@@ -8,7 +8,10 @@
     "auth": "zef:librasteve",
     "build-depends": [],
     "provides": {
-        "Air::Functional": "lib/Air/Functional.rakumod"
+        "Air": "lib/Air.rakumod",
+        "Air::Functional": "lib/Air/Functional.rakumod",
+        "Air::Component": "lib/Air/Component.rakumod",
+        "Air::BaseLib": "lib/Air/BaseLib.rakumod"
     },
     "license": "Artistic-2.0",
     "source-url": "https://github.com/librasteve/Air.git"
