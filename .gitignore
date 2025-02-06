@@ -1,2 +1,9 @@
-.precomp/
-/Air-*
+.DS_Store
+.precomp
+.lib/precomp
+*.swp
+.ipynb_checkpoints/*
+.log
+.pem
+.idea/
+*.iml

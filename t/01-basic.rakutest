@@ -1,6 +1,18 @@
 use Test;
-use Air;
+use Air::Functional;
 
-pass "replace me";
+is h1('text', :class<jumbotron>), "\n<h1 class=\"jumbotron\">text</h1>",        'h1';
+
+is h1(:class<doobie>), "\n<h1 class=\"doobie\"></h1>",                          'empty';
+
+is div(:class<jumbotron>, 'xx'), "\n<div class=\"jumbotron\">xx</div>",         'regular';
+
+is hr, "\n<hr />",                                                            'singular';
+
+my $tainted = '<div class="content">Escaped & Raw HTML!</div>';
+my $expect = "\n<p>\&lt;div class=\&quot;content\&quot;\&gt;Escaped \&amp; Raw HTML!\&lt;/div\&gt;</p>";
+is p( text $tainted ), $expect ,                                            'text';
+is p( ^$tainted ), $expect ,                                                '^';
+
 
 done-testing;
