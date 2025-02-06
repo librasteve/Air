@@ -1,0 +1,6 @@
+use Test;
+use Air;
+
+pass "replace me";
+
+done-testing;
