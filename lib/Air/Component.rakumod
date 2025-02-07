@@ -14,7 +14,6 @@ multi trait_mod:<is>(Method $m, :$routable! (:$name = $m.name)) is export {
 use Cro::HTTP::Router;
 
 role Component {
-
 	# ID, Holder & URL Setup
 	my  UInt $next = 1;
 	has UInt $.id;

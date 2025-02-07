@@ -106,7 +106,7 @@ my package EXPORT::CRO {
 
 # exclude tags that overlap with Cro & HTML::Components & BaseLib
 
-my @exclude-base  = <header table template script>;
+my @exclude-base  = <table nav>;
 
 my @regular-base  = @regular-tags.grep:  { $_ ∉ @exclude-base };
 my @singular-base = @singular-tags.grep: { $_ ∉ @exclude-base };

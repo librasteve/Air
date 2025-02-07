@@ -8,11 +8,11 @@ Newline is inner to outer
 use Air::Functional;
 use Air::Component;
 
-my @components = <Script Page Table Grid>;
+my @components = <Page Nav Table Grid>;
 
-##### Export as Tag role #####
+##### Tag Role #####
 
-#| The Tag role provides an HTML method so that the consuming class behaves like a standard HTML tag that
+#| The Tag Role provides an HTML method so that the consuming class behaves like a standard HTML tag that
 #| can be provided with inner and attr attributes
 
 enum TagType is export <Singular Regular>;
@@ -34,23 +34,22 @@ role Tag[TagType $tag-type] is export {
     }
 }
 
-role Meta does Tag[Singular] { }
+##### Site Roles #####
 
-role Title does Tag[Regular] { }
+role Meta does Tag[Singular] {}
 
-role Script does Tag[Regular] does Component {
-    has Str $.src;
+role Title does Tag[Regular] {}
 
-    method attrs {
-        { :$!src }
-    }
-}
+role Script does Tag[Regular] {}
 
-role Link does Tag[Singular] { }
+role Link does Tag[Singular] {}
 
-role Style does Tag[Regular] { }
+role Style does Tag[Regular] {}
+
+role Body does Tag[Regular] {}
 
 role Head does Tag[Regular] {
+    my $loaded = 0;
     has Meta   @.metas;
     has Title  $.title is rw;
     has Script @.scripts;
@@ -61,9 +60,16 @@ role Head does Tag[Regular] {
     method defaults {
         self.metas.append: Meta.new: attrs => {:charset<utf-8>};
         self.metas.append: Meta.new: attrs => {:name<viewport>, :content<width=device-width, initial-scale=1>};
+        self.links.append: Link.new: attrs => {:rel<stylesheet>, :href<css/styles.css> };
+        self.links.append: Link.new: attrs => {:rel<icon>, :href<img/favicon.ico>, :type<image/x-icon>};
+        self.scripts.append: Script.new: attrs => {:src<https://kit.fontawesome.com/a425eec628.js'>, :crossorigin<anonymous>};
+        self.scripts.append: Script.new: attrs => {:src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
+                                    :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>};
     }
 
     multi method HTML {
+        self.defaults unless $loaded++;
+
         opener($.name)                     ~
         "{ (.HTML for  @!metas   ).join }" ~
         "{ (.HTML with $!title   )}"       ~
@@ -74,20 +80,24 @@ role Head does Tag[Regular] {
     }
 }
 
-role Body does Tag[Regular] { }
-
-#[
-
 role Html does Tag[Regular] {
+    my $loaded = 0;
+
     has Head $.head .= new;
     has Body $.body is rw;
 
+    has Attr %.lang is rw = :lang<en>;
+    has Attr %.mode is rw = :data-theme<dark>;
+
     method defaults {
         self.head.defaults;
-        %.attrs.push: :lang<en>;
+        %.attrs.append: %!lang, %!mode;
+
     }
 
     multi method HTML {
+        self.defaults unless $loaded++;
+
         opener($.name, |%.attrs) ~
         $!head.HTML              ~
         $!body.HTML              ~
@@ -95,69 +105,90 @@ role Html does Tag[Regular] {
     }
 }
 
-role Page does Component {
-    has $.doctype = 'html';
-    has Html $.html .= new;
 
-    has $.title;
-    has $.description;
+role Header does Tag[Regular] {}
+role Main   does Tag[Regular] {}
+role Footer does Tag[Regular] {}
+
+#iamerejh
+role Fragment {}
+
+role Page does Component {
+    my $loaded = 0;
+    has Int $.REFRESH;    #auto refresh every n secs during dev't
+
+    has Str $.title       is required;
+    has Str $.description is required;
+
+    has Html $.html .= new;
 
     method defaults {
         self.html.defaults;
-        self.html.head.title = Title.new(inner => $!title);
+        self.html.head.title = Title.new: :inner($!title);
         self.meta: { :name<description>, :content($!description) };
+        self.meta: { :http-equiv<refresh>, :content($!REFRESH) } if $!REFRESH;
     }
 
     multi method HTML {
-        "<!doctype $!doctype>" ~ $!html.HTML
+        self.defaults unless $loaded++;
+        '<!doctype html>' ~ $!html.HTML
     }
 
-    method meta(%attrs) {
-        self.html.head.metas.append: Meta.new(:%attrs)
-    }
-
-    method title($inner) {
-        self.html.head.title = Title.new(inner => $!title)
-    }
-
-    method script(:$src) {
-        self.html.head.scripts.append: Script.new(:$src);
-    }
-
-    method link(%attrs) {
-        self.html.head.links.append: Link.new(:%attrs)
-    }
-
-    method style($inner) {
-        self.html.head.style = Style.new(:$inner)
-    }
-
-    method body($inner) {
-        self.html.body = Body.new(:$inner)
-    }
-}
-
-role Container {
-
-}
-
-role Layout {
-
-}
-
-role Template {
-
+    #| Setter methods
+    method meta(%attrs)   { self.html.head.metas.append: Meta.new(:%attrs) }
+    method script(%attrs) { self.html.head.scripts.append: Script.new(:%attrs) }
+    method link(%attrs)   { self.html.head.links.append: Link.new(:%attrs) }
+    method style($inner)  { self.html.head.style = Style.new(:$inner) }
+    method body($inner)   { self.html.body = Body.new(:$inner) }
 }
 
 role Site {
+    has Page @.pages;
+    has Page $.index is rw = @!pages[0];
 
+    use Cro::HTTP::Router;
+
+    method routes {
+        route {
+            get ->               { content 'text/html', $.index.HTML }
+            get -> 'css', *@path { static 'static/css', @path }
+            get -> 'img', *@path { static 'static/img', @path }
+            get -> 'js',  *@path { static 'static/js',  @path }
+            get ->        *@path { static 'static',     @path }
+        }
+    }
 }
 
-role Nav {
+##### Roles TBD #####
+role Container {}
+role Layout {}
+role Template {}
 
+##### Tag Components #####
+# viz. https://picocss.com/docs
+
+class Nav does Component {
+    has Str  $.hx-target = '#content';
+    has Str  $.logo;
+    has Pair @.items = [];
+
+    multi method new(@items, *%h) {
+        self.new: :@items, |%h;
+    }
+
+    submethod TWEAK {
+        @!items .= map: { (.value === True) ?? (.key => .key) !! $_ };
+    }
+
+    multi method HTML {
+        nav [
+            { ul li :class<logo>, :href</>, $!logo } with $!logo;
+            ul :$!hx-target, do for @!items
+                { li a(:hx-get(.key), .value) };
+        ]
+    }
 }
 
-#| viz. https://picocss.com/docs/table
 class Table does Component {
     has $.tbody = [];
     has $.thead = [];
@@ -189,7 +220,6 @@ class Table does Component {
     }
 }
 
-#| viz. https://picocss.com/docs/grid
 class Grid does Component {
     has @.items;
 
@@ -219,22 +249,9 @@ class Grid does Component {
             do for @!items -> $item {
                 div $item
             }
-            ;
+        ;
     }
 }
-
-#]
-
-
-#`[
-my $static = './static/index.html';
-my %assets = ( js => './static/js', css => './static/js', images => './static/images' );
-my $routes = './lib/Routes.rakumod';
-
-spurt $page.HTML-static $static;
-spurt $page.HTML-assets %assets;
-spurt $page.HTML-routes $routes;
-#]
 
 ##### HTML Functional Export #####
 
