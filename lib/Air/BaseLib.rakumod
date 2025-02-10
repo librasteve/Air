@@ -44,7 +44,11 @@ role Script does Tag[Regular] {}
 
 role Link does Tag[Singular] {}
 
-role Style does Tag[Regular] {}
+role Style does Tag[Regular] {
+    multi method new($inner, *%attrs) {
+        self.new: :$inner, |%attrs
+    }
+}
 
 role Head does Tag[Regular] {
     my $loaded = 0;
@@ -96,23 +100,35 @@ role Nav does Tag[Regular] {
 }
 
 role Header does Tag[Regular] {
-    has Nav $.nav;
+    has Nav $.nav is rw .= new;
 
-#    multi method HTML {
-#        opener($.name, |%.attrs) ~
-#        $!nav.HTML               ~
-#        closer($.name)           ~ "\n"
-#    }
+    multi method HTML {
+        opener($.name, |%.attrs) ~
+        $!nav.HTML               ~
+        closer($.name)           ~ "\n"
+    }
 }
 
-#role Header does Tag[Regular] {}
-role Main   does Tag[Regular] {}
-role Footer does Tag[Regular] {}
+role Main does Tag[Regular] {
+    multi method new($inner, *%attrs) {
+        self.new: :$inner, |%attrs
+    }
+}
+
+role Footer does Tag[Regular] {
+    multi method new($inner, *%attrs) {
+        self.new: :$inner, |%attrs
+    }
+}
 
 role Body does Tag[Regular] {
     has Header $.header is rw .= new: :attrs{:class<container>};
     has Main   $.main   is rw .= new: :attrs{:class<container>};
     has Footer $.footer is rw .= new: :attrs{:class<container>};
+
+    multi method new($inner, *%attrs) {
+        self.new: :$inner, |%attrs
+    }
 
     multi method HTML {
         opener($.name, |%.attrs) ~
@@ -127,7 +143,7 @@ role Html does Tag[Regular] {
     my $loaded = 0;
 
     has Head $.head .= new;
-    has Body $.body is rw;
+    has Body $.body is rw .= new;
 
     has Attr %.lang is rw = :lang<en>;
     has Attr %.mode is rw = :data-theme<dark>;
@@ -135,7 +151,6 @@ role Html does Tag[Regular] {
     method defaults {
         self.head.defaults;
         %.attrs.append: %!lang, %!mode;
-
     }
 
     multi method HTML {
@@ -150,20 +165,22 @@ role Html does Tag[Regular] {
 
 role Page does Component {
     my $loaded = 0;
-    has Int  $.REFRESH;    #auto refresh every n secs during dev't
+    has Int     $.REFRESH;    #auto refresh every n secs in dev't
 
-    has Str  $.title;
-    has Str  $.description;
-    has Nav  $.nav;
+    has Str     $.title;
+    has Str     $.description;
+    has Nav     $.nav;
+    has Footer  $.footer;
 
     has Html $.html .= new;
 
     method defaults {
         self.html.defaults;
-        self.html.head.title  = Title.new: :inner($!title) with $!title;
-#        self.html.body.header = Header.new: :$!nav with $!nav;    #iamerejh
-        self.meta: { :name<description>, :content($!description) } with $!description;
-        self.meta: { :http-equiv<refresh>, :content($!REFRESH) } if $!REFRESH;
+        self.html.head.title = Title.new: :inner($!title)           with $!title;
+        self.html.body.header.nav = $!nav                           with $!nav;
+        self.html.body.footer  = $!footer                           with $!footer;
+        self.meta: { :name<description>, :content($!description) }  with $!description;
+        self.meta: { :http-equiv<refresh>, :content($!REFRESH) }    with $!REFRESH;
     }
 
     multi method HTML {
@@ -175,11 +192,9 @@ role Page does Component {
     method meta(%attrs)   { self.html.head.metas.append: Meta.new(:%attrs) }
     method script(%attrs) { self.html.head.scripts.append: Script.new(:%attrs) }
     method link(%attrs)   { self.html.head.links.append: Link.new(:%attrs) }
-    method style($inner)  { self.html.head.style = Style.new(:$inner) }
-    method body($inner)   { self.html.body = Body.new(:$inner) }
-#    method header($inner) { self.html.body.header = Header.new(:$inner) }
-#    method main($inner)   { self.html.body.main = Main.new(:$inner) }    #iamerejh
-#    method footer($inner) { self.html.body.footer = Footer.new(:$inner) }
+    method style($inner)  { self.html.head.style = Style.new($inner) }
+    method body($inner)   { self.html.body = Body.new($inner) }
+    method main($inner)   { self.html.body.main = Main.new($inner, :attrs{:class<container>}) }
 }
 
 role Site {
