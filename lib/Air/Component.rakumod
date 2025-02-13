@@ -2,12 +2,11 @@ multi trait_mod:<is>(Method $m, Bool :$routable!) is export {
 	trait_mod:<is>($m, :routable{})
 }
 
-multi trait_mod:<is>(Method $m, :$routable! (:$name = $m.name)) is export {
+multi trait_mod:<is>(Method $m, :$routable!, :$name = $m.name) is export {
 	my role IsRoutable {
 		has Str $.is-routable-name;
 		method is-routable { True }
 	}
-
 	$m does IsRoutable($name)
 }
 
@@ -24,6 +23,7 @@ role Component {
 	submethod TWEAK {
 		$!id //= $next++;
 		%holder{$!id} = self;
+		self.?make-routes;
 	}
 
 	method url-part { ::?CLASS.^name.subst('::','-').lc }
@@ -35,6 +35,7 @@ role Component {
 	method DELETE         { self.holder{$!id}:delete }
 	method UPDATE(*%data) { self.data = |self.data, |%data }
 	method all { self.holder.keys.sort.map: { $.holder{$_} } }
+
 
 	# Method Routes
 	::?CLASS.HOW does my role ExportMethod {

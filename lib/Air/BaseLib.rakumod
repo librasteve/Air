@@ -82,22 +82,8 @@ role Head does Tag[Regular] {
     }
 }
 
-role Nav does Tag[Regular] {
-    has Str  $.hx-target = '#content';
-    has Str  $.logo;
-    has Str  @.items = [];
-
-    multi method new(@items, *%h) {
-        self.new: :@items, |%h;
-    }
-
-    multi method HTML {
-        nav [
-            { ul li :class<logo>, :href</>, $!logo } with $!logo;
-            ul :$!hx-target, do for @!items { li a(:hx-get($_), $_) };
-        ]
-    }
-}
+class Nav { ... }
+class Page { ... }
 
 role Header does Tag[Regular] {
     has Nav $.nav is rw .= new;
@@ -150,7 +136,7 @@ role Html does Tag[Regular] {
 
     method defaults {
         self.head.defaults;
-        %.attrs.append: %!lang, %!mode;
+        self.attrs = |%!lang, |%!mode;
     }
 
     multi method HTML {
@@ -163,7 +149,53 @@ role Html does Tag[Regular] {
     }
 }
 
-role Page does Component {
+# More Roles TBD?
+role Container {}
+role Layout {}
+role Template {}
+
+##### Core Classes #####
+
+class Section does Component {
+    has $.inner;
+
+    multi method new($inner, *%attrs) {
+        self.new: :$inner, |%attrs
+    }
+
+    method HTML {
+        $!inner
+    }
+}
+
+subset ExternalLink of Pair;
+subset NavItem where * ~~ Section | Page | ExternalLink;
+
+class Nav does Component {
+    has Str  $.hx-target = '#content';
+    has Str  $.logo;
+    has NavItem() @.items;
+
+    method make-routes() {
+        for self.items.map: *.kv -> ($name, $target) {
+            my &new-method = method {
+                respond $target
+            };
+
+            trait_mod:<is>(&new-method, :routable, :$name);
+            self.^add_method($name, &new-method);
+        }
+    }
+
+    multi method HTML {
+        nav [
+            { ul li :class<logo>, :href</>, $!logo } with $!logo;
+            ul :$!hx-target, do for @!items { li a(:hx-get("$.url-part/$.id/" ~ .key), .key) };
+        ]
+    }
+}
+
+class Page does Component {
     my $loaded = 0;
     has Int     $.REFRESH;    #auto refresh every n secs in dev't
 
@@ -197,7 +229,7 @@ role Page does Component {
     method main($inner)   { self.html.body.main = Main.new($inner, :attrs{:class<container>}) }
 }
 
-role Site {
+class Site {
     has Page @.pages;
     has Page $.index is rw = @!pages[0];
 
@@ -205,6 +237,7 @@ role Site {
 
     method routes {
         route {
+            Nav.^add-routes;
             get ->               { content 'text/html', $.index.HTML }
             get -> 'css', *@path { static 'static/css', @path }
             get -> 'img', *@path { static 'static/img', @path }
@@ -213,11 +246,6 @@ role Site {
         }
     }
 }
-
-##### Roles TBD #####
-role Container {}
-role Layout {}
-role Template {}
 
 ##### Tag Classes #####
 # viz. https://picocss.com/docs
