@@ -8,7 +8,7 @@ Newline is inner to outer
 use Air::Functional;
 use Air::Component;
 
-my @components = <Page Nav Body Header Main Footer Table Grid>;
+my @components = <Content Page Nav Body Header Main Footer Table Grid>;
 
 ##### Tag Role #####
 
@@ -156,7 +156,7 @@ role Template {}
 
 ##### Core Classes #####
 
-class Section does Component {
+class Content does Component {
     has $.inner;
 
     multi method new($inner, *%attrs) {
@@ -164,12 +164,24 @@ class Section does Component {
     }
 
     method HTML {
-        $!inner
+        div :id<content>, [|$!inner]
     }
 }
 
+#class A does Component {
+#    has $.inner;
+#
+#    multi method new($inner, *%attrs) {
+#        self.new: :$inner, |%attrs
+#    }
+#
+#    method HTML {
+#        $!inner
+#    }
+#}
+
 subset ExternalLink of Pair;
-subset NavItem where * ~~ Section | Page | ExternalLink;
+subset NavItem where * ~~ Content | Page | ExternalLink;
 
 class Nav does Component {
     has Str  $.hx-target = '#content';
