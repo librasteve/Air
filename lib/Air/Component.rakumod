@@ -1,12 +1,13 @@
+role IsRoutable {
+	has Str $.is-routable-name;
+	method is-routable { True }
+}
+
 multi trait_mod:<is>(Method $m, Bool :$routable!) is export {
 	trait_mod:<is>($m, :routable{})
 }
 
 multi trait_mod:<is>(Method $m, :$routable!, :$name = $m.name) is export {
-	my role IsRoutable {
-		has Str $.is-routable-name;
-		method is-routable { True }
-	}
 	$m does IsRoutable($name)
 }
 
@@ -15,7 +16,7 @@ use Cro::HTTP::Router;
 role Component {
 	# ID, Holder & URL Setup
 	my  UInt $next = 1;
-	has UInt $.id;
+	has UInt $.id;   # fixme hash of ids per type
 
 	my %holder;
 	method holder { %holder }

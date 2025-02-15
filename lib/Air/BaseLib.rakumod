@@ -8,7 +8,7 @@ Newline is inner to outer
 use Air::Functional;
 use Air::Component;
 
-my @components = <Content Page Nav Body Header Main Footer Table Grid>;
+my @components = <Content Page Nav Footer Body Header Main Footer Table Grid>;
 
 ##### Tag Role #####
 
@@ -168,41 +168,55 @@ class Content does Component {
     }
 }
 
-#class A does Component {
-#    has $.inner;
-#
-#    multi method new($inner, *%attrs) {
-#        self.new: :$inner, |%attrs
-#    }
-#
-#    method HTML {
-#        $!inner
-#    }
-#}
+class A does Component {
+    has $.inner;
+
+    multi method new($inner, *%attrs) {
+        self.new: :$inner, |%attrs
+    }
+
+    method HTML {
+        $!inner
+    }
+}
 
 subset ExternalLink of Pair;
-subset NavItem where * ~~ Content | Page | ExternalLink;
+subset NavItem of Pair where * ~~ Content | Page;
 
 class Nav does Component {
     has Str  $.hx-target = '#content';
     has Str  $.logo;
-    has NavItem() @.items;
+#    has NavItem @.items;
+    has @.items;
 
     method make-routes() {
-        for self.items.map: *.kv -> ($name, $target) {
-            my &new-method = method {
-                respond $target
-            };
-
-            trait_mod:<is>(&new-method, :routable, :$name);
-            self.^add_method($name, &new-method);
+        unless self.^methods.grep: * ~~ IsRoutable {
+            for self.items.map: *.kv -> ($name, $target) {
+                given $target {
+                    when * ~~ Content {
+                        my &new-method = method {respond $target};
+                        trait_mod:<is>(&new-method, :routable, :$name);
+                        self.^add_method($name, &new-method);
+                    }
+                }
+            }
         }
     }
 
     multi method HTML {
         nav [
-            { ul li :class<logo>, :href</>, $!logo } with $!logo;
-            ul :$!hx-target, do for @!items { li a(:hx-get("$.url-part/$.id/" ~ .key), .key) };
+            { ul li :class<logo>, :href</>, $.logo } with $.logo;
+            ul :$!hx-target, do for @.items.map: *.kv -> ($name, $target) {
+                given $target {
+                    when * ~~ Content {
+                        li a(:hx-get("$.url-part/$.id/" ~ $name), $name)
+                    }
+                    when * ~~ Page {
+                        li a(:hx-get("$.url-part/$.id/" ~ $name),
+                            :hx-target<html>, :hx-swap<outerHTML>, $name)
+                    }
+                }
+            }
         ]
     }
 }
@@ -212,19 +226,20 @@ class Page does Component {
     has Int     $.REFRESH;    #auto refresh every n secs in dev't
 
     has Str     $.title;
+    has Str     $.name;
     has Str     $.description;
-    has Nav     $.nav;
+    has Nav     $.nav is rw;
     has Footer  $.footer;
 
     has Html $.html .= new;
 
     method defaults {
         self.html.defaults;
-        self.html.head.title = Title.new: :inner($!title)           with $!title;
-        self.html.body.header.nav = $!nav                           with $!nav;
-        self.html.body.footer  = $!footer                           with $!footer;
-        self.meta: { :name<description>, :content($!description) }  with $!description;
-        self.meta: { :http-equiv<refresh>, :content($!REFRESH) }    with $!REFRESH;
+        self.html.head.title = Title.new: :inner($.title)           with $.title;
+        self.html.body.header.nav = $.nav                           with $.nav;
+        self.html.body.footer  = $.footer                           with $.footer;
+        self.meta: { :name<description>, :content($.description) }  with $.description;
+        self.meta: { :http-equiv<refresh>, :content($.REFRESH) }    with $.REFRESH;
     }
 
     multi method HTML {
@@ -255,6 +270,12 @@ class Site {
             get -> 'img', *@path { static 'static/img', @path }
             get -> 'js',  *@path { static 'static/js',  @path }
             get ->        *@path { static 'static',     @path }
+
+            for @!pages -> $page {
+                my $name = $page.name;
+                note "adding GET $name";
+                get -> Str $ where $name { content 'text/html', $page.HTML }
+            }
         }
     }
 }
