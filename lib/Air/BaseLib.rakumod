@@ -50,10 +50,21 @@ role Style does Tag[Regular] {
     }
 }
 
-role Head does Tag[Regular] {
-    my $loaded = 0;
+class Head does Tag[Regular] {
+
+    # Singleton
+    my Head $instance;
+    method new {self.instance}
+    submethod instance {
+        unless $instance {
+            $instance = Head.bless;
+            $instance.defaults;
+        };
+        $instance;
+    }
 
     has Title  $.title is rw;
+    has Meta   $.description is rw;
     has Meta   @.metas;
     has Script @.scripts;
     has Link   @.links;
@@ -62,22 +73,21 @@ role Head does Tag[Regular] {
     method defaults {
         self.metas.append: Meta.new: attrs => {:charset<utf-8>};
         self.metas.append: Meta.new: attrs => {:name<viewport>, :content<width=device-width, initial-scale=1>};
-        self.links.append: Link.new: attrs => {:rel<stylesheet>, :href<css/styles.css> };
-        self.links.append: Link.new: attrs => {:rel<icon>, :href<img/favicon.ico>, :type<image/x-icon>};
+        self.links.append: Link.new: attrs => {:rel<stylesheet>, :href</css/styles.css> };
+        self.links.append: Link.new: attrs => {:rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>};
         self.scripts.append: Script.new: attrs => {:src<https://kit.fontawesome.com/a425eec628.js'>, :crossorigin<anonymous>};
         self.scripts.append: Script.new: attrs => {:src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
-                                    :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>};
+                                        :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>};
     }
 
     multi method HTML {
-        self.defaults unless $loaded++;
-
         opener($.name)                     ~
+        "{ (.HTML with $!title         )}" ~
+        "{ (.HTML with $!description   )}" ~
         "{ (.HTML for  @!metas   ).join }" ~
-        "{ (.HTML with $!title   )}"       ~
         "{ (.HTML for  @!scripts ).join }" ~
         "{ (.HTML for  @!links   ).join }" ~
-        "{ (.HTML with $!style   )}"       ~
+        "{ (.HTML with $!style         )}" ~
         closer($.name)                     ~ "\n"
     }
 }
@@ -125,7 +135,7 @@ role Body does Tag[Regular] {
     }
 }
 
-role Html does Tag[Regular] {
+class Html does Tag[Regular] {
     my $loaded = 0;
 
     has Head $.head .= new;
@@ -135,12 +145,12 @@ role Html does Tag[Regular] {
     has Attr %.mode is rw = :data-theme<dark>;
 
     method defaults {
-        self.head.defaults;
         self.attrs = |%!lang, |%!mode;
+        $loaded++;  #iamerejh (what else calls this?)
     }
 
     multi method HTML {
-        self.defaults unless $loaded++;
+        self.defaults unless $loaded;
 
         opener($.name, |%.attrs) ~
         $!head.HTML              ~
@@ -212,8 +222,7 @@ class Nav does Component {
                         li a(:hx-get("$.url-part/$.id/" ~ $name), $name)
                     }
                     when * ~~ Page {
-                        li a(:hx-get("$.url-part/$.id/" ~ $name),
-                            :hx-target<html>, :hx-swap<outerHTML>, $name)
+                        li a(:href("/{.url-part}/{.id}"), $name)
                     }
                 }
             }
@@ -222,11 +231,10 @@ class Nav does Component {
 }
 
 class Page does Component {
-    my $loaded = 0;
+    has $.loaded is rw = 0;
     has Int     $.REFRESH;    #auto refresh every n secs in dev't
 
     has Str     $.title;
-    has Str     $.name;
     has Str     $.description;
     has Nav     $.nav is rw;
     has Footer  $.footer;
@@ -234,26 +242,25 @@ class Page does Component {
     has Html $.html .= new;
 
     method defaults {
-        self.html.defaults;
-        self.html.head.title = Title.new: :inner($.title)           with $.title;
-        self.html.body.header.nav = $.nav                           with $.nav;
-        self.html.body.footer  = $.footer                           with $.footer;
-        self.meta: { :name<description>, :content($.description) }  with $.description;
-        self.meta: { :http-equiv<refresh>, :content($.REFRESH) }    with $.REFRESH;
+        unless $.loaded++ {
+            self.html.head.title = Title.new: :inner($.title)           with $.title;
+            self.html.body.header.nav = $.nav                           with $.nav;
+            self.html.body.footer = $.footer                            with $.footer;
+            self.html.head.description = Meta.new: attrs =>
+                        { :name<description>, :content($.description) } with $.description;
+            self.html.head.metas.append: Meta.new: attrs =>
+                        { :http-equiv<refresh>, :content($.REFRESH) }   with $.REFRESH;
+        }
+    }
+
+    method main($inner) {
+        self.html.body.main = Main.new: $inner, :attrs{:class<container>}
     }
 
     multi method HTML {
-        self.defaults unless $loaded++;
+        self.defaults unless $.loaded;
         '<!doctype html>' ~ $!html.HTML
     }
-
-    #| Setter methods
-    method meta(%attrs)   { self.html.head.metas.append: Meta.new(:%attrs) }
-    method script(%attrs) { self.html.head.scripts.append: Script.new(:%attrs) }
-    method link(%attrs)   { self.html.head.links.append: Link.new(:%attrs) }
-    method style($inner)  { self.html.head.style = Style.new($inner) }
-    method body($inner)   { self.html.body = Body.new($inner) }
-    method main($inner)   { self.html.body.main = Main.new($inner, :attrs{:class<container>}) }
 }
 
 class Site {
@@ -271,10 +278,9 @@ class Site {
             get -> 'js',  *@path { static 'static/js',  @path }
             get ->        *@path { static 'static',     @path }
 
-            for @!pages -> $page {
-                my $name = $page.name;
-                note "adding GET $name";
-                get -> Str $ where $name { content 'text/html', $page.HTML }
+            for @!pages.map: {.url-part, .id} -> ($url-part, $id) {
+                note "adding GET $url-part/$id";
+                get -> Str $ where $url-part, $id { content 'text/html', @!pages[$id-1].HTML }
             }
         }
     }
