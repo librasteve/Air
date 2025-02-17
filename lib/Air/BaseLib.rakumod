@@ -8,7 +8,7 @@ Newline is inner to outer
 use Air::Functional;
 use Air::Component;
 
-my @components = <Content Page Nav Footer Body Header Main Footer Table Grid>;
+my @components = <External Content Page Nav Body Header Main Footer Table Grid>;
 
 ##### Tag Role #####
 
@@ -36,6 +36,12 @@ role Tag[TagType $tag-type] is export {
 
 ##### Site Roles #####
 
+role A does Tag[Regular] {
+    multi method new($inner, *%attrs) {
+        self.new: :$inner, |%attrs
+    }
+}
+
 role Meta does Tag[Singular] {}
 
 role Title does Tag[Regular] {}
@@ -50,9 +56,9 @@ role Style does Tag[Regular] {
     }
 }
 
-class Head does Tag[Regular] {
+role Head does Tag[Regular] {
 
-    # Singleton
+    # Singleton pattern (ie. same Head for all pages)
     my Head $instance;
     method new {self.instance}
     submethod instance {
@@ -135,7 +141,7 @@ role Body does Tag[Regular] {
     }
 }
 
-class Html does Tag[Regular] {
+role Html does Tag[Regular] {
     my $loaded = 0;
 
     has Head $.head .= new;
@@ -146,11 +152,10 @@ class Html does Tag[Regular] {
 
     method defaults {
         self.attrs = |%!lang, |%!mode;
-        $loaded++;  #iamerejh (what else calls this?)
     }
 
     multi method HTML {
-        self.defaults unless $loaded;
+        self.defaults unless $loaded++;
 
         opener($.name, |%.attrs) ~
         $!head.HTML              ~
@@ -166,6 +171,16 @@ role Template {}
 
 ##### Core Classes #####
 
+class External does A {
+    has %.others = {:target<_blank>, :rel<noopener noreferrer>};
+
+    multi method HTML {   #iamerejh
+        self.attrs = |self.attrs, |self.others;
+        note self.raku;
+        nextsame
+    }
+}
+
 class Content does Component {
     has $.inner;
 
@@ -178,26 +193,12 @@ class Content does Component {
     }
 }
 
-class A does Component {
-    has $.inner;
-
-    multi method new($inner, *%attrs) {
-        self.new: :$inner, |%attrs
-    }
-
-    method HTML {
-        $!inner
-    }
-}
-
-subset ExternalLink of Pair;
-subset NavItem of Pair where * ~~ Content | Page;
+subset NavItem of Pair where .value ~~ External | Content | Page;
 
 class Nav does Component {
     has Str  $.hx-target = '#content';
     has Str  $.logo;
-#    has NavItem @.items;
-    has @.items;
+    has NavItem @.items;
 
     method make-routes() {
         unless self.^methods.grep: * ~~ IsRoutable {
@@ -218,6 +219,9 @@ class Nav does Component {
             { ul li :class<logo>, :href</>, $.logo } with $.logo;
             ul :$!hx-target, do for @.items.map: *.kv -> ($name, $target) {
                 given $target {
+                    when * ~~ External {
+                        li $target.HTML
+                    }
                     when * ~~ Content {
                         li a(:hx-get("$.url-part/$.id/" ~ $name), $name)
                     }
@@ -244,12 +248,12 @@ class Page does Component {
     method defaults {
         unless $.loaded++ {
             self.html.head.title = Title.new: :inner($.title)           with $.title;
-            self.html.body.header.nav = $.nav                           with $.nav;
-            self.html.body.footer = $.footer                            with $.footer;
             self.html.head.description = Meta.new: attrs =>
                         { :name<description>, :content($.description) } with $.description;
             self.html.head.metas.append: Meta.new: attrs =>
                         { :http-equiv<refresh>, :content($.REFRESH) }   with $.REFRESH;
+            self.html.body.header.nav = $.nav                           with $.nav;
+            self.html.body.footer = $.footer                            with $.footer;
         }
     }
 
