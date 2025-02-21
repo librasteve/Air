@@ -87,7 +87,7 @@ my package EXPORT::DEFAULT {
     }
 }
 
-# exclude tags that overlap with Cro & HTML::Components
+# exclude tags that overlap with Cro & Air::Component
 
 my @exclude-cro = <header table template>;
 
@@ -104,7 +104,7 @@ my package EXPORT::CRO {
     }
 }
 
-# exclude tags that overlap with Cro & HTML::Components & BaseLib
+# exclude tags that overlap with Cro & Air::Component & BaseLib
 
 my @exclude-base  = <body main header footer nav table>;
 

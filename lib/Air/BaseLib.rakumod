@@ -1,10 +1,3 @@
-
-#`[
-Model page using OO
-This has the superpowers of defaults and overrrides
-Newline is inner to outer
-#]
-
 use Air::Functional;
 use Air::Component;
 
@@ -20,7 +13,7 @@ subset Attr of Str;
 
 role Tag[TagType $tag-type] is export {
     has Str    $.name = ::?CLASS.^name.lc;
-    has Attr() %.attrs;   #coercion is friendly to attr values with spaces
+    has Attr() %.attrs is rw;   #coercion is friendly to attr values with spaces
     has        $.inner;
 
     multi method HTML {
@@ -103,10 +96,14 @@ class Page { ... }
 
 role Header does Tag[Regular] {
     has Nav $.nav is rw .= new;
+    has Str $.tagline = '';
 
     multi method HTML {
+        %.attrs = |%.attrs, :class<container>;
+
         opener($.name, |%.attrs) ~
         $!nav.HTML               ~
+        $!tagline                ~
         closer($.name)           ~ "\n"
     }
 }
@@ -115,18 +112,34 @@ role Main does Tag[Regular] {
     multi method new($inner, *%attrs) {
         self.new: :$inner, |%attrs
     }
+
+    multi method HTML {
+        %.attrs = |%.attrs, :class<container>;
+
+        opener($.name, |%.attrs) ~
+        $.inner                  ~
+        closer($.name)           ~ "\n"
+    }
 }
 
 role Footer does Tag[Regular] {
     multi method new($inner, *%attrs) {
         self.new: :$inner, |%attrs
     }
+
+    multi method HTML {
+        %.attrs = |%.attrs, :class<container>;
+
+        opener($.name, |%.attrs) ~
+        $.inner                  ~
+        closer($.name)           ~ "\n"
+    }
 }
 
 role Body does Tag[Regular] {
-    has Header $.header is rw .= new: :attrs{:class<container>};
-    has Main   $.main   is rw .= new: :attrs{:class<container>};
-    has Footer $.footer is rw .= new: :attrs{:class<container>};
+    has Header $.header is rw .= new;
+    has Main   $.main   is rw .= new;
+    has Footer $.footer is rw .= new;
 
     multi method new($inner, *%attrs) {
         self.new: :$inner, |%attrs
@@ -172,12 +185,23 @@ role Template {}
 ##### Core Classes #####
 
 class External does A {
+    has Str $!label;
+
+    has $.href is required;
+    has %!href = {:$!href};
     has %.others = {:target<_blank>, :rel<noopener noreferrer>};
 
-    multi method HTML {   #iamerejh
-        self.attrs = |self.attrs, |self.others;
-        note self.raku;
-        nextsame
+    multi method label($_) {
+        $!label = $_
+    }
+
+    multi method label {
+        $!label // ''
+    }
+
+    multi method HTML {
+        %.attrs = |self.others, |%!href;
+        do-regular-tag( 'a', [$.label // ''], |%.attrs )
     }
 }
 
@@ -217,9 +241,11 @@ class Nav does Component {
     multi method HTML {
         nav [
             { ul li :class<logo>, :href</>, $.logo } with $.logo;
+
             ul :$!hx-target, do for @.items.map: *.kv -> ($name, $target) {
                 given $target {
                     when * ~~ External {
+                        $target.label: $name;
                         li $target.HTML
                     }
                     when * ~~ Content {
@@ -229,7 +255,7 @@ class Nav does Component {
                         li a(:href("/{.url-part}/{.id}"), $name)
                     }
                 }
-            }
+            };
         ]
     }
 }
@@ -240,25 +266,29 @@ class Page does Component {
 
     has Str     $.title;
     has Str     $.description;
-    has Nav     $.nav is rw;
+    has Nav     $.nav is rw;  #\ either or
+    has Header  $.header;     #/
     has Footer  $.footer;
 
     has Html $.html .= new;
 
     method defaults {
         unless $.loaded++ {
+            self.html.head.metas.append: Meta.new: attrs =>
+                        { :http-equiv<refresh>, :content($.REFRESH) }   with $.REFRESH;
+
             self.html.head.title = Title.new: :inner($.title)           with $.title;
             self.html.head.description = Meta.new: attrs =>
                         { :name<description>, :content($.description) } with $.description;
-            self.html.head.metas.append: Meta.new: attrs =>
-                        { :http-equiv<refresh>, :content($.REFRESH) }   with $.REFRESH;
+
             self.html.body.header.nav = $.nav                           with $.nav;
+            self.html.body.header = $.header                            with $.header;
             self.html.body.footer = $.footer                            with $.footer;
         }
     }
 
     method main($inner) {
-        self.html.body.main = Main.new: $inner, :attrs{:class<container>}
+        self.html.body.main = Main.new: $inner
     }
 
     multi method HTML {
@@ -359,9 +389,8 @@ class Grid {
 
 ##### HTML Functional Export #####
 
-# put in all the tags programmatically
-# viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
-
+#| put in all the @components tags programmatically
+#| viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 my package EXPORT::DEFAULT {
 
     for @components -> $name {
@@ -374,5 +403,3 @@ my package EXPORT::DEFAULT {
 }
 
 my package EXPORT::NONE { }
-
-
