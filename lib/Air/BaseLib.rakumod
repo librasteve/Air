@@ -27,7 +27,7 @@ role Tag[TagType $tag-type] is export {
     }
 }
 
-##### Site Roles #####
+##### Tag Roles #####
 
 role A does Tag[Regular] {
     multi method new($inner, *%attrs) {
@@ -74,7 +74,7 @@ role Head does Tag[Regular] {
         self.metas.append: Meta.new: attrs => {:name<viewport>, :content<width=device-width, initial-scale=1>};
         self.links.append: Link.new: attrs => {:rel<stylesheet>, :href</css/styles.css> };
         self.links.append: Link.new: attrs => {:rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>};
-        self.scripts.append: Script.new: attrs => {:src<https://kit.fontawesome.com/a425eec628.js'>, :crossorigin<anonymous>};
+        self.scripts.append: Script.new: attrs => {:src<https://kit.fontawesome.com/a425eec628.js>, :crossorigin<anonymous>};
         self.scripts.append: Script.new: attrs => {:src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
                                         :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>};
     }
@@ -177,12 +177,120 @@ role Html does Tag[Regular] {
     }
 }
 
+##### Widgets #####
+
+role LightDark does Tag[Regular] {
+    has $.show = 'icon';
+
+    multi method HTML {
+        given self.show {
+            when 'buttons' { self.buttons }
+            when 'icon'    { self.icon   }
+        }
+    }
+
+    has $.buttons = Q:to/END/;
+        <div role="group">
+            <button class="contrast"  id="themeToggle">Toggle</button>
+            <button                   id="themeLight" >Light</button>
+            <button class="secondary" id="themeDark"  >Dark</button>
+            <button class="outline"   id="themeSystem">System</button>
+        </div>
+        <script>
+            function setTheme(mode) {
+                const htmlElement = document.documentElement;
+                let newTheme = mode;
+
+                if (mode === "toggle") {
+                    const currentTheme = htmlElement.getAttribute("data-theme") || "light";
+                    newTheme = currentTheme === "dark" ? "light" : "dark";
+                } else if (mode === "system") {
+                    newTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                }
+
+                htmlElement.setAttribute("data-theme", newTheme);
+            }
+
+            // Load saved theme on page load
+            document.addEventListener("DOMContentLoaded", () => {
+                const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                const initialTheme = systemPrefersDark ? "dark" : "light";
+                document.documentElement.setAttribute("data-theme", initialTheme);
+            });
+
+            // Listen for system dark mode changes and update the theme dynamically
+            window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+                setTheme("system"); // Follow system setting
+            });
+
+            // Example: Attach to a button click
+            document.getElementById("themeToggle").addEventListener("click", () => setTheme("toggle"));
+            document.getElementById("themeDark").addEventListener("click", () => setTheme("dark"));
+            document.getElementById("themeLight").addEventListener("click", () => setTheme("light"));
+            document.getElementById("themeSystem").addEventListener("click", () => setTheme("system"));
+        </script>
+        END
+
+    has $.icon = Q:to/END/;
+        <a id ="sunIcon" class="fas fa-sun"></a>
+        <a id ="moonIcon" class="fas fa-moon"></a>
+        <script>
+            const sunIcon = document.getElementById("sunIcon");
+            const moonIcon = document.getElementById("moonIcon");
+
+            // Function to show/hide icons
+            function updateIcons(theme) {
+                if (theme === "dark") {
+                    sunIcon.style.display = "none"; // Hide sun
+                    moonIcon.style.display = "block"; // Show moon
+                } else {
+                    sunIcon.style.display = "block"; // Show sun
+                    moonIcon.style.display = "none"; // Hide moon
+                }
+            }
+
+            function setTheme(mode) {
+                const htmlElement = document.documentElement;
+                let newTheme = mode;
+
+                if (mode === "toggle") {
+                    const currentTheme = htmlElement.getAttribute("data-theme") || "light";
+                    newTheme = currentTheme === "dark" ? "light" : "dark";
+                } else if (mode === "system") {
+                    newTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                }
+
+                htmlElement.setAttribute("data-theme", newTheme);
+                updateIcons(newTheme);
+            }
+
+            // Load saved theme on page load
+            document.addEventListener("DOMContentLoaded", () => {
+                const savedTheme = localStorage.getItem("theme") || "light";  //default to light
+                const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                const initialTheme = systemPrefersDark ? "dark" : "light";
+                updateIcons(initialTheme);
+                document.documentElement.setAttribute("data-theme", initialTheme);
+            });
+
+            // Listen for system dark mode changes and update the theme dynamically
+            window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+                setTheme("system"); // Follow system setting
+            });
+
+            // Example: Attach to a button click
+            document.getElementById("sunIcon").addEventListener("click", () => setTheme("dark"));
+            document.getElementById("moonIcon").addEventListener("click", () => setTheme("light"));
+        </script>
+        END
+}
+
 # More Roles TBD?
 role Container {}
 role Layout {}
 role Template {}
 
-##### Core Classes #####
+##### Site Classes #####
 
 class External does A {
     has Str $!label;
@@ -218,11 +326,13 @@ class Content does Component {
 }
 
 subset NavItem of Pair where .value ~~ External | Content | Page;
+subset Widget of Any where * ~~ LightDark;
 
 class Nav does Component {
     has Str  $.hx-target = '#content';
     has Str  $.logo;
     has NavItem @.items;
+    has Widget  @.widgets;
 
     method make-routes() {
         unless self.^methods.grep: * ~~ IsRoutable {
@@ -242,20 +352,25 @@ class Nav does Component {
         nav [
             { ul li :class<logo>, :href</>, $.logo } with $.logo;
 
-            ul :$!hx-target, do for @.items.map: *.kv -> ($name, $target) {
-                given $target {
-                    when * ~~ External {
-                        $target.label: $name;
-                        li $target.HTML
+            ul( :$!hx-target,
+
+                do for @.items.map: *.kv -> ($name, $target) {
+                    given $target {
+                        when * ~~ External {
+                            $target.label: $name;
+                            li $target.HTML
+                        }
+                        when * ~~ Content {
+                            li a(:hx-get("$.url-part/$.id/" ~ $name), $name)
+                        }
+                        when * ~~ Page {
+                            li a(:href("/{.url-part}/{.id}"), $name)
+                        }
                     }
-                    when * ~~ Content {
-                        li a(:hx-get("$.url-part/$.id/" ~ $name), $name)
-                    }
-                    when * ~~ Page {
-                        li a(:href("/{.url-part}/{.id}"), $name)
-                    }
-                }
-            };
+                },
+
+                do for @.widgets { li .HTML },
+            );
         ]
     }
 }
