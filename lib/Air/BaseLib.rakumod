@@ -74,7 +74,6 @@ role Head does Tag[Regular] {
         self.metas.append: Meta.new: attrs => {:name<viewport>, :content<width=device-width, initial-scale=1>};
         self.links.append: Link.new: attrs => {:rel<stylesheet>, :href</css/styles.css> };
         self.links.append: Link.new: attrs => {:rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>};
-        self.scripts.append: Script.new: attrs => {:src<https://kit.fontawesome.com/a425eec628.js>, :crossorigin<anonymous>};
         self.scripts.append: Script.new: attrs => {:src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
                                         :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>};
     }
@@ -232,8 +231,8 @@ role LightDark does Tag[Regular] {
         END
 
     has $.icon = Q:to/END/;
-        <a id ="sunIcon" class="fas fa-sun"></a>
-        <a id ="moonIcon" class="fas fa-moon"></a>
+        <a style="font-variant-emoji: text" id ="sunIcon">&#9728;</a>
+        <a style="font-variant-emoji: text" id ="moonIcon">&#9790;</a>
         <script>
             const sunIcon = document.getElementById("sunIcon");
             const moonIcon = document.getElementById("moonIcon");
@@ -329,10 +328,59 @@ subset NavItem of Pair where .value ~~ External | Content | Page;
 subset Widget of Any where * ~~ LightDark;
 
 class Nav does Component {
+    my $loaded = 0;
+
     has Str  $.hx-target = '#content';
     has Str  $.logo;
     has NavItem @.items;
     has Widget  @.widgets;
+
+    method style { q:to/END/
+        <style>
+            /* Custom styles for the hamburger menu */
+            .menu {
+                display: none;
+                flex-direction: column;
+                gap: 10px;
+                position: absolute;
+                top: 60px;
+                right: 20px;
+                background: rgba(128, 128, 128, .97);
+                padding: 1rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(128, 128, 128, .2);
+            }
+
+            .menu a {
+                display: block;
+            }
+
+            .menu.show {
+                display: flex;
+            }
+
+            .hamburger {
+                color: var(--pico-primary);
+                display: none;
+                cursor: pointer;
+                font-size: 2.5rem;
+                background: none;
+                border: none;
+                padding: 0.5rem;
+            }
+
+            @media (max-width: 768px) {
+                .hamburger {
+                    display: block;
+                }
+
+                .nav-links {
+                    display: none;
+                }
+            }
+        </style>
+    END
+	}
 
     method make-routes() {
         unless self.^methods.grep: * ~~ IsRoutable {
@@ -348,30 +396,68 @@ class Nav does Component {
         }
     }
 
+    method nav-items {
+        do for @.items.map: *.kv -> ($name, $target) {
+            given $target {
+                when * ~~ External {
+                    $target.label: $name;
+                    li $target.HTML
+                }
+                when * ~~ Content {
+                    li a(:hx-get("$.url-part/$.id/" ~ $name), $name)
+                }
+                when * ~~ Page {
+                    li a(:href("/{.url-part}/{.id}"), $name)
+                }
+            }
+        }
+    }
+
     multi method HTML {
+        self.style ~
+
         nav [
             { ul li :class<logo>, :href</>, $.logo } with $.logo;
 
-            ul( :$!hx-target,
+            button( :class<hamburger>, :id<hamburger>, '&#9776;' );
+#            button( :class<hamburger>, :id<hamburger>, i(:class<fa-solid fa-bars>) );
 
-                do for @.items.map: *.kv -> ($name, $target) {
-                    given $target {
-                        when * ~~ External {
-                            $target.label: $name;
-                            li $target.HTML
-                        }
-                        when * ~~ Content {
-                            li a(:hx-get("$.url-part/$.id/" ~ $name), $name)
-                        }
-                        when * ~~ Page {
-                            li a(:href("/{.url-part}/{.id}"), $name)
-                        }
-                    }
-                },
-
+            ul( :$!hx-target, :class<nav-links>,
+                self.nav-items,
                 do for @.widgets { li .HTML },
             );
+
+            ul( :$!hx-target, :class<menu>, :id<menu>,
+                self.nav-items,
+            );
         ]
+
+        ~ self.js;
+    }
+
+    method js { Q:to/END/;
+        <script>
+            const hamburger = document.getElementById('hamburger');
+            const menu = document.getElementById('menu');
+
+            hamburger.addEventListener('click', () => {
+                menu.classList.toggle('show');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!menu.contains(e.target) && !hamburger.contains(e.target)) {
+                    menu.classList.remove('show');
+                }
+            });
+
+            // Hide the menu when resizing the viewport to a wider width
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 768) {
+                    menu.classList.remove('show');
+                }
+            });
+        </script>
+        END
     }
 }
 
@@ -383,6 +469,7 @@ class Page does Component {
     has Str     $.description;
     has Nav     $.nav is rw;  #\ either or
     has Header  $.header;     #/
+    has Main    $.main is rw;
     has Footer  $.footer;
 
     has Html $.html .= new;
@@ -398,12 +485,13 @@ class Page does Component {
 
             self.html.body.header.nav = $.nav                           with $.nav;
             self.html.body.header = $.header                            with $.header;
+            self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
         }
     }
 
-    method main($inner) {
-        self.html.body.main = Main.new: $inner
+    multi method new(Main $main) {
+        self.new: :$main;
     }
 
     multi method HTML {
@@ -415,6 +503,10 @@ class Page does Component {
 class Site {
     has Page @.pages;
     has Page $.index is rw = @!pages[0];
+
+    multi method new(Page $index) {
+        self.new: :$index;
+    }
 
     use Cro::HTTP::Router;
 
