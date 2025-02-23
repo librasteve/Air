@@ -504,15 +504,26 @@ class Site {
     has Page @.pages;
     has Page $.index is rw = @!pages[0];
 
-    multi method new(Page $index) {
-        self.new: :$index;
+    has Bool $.scss;
+    #| <amber azure blue cyan fuchsia green indigo jade lime orange
+    #| pink pumpkin purple red violet yellow> (pico theme)
+    has Str  $.theme-color = 'green';
+    #| one from <aqua black blue fuchsia gray green lime maroon navy
+    # | olive purple red silver teal white yellow> (basic css)
+    has Str  $.bold-color  = 'red';
+
+    multi method new(Page $index, *%h) {
+        self.new: :$index, |%h;
     }
 
     use Cro::HTTP::Router;
 
     method routes {
         route {
+            self.scss with $!scss;
+
             Nav.^add-routes;
+
             get ->               { content 'text/html', $.index.HTML }
             get -> 'css', *@path { static 'static/css', @path }
             get -> 'img', *@path { static 'static/img', @path }
@@ -524,6 +535,83 @@ class Site {
                 get -> Str $ where $url-part, $id { content 'text/html', @!pages[$id-1].HTML }
             }
         }
+    }
+
+    method scss {
+        my $css = self.css;
+
+        note "theme-color=$!theme-color";
+        $css ~~ s:g/'%THEME_COLOR%'/$!theme-color/;
+
+        note "bold-color=$!bold-color";
+        $css ~~ s:g/'%BOLD_COLOR%'/$!bold-color/;
+
+        chdir "static/css";
+        spurt "styles.scss", $css;
+        qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
+        chdir "../..";
+    }
+
+    method css { Q:to/END/;
+        @use "node_modules/@picocss/pico/scss" with (
+          $theme-color: "%THEME_COLOR%"
+        );
+
+        //some root overrides for scale https://github.com/picocss/pico/discussions/482
+
+        :root {
+          --pico-font-family-sans-serif: Inter, system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial,
+              "Helvetica Neue", sans-serif, var(--pico-font-family-emoji);
+          --pico-font-size: 106.25%;
+          /* Original: 100% */
+          --pico-line-height: 1.25;
+          /* Original: 1.5 */
+          --pico-form-element-spacing-vertical: 0.5rem;
+          /* Original: 1rem */
+          --pico-form-element-spacing-horizontal: 1.0rem;
+          /* Original: 1.25rem */
+          --pico-border-radius: 0.375rem;
+          /* Original: 0.25rem */
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+          --pico-font-weight: 600;
+          /* Original: 700 */
+        }
+
+        article {
+          border: 1px solid var(--pico-muted-border-color);
+          /* Original doesn't have a border */
+          border-radius: calc(var(--pico-border-radius) * 2);
+          /* Original: var(--pico-border-radius) */
+        }
+
+        article>footer {
+          border-radius: calc(var(--pico-border-radius) * 2);
+          /* Original: var(--pico-border-radius) */
+        }
+
+        b {
+          color: %BOLD_COLOR%;
+        }
+
+        .logo, .logo:hover {
+          /* Remove underline by default and on hover */
+          text-decoration: none;
+          font-size:160%;
+          font-weight:700;
+        }
+
+        body > footer > p {
+          font-size:66%;
+          font-style:italic;
+        }
+        END
     }
 }
 
