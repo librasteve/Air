@@ -2,6 +2,8 @@ unit class HTML::Functional;
 
 use HTML::Escape;
 
+class Node is Str is export(:MANDATORY) {}
+
 ##### Declare Constants #####
 
 #| viz. https://www.w3schools.com/tags/default.asp
@@ -15,16 +17,6 @@ constant @all-tags = <a abbr address area article aside audio b base bdi bdo blo
 
 #| of which "empty" / "singular" tags from https://www.tutsinsider.com/html/html-empty-elements/
 constant @singular-tags = <area base br col embed hr img input link meta param source track wbr>;
-
-##### HTML Escape #####
-
-multi prefix:<^>(Str:D() $s) is export {
-    escape-html($s)
-}
-
-sub text(Str:D() $s) is export {
-    escape-html($s)
-}
 
 ##### HTML Tag Export #####
 
@@ -49,11 +41,19 @@ sub opener($tag, *%h) is export {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ '>'
 }
 
+multi sub render(Str $inner) {
+    escape-html($inner)
+}
+
+multi sub render(Node $inner) {
+    $inner
+}
+
 sub inner(@inners) is export {
     given @inners {
         when * == 0 {   ''   }
-        when * == 1 { .first }
-        when * >= 2 { .join  }
+        when * == 1 { .first.&render }
+        when * >= 2 { .map(*.&render).join }
     }
 }
 
@@ -62,12 +62,12 @@ sub closer($tag, :$nl) is export(:MANDATORY)  {
     '</' ~ $tag ~ '>'
 }
 
-sub do-regular-tag($tag, *@inners, *%h) is export(:MANDATORY)  {
+sub do-regular-tag($tag, *@inners, *%h --> Node() ) is export(:MANDATORY)  {
     my $nl = @inners >= 2;
     opener($tag, |%h) ~ inner(@inners) ~ closer($tag, :$nl)
 }
 
-sub do-singular-tag($tag, *%h) is export(:MANDATORY)  {
+sub do-singular-tag($tag, *%h --> Node() ) is export(:MANDATORY)  {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ ' />'
 }
 
@@ -88,7 +88,6 @@ my package EXPORT::DEFAULT {
 }
 
 # exclude tags that overlap with Cro & Air::Component
-
 my @exclude-cro = <header table template>;
 
 my @regular-cro  = @regular-tags.grep:  { $_ ∉ @exclude-cro };
@@ -105,8 +104,7 @@ my package EXPORT::CRO {
 }
 
 # exclude tags that overlap with Cro & Air::Component & BaseLib
-
-my @exclude-base  = <body main header footer nav table>;
+my @exclude-base  = <body main header content footer nav table>;
 
 my @regular-base  = @regular-tags.grep:  { $_ ∉ @exclude-base };
 my @singular-base = @singular-tags.grep: { $_ ∉ @exclude-base };

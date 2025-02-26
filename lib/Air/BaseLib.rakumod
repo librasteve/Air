@@ -11,10 +11,14 @@ my @components = <External Content Page Nav Body Header Main Footer Table Grid>;
 enum TagType is export <Singular Regular>;
 subset Attr of Str;
 
-role Tag[TagType $tag-type] is export {
+role Tag[TagType $tag-type] is Node is export {   #iamerejh
     has Str    $.name = ::?CLASS.^name.lc;
     has Attr() %.attrs is rw;   #coercion is friendly to attr values with spaces
     has        $.inner;
+
+    multi method new($inner, *%attrs) {
+        self.new: :$inner, |%attrs
+    }
 
     multi method HTML {
         samewith $tag-type
@@ -30,9 +34,9 @@ role Tag[TagType $tag-type] is export {
 ##### Tag Roles #####
 
 role A does Tag[Regular] {
-    multi method new($inner, *%attrs) {
-        self.new: :$inner, |%attrs
-    }
+#    multi method new($inner, *%attrs) {
+#        self.new: :$inner, |%attrs
+#    }
 }
 
 role Meta does Tag[Singular] {}
@@ -44,16 +48,16 @@ role Script does Tag[Regular] {}
 role Link does Tag[Singular] {}
 
 role Style does Tag[Regular] {
-    multi method new($inner, *%attrs) {
-        self.new: :$inner, |%attrs
-    }
+#    multi method new($inner, *%attrs) {
+#        self.new: :$inner, |%attrs
+#    }
 }
 
 role Head does Tag[Regular] {
 
     # Singleton pattern (ie. same Head for all pages)
     my Head $instance;
-    method new {self.instance}
+    multi method new {self.instance}
     submethod instance {
         unless $instance {
             $instance = Head.bless;
@@ -94,23 +98,23 @@ class Nav { ... }
 class Page { ... }
 
 role Header does Tag[Regular] {
-    has Nav $.nav is rw .= new;
+    has Nav $.nav is rw;
     has Str $.tagline = '';
 
     multi method HTML {
         %.attrs = |%.attrs, :class<container>;
 
-        opener($.name, |%.attrs) ~
-        $!nav.HTML               ~
-        $!tagline                ~
-        closer($.name)           ~ "\n"
+        opener($.name, |%.attrs)    ~
+        ($!nav ?? $!nav.HTML !! '') ~
+        $!tagline                   ~
+        closer($.name)              ~ "\n"
     }
 }
 
 role Main does Tag[Regular] {
-    multi method new($inner, *%attrs) {
-        self.new: :$inner, |%attrs
-    }
+#    multi method new($inner, *%attrs) {
+#        self.new: :$inner, |%attrs
+#    }
 
     multi method HTML {
         %.attrs = |%.attrs, :class<container>;
@@ -122,9 +126,9 @@ role Main does Tag[Regular] {
 }
 
 role Footer does Tag[Regular] {
-    multi method new($inner, *%attrs) {
-        self.new: :$inner, |%attrs
-    }
+#    multi method new($inner, *%attrs) {
+#        self.new: :$inner, |%attrs
+#    }
 
     multi method HTML {
         %.attrs = |%.attrs, :class<container>;
@@ -138,11 +142,11 @@ role Footer does Tag[Regular] {
 role Body does Tag[Regular] {
     has Header $.header is rw .= new;
     has Main   $.main   is rw .= new;
-    has Footer $.footer is rw .= new;
+    has Footer $.footer is rw .= new: '';
 
-    multi method new($inner, *%attrs) {
-        self.new: :$inner, |%attrs
-    }
+#    multi method new($inner, *%attrs) {
+#        self.new: :$inner, |%attrs
+#    }
 
     multi method HTML {
         opener($.name, |%.attrs) ~
@@ -285,9 +289,7 @@ role LightDark does Tag[Regular] {
 }
 
 # More Roles TBD?
-role Container {}
-role Layout {}
-role Template {}
+role Theme {}
 
 ##### Site Classes #####
 
@@ -420,7 +422,6 @@ class Nav does Component {
             { ul li :class<logo>, :href</>, $.logo } with $.logo;
 
             button( :class<hamburger>, :id<hamburger>, '&#9776;' );
-#            button( :class<hamburger>, :id<hamburger>, i(:class<fa-solid fa-bars>) );
 
             ul( :$!hx-target, :class<nav-links>,
                 self.nav-items,
@@ -469,7 +470,7 @@ class Page does Component {
     has Str     $.description;
     has Nav     $.nav is rw;  #\ either or
     has Header  $.header;     #/
-    has Main    $.main is rw;
+    has         $.main is rw;
     has Footer  $.footer;
 
     has Html $.html .= new;
@@ -485,12 +486,13 @@ class Page does Component {
 
             self.html.body.header.nav = $.nav                           with $.nav;
             self.html.body.header = $.header                            with $.header;
-            self.html.body.main   = $.main                              with $.main;
+            self.html.body.main   = $.main                              if $.main ~~ Main;
+            self.html.body.main   = Main.new: $.main                    if $.main ~~ Str;
             self.html.body.footer = $.footer                            with $.footer;
         }
     }
 
-    multi method new(Main $main) {
+    multi method new($main) {
         self.new: :$main;
     }
 
@@ -504,10 +506,12 @@ class Site {
     has Page @.pages;
     has Page $.index is rw = @!pages[0];
 
-    has Bool $.scss;
+    has Bool $.scss;  # run sass compiler
+
     #| <amber azure blue cyan fuchsia green indigo jade lime orange
     #| pink pumpkin purple red violet yellow> (pico theme)
     has Str  $.theme-color = 'green';
+
     #| one from <aqua black blue fuchsia gray green lime maroon navy
     # | olive purple red silver teal white yellow> (basic css)
     has Str  $.bold-color  = 'red';
@@ -519,9 +523,9 @@ class Site {
     use Cro::HTTP::Router;
 
     method routes {
-        route {
-            self.scss with $!scss;
+        self.scss with $!scss;
 
+        route {
             Nav.^add-routes;
 
             get ->               { content 'text/html', $.index.HTML }
@@ -682,9 +686,9 @@ class Grid {
     }
 }
 
-##### HTML Functional Export #####
+##### Functions Export #####
 
-#| put in all the @components tags programmatically
+#| put in all the @components as functions
 #| viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 my package EXPORT::DEFAULT {
 
@@ -692,7 +696,8 @@ my package EXPORT::DEFAULT {
 
         OUR::{'&' ~ $name.lc} :=
             sub (*@a, *%h) {
-                ::($name).new( |@a, |%h ).HTML;
+#                ::($name).new( |@a, |%h )
+                ::($name).new( |@a, |%h ).HTML
             }
     }
 }
