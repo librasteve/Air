@@ -1,7 +1,7 @@
 use Air::Functional;
 use Air::Component;
 
-my @components = <Safe External Content Page Nav Body Header Main Footer Table Grid>;
+my @components = <Site Safe External Content Page Nav Body Header Main Footer Table Grid>;
 
 ##### Tagged Role #####
 
@@ -46,11 +46,10 @@ role Script does Tagged[Regular]  {}
 role Link   does Tagged[Singular] {}
 
 role Safe   does Tagged[Regular]  {
-    # Shun html escape even though inner is Str
+    #| Shun html escape even though inner is Str
+    #| No opener, closer required
     multi method HTML {
-        opener($.name)  ~
-        @.inners.first  ~
-        closer($.name)  ~ "\n"
+        @.inners.join
     }
 }
 
@@ -162,7 +161,7 @@ role Html   does Tagged[Regular] {
     has Attr %.mode is rw = :data-theme<dark>;
 
     method defaults {
-        self.attrs = |%!lang, |%!mode;
+        self.attrs = |%!lang, |%!mode, |%.attrs;
     }
 
     multi method HTML {
@@ -488,8 +487,8 @@ class Page does Component {
         }
     }
 
-    multi method new($main) {
-        self.new: :$main;
+    multi method new($main, *%h) {
+        self.new: :$main, |%h;
     }
 
     multi method HTML {
