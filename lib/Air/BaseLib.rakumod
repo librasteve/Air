@@ -1,7 +1,7 @@
 use Air::Functional;
 use Air::Component;
 
-my @components = <External Content Page Nav Body Header Main Footer Table Grid>;
+my @components = <Safe External Content Page Nav Body Header Main Footer Table Grid>;
 
 ##### Tagged Role #####
 
@@ -15,7 +15,6 @@ role Tagged[TagType $tag-type] is Tag is export {
     has Str     $.name = ::?CLASS.^name.lc;
     has Attr()  %.attrs is rw;   #coercion accepts multi-valued attrs with spaces
     has         @.inners;
-
 
     multi method new(@inners, *%attrs) {
         self.new: :@inners, |%attrs
@@ -46,8 +45,17 @@ role Title  does Tagged[Regular]  {}
 role Script does Tagged[Regular]  {}
 role Link   does Tagged[Singular] {}
 
+role Safe   does Tagged[Regular]  {
+    # Shun html escape even though inner is Str
+    multi method HTML {
+        opener($.name)  ~
+        @.inners.first  ~
+        closer($.name)  ~ "\n"
+    }
+}
+
 role Style  does Tagged[Regular]  {
-    # Shun html escape even though inner is Sttr
+    # Shun html escape even though inner is Str
     multi method HTML {
         opener($.name)  ~
         @.inners.first  ~
