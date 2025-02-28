@@ -14,10 +14,13 @@ subset Attr of Str;
 role Tag[TagType $tag-type] is Node is export {   #iamerejh
     has Str    $.name = ::?CLASS.^name.lc;
     has Attr() %.attrs is rw;   #coercion is friendly to attr values with spaces
-    has        $.inner;
+    has Node() @.inners;        #Tags never do implicit text escape
 
+    multi method new(@inners, *%attrs) {
+        self.new: :@inners, |%attrs
+    }
     multi method new($inner, *%attrs) {
-        self.new: :$inner, |%attrs
+        self.new: :inners[$inner], |%attrs
     }
 
     multi method HTML {
@@ -27,17 +30,13 @@ role Tag[TagType $tag-type] is Node is export {   #iamerejh
         do-singular-tag( $!name, |%.attrs )
     }
     multi method HTML(Regular) {
-        do-regular-tag( $!name, [$.inner // ''], |%.attrs )
+        do-regular-tag( $!name, @.inners, |%.attrs )
     }
 }
 
 ##### Tag Roles #####
 
-role A does Tag[Regular] {
-#    multi method new($inner, *%attrs) {
-#        self.new: :$inner, |%attrs
-#    }
-}
+role A does Tag[Regular] {}
 
 role Meta does Tag[Singular] {}
 
@@ -47,17 +46,13 @@ role Script does Tag[Regular] {}
 
 role Link does Tag[Singular] {}
 
-role Style does Tag[Regular] {
-#    multi method new($inner, *%attrs) {
-#        self.new: :$inner, |%attrs
-#    }
-}
+role Style does Tag[Regular] {}
 
 role Head does Tag[Regular] {
 
     # Singleton pattern (ie. same Head for all pages)
     my Head $instance;
-    multi method new {self.instance}
+    multi method new {note "Please use Head.instance rather than Head.new!\n"; self.instance}
     submethod instance {
         unless $instance {
             $instance = Head.bless;
@@ -112,29 +107,21 @@ role Header does Tag[Regular] {
 }
 
 role Main does Tag[Regular] {
-#    multi method new($inner, *%attrs) {
-#        self.new: :$inner, |%attrs
-#    }
-
     multi method HTML {
         %.attrs = |%.attrs, :class<container>;
 
         opener($.name, |%.attrs) ~
-        $.inner                  ~
+        @.inners                 ~
         closer($.name)           ~ "\n"
     }
 }
 
 role Footer does Tag[Regular] {
-#    multi method new($inner, *%attrs) {
-#        self.new: :$inner, |%attrs
-#    }
-
     multi method HTML {
         %.attrs = |%.attrs, :class<container>;
 
         opener($.name, |%.attrs) ~
-        $.inner                  ~
+        @.inners                 ~
         closer($.name)           ~ "\n"
     }
 }
@@ -142,11 +129,7 @@ role Footer does Tag[Regular] {
 role Body does Tag[Regular] {
     has Header $.header is rw .= new;
     has Main   $.main   is rw .= new;
-    has Footer $.footer is rw .= new: '';
-
-#    multi method new($inner, *%attrs) {
-#        self.new: :$inner, |%attrs
-#    }
+    has Footer $.footer is rw .= new;
 
     multi method HTML {
         opener($.name, |%.attrs) ~
@@ -160,7 +143,7 @@ role Body does Tag[Regular] {
 role Html does Tag[Regular] {
     my $loaded = 0;
 
-    has Head $.head .= new;
+    has Head $.head .= instance;
     has Body $.body is rw .= new;
 
     has Attr %.lang is rw = :lang<en>;
@@ -317,7 +300,7 @@ class External does A {
 class Content does Component {
     has $.inner;
 
-    multi method new($inner, *%attrs) {
+    multi method new($inner, *%attrs) {  # fixme @inners
         self.new: :$inner, |%attrs
     }
 
@@ -480,7 +463,8 @@ class Page does Component {
             self.html.head.metas.append: Meta.new: attrs =>
                         { :http-equiv<refresh>, :content($.REFRESH) }   with $.REFRESH;
 
-            self.html.head.title = Title.new: :inner($.title)           with $.title;
+            self.html.head.title = Title.new: $.title                   with $.title;
+
             self.html.head.description = Meta.new: attrs =>
                         { :name<description>, :content($.description) } with $.description;
 

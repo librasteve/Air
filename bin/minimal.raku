@@ -13,11 +13,6 @@ my $p;
         main => '<p>Hello World!</p>';
 
     $p.html.head.style = Style.new: 'p {color: blue;}';
-
-    $p.HTML;
-    note $p.html.head.style.HTML;
-
-    note $p.html.head.style ~~ Node;
 }
 
 {

@@ -7,16 +7,13 @@ is h1(:class<doobie>), "\n<h1 class=\"doobie\"></h1>",                          
 
 is div(:class<jumbotron>, 'xx'), "\n<div class=\"jumbotron\">xx</div>",         'regular';
 
-is hr, "\n<hr />",                                                            'singular';
+is hr, "\n<hr />",                                                              'singular';
 
-#`[
-#viz. https://github.com/ugexe/zef/issues/584
+#Str inners are auto escaped
 my $tainted = '<div class="content">Escaped & Raw HTML!</div>';
 my $expect = "\n<p>\&lt;div class=\&quot;content\&quot;\&gt;Escaped \&amp; Raw HTML!\&lt;/div\&gt;</p>";
 
-is p( text $tainted ), $expect ,                                            'text';
-is p( ^$tainted ), $expect ,                                                '^';
-#]
+is p( $tainted ), $expect ,                                                     'escape';
 
 
 done-testing;
