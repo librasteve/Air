@@ -1,61 +1,55 @@
 [![Actions Status](https://github.com/librasteve/Air/actions/workflows/test.yml/badge.svg)](https://github.com/librasteve/Air/actions)
 
+### WORK IN PROGRESS ###
+
+Please raise an Issue if you would like to feedback or assist.
+
 NAME
 ====
 
-Component - A way create web components without cro templates
+Air - A way create web sites without cro templates
 
 SYNOPSIS
 ========
 
 ```raku
-use Component;
-class AComponent does Component {
-	has $.data;
+use Air::Functional :BASE;
+use Air::Base;
 
-	method RENDER {
-		Q:to/END/
-		<h1><.data></h1>
-		END
-	}
+
+my &index = &page.assuming( #:REFRESH(1),
+    title       => 'hÅrc',
+    description => 'HTMX, Air, Raku, Cro',
+    footer      => footer p ['Aloft on ', b safe '&Aring;ir'],
+    );
+
+
+my &planets = &table.assuming(
+    :thead[["Planet", "Diameter (km)",
+            "Distance to Sun (AU)", "Orbit (days)"],],
+    :tbody[["Mercury",  "4,880", "0.39",  "88"],
+           ["Venus"  , "12,104", "0.72", "225"],
+           ["Earth"  , "12,742", "1.00", "365"],
+           ["Mars"   ,  "6,779", "1.52", "687"],],
+    :tfoot[["Average",  "9,126", "0.91", "341"],],
+    );
+
+
+sub SITE is export {
+    site #:bold-color<blue>,
+        index
+        main
+            div [
+                h3 'Planetary Table';
+                planets;
+            ]
 }
-
-sub EXPORT { AComponent.^exports }
 ```
 
 DESCRIPTION
 ===========
 
-Component is a way create web components with cro templates
-
-You can use Components in 3 distinct (and complementar) ways
-
-  * In a template only way: If wou just want your Component to be a "fancy substitute for cro-template sub/macro", You can simpley create your Component, and on yout template, <:use> it, it with export a sub (or a macro if you used the `is macro` trait) to your template, that sub (or macro) will accept any arguments you pass it and will pass it to your Component's conscructor (new), and use the result of that as the value to be used.
-
-    Ex:
-
-    ```raku
-    use Component;
-
-    class H1 does Component is macro {
-	    has Str $.prefix = "My fancy H1";
-
-	    method RENDER {
-		    Q[<h1><.prefix><:body></h1>]
-	    }
-    }
-
-    sub EXPORT { H1.^exports }
-    ```
-
-    On your template:
-
-    ```crotmp
-    <:use H1>
-    <|H1(:prefix('Something very important: '))>
-	    That was it
-    </|>
-    ```
+blah blah
 
 AUTHOR
 ======
