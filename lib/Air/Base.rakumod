@@ -1,7 +1,7 @@
 use Air::Functional;
 use Air::Component;
 
-my @components = <Site Safe External Content Page Nav Body Header Main Footer Table Grid>;
+my @components = <Site Page External Content Nav Body Header Main Footer Table Grid Safe>;
 
 ##### Tagged Role #####
 
@@ -501,7 +501,7 @@ class Site {
     has Page @.pages;
     has Page $.index is rw = @!pages[0];
 
-    has Bool $.scss;  # run sass compiler
+    has Bool $.scss = True;  # run sass compiler
 
     #| <amber azure blue cyan fuchsia green indigo jade lime orange
     #| pink pumpkin purple red violet yellow> (pico theme)

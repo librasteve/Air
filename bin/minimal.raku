@@ -6,7 +6,7 @@ my $p;
 
 {
     use Air::Functional :BASE;
-    use Air::BaseLib;
+    use Air::Base;
 
     $p = Page.new:
         title => "Raku HTMX",

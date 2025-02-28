@@ -6,7 +6,7 @@ my $html;
 
 {
     use Air::Functional :BASE;
-    use Air::BaseLib;
+    use Air::Base;
 
     my %data =
         :thead[["Planet", "Hexameter (km)", "Distance to Sun (AU)", "Orbit (days)"],],

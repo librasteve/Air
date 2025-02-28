@@ -6,7 +6,7 @@ my $p;
 
 {
     use Air::Functional  :BASE;
-    use Air::BaseLib;
+    use Air::Base;
 
     #| write your own role to setup default values and custom attributes
     class MyPage is Page {

@@ -114,7 +114,7 @@ my package EXPORT::CRO {
     }
 }
 
-# exclude tags that overlap with Cro & Air::Component & BaseLib
+# exclude tags that overlap with Cro & Air::Component & Base
 my @exclude-base  = <body main header content footer nav table>;
 
 my @regular-base  = @regular-tags.grep:  { $_ ∉ @exclude-base };

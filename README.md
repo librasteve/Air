@@ -1,69 +1,71 @@
+[![Actions Status](https://github.com/librasteve/Air/actions/workflows/test.yml/badge.svg)](https://github.com/librasteve/Air/actions)
+
 NAME
 ====
 
-Air - blah blah blah
+Component - A way create web components without cro templates
 
 SYNOPSIS
 ========
 
 ```raku
-use Air;
+use Component;
+class AComponent does Component {
+	has $.data;
+
+	method RENDER {
+		Q:to/END/
+		<h1><.data></h1>
+		END
+	}
+}
+
+sub EXPORT { AComponent.^exports }
 ```
 
 DESCRIPTION
 ===========
 
-Air is ...
+Component is a way create web components with cro templates
+
+You can use Components in 3 distinct (and complementar) ways
+
+  * In a template only way: If wou just want your Component to be a "fancy substitute for cro-template sub/macro", You can simpley create your Component, and on yout template, <:use> it, it with export a sub (or a macro if you used the `is macro` trait) to your template, that sub (or macro) will accept any arguments you pass it and will pass it to your Component's conscructor (new), and use the result of that as the value to be used.
+
+    Ex:
+
+    ```raku
+    use Component;
+
+    class H1 does Component is macro {
+	    has Str $.prefix = "My fancy H1";
+
+	    method RENDER {
+		    Q[<h1><.prefix><:body></h1>]
+	    }
+    }
+
+    sub EXPORT { H1.^exports }
+    ```
+
+    On your template:
+
+    ```crotmp
+    <:use H1>
+    <|H1(:prefix('Something very important: '))>
+	    That was it
+    </|>
+    ```
 
 AUTHOR
 ======
 
-librasteve <librasteve@furnival.net>
+Steve Roe <librasteve@furnival.net>
 
 COPYRIGHT AND LICENSE
 =====================
 
-Copyright 2025 librasteve
+Copyright 2025 Steve Roe
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
-There are two patterns in use in BaseLib:
-
-1. Tag Pattern
-
-role Tag furnishes a class with `multi method HTML {}`.
-
-A call to `.HTML` will produce an html tag with the name of the class and populated with any `%.attrs` and `$.inner`
-value provided.
-
-The HTML method can be overridden by a consuming class lke this:
-
-```raku
-multi method HTML {
-    self.defaults unless $loaded++;
-
-    opener($.name, |%.attrs) ~
-    $!head.HTML              ~
-    $!body.HTML              ~
-    closer($.name)           ~ "\n"
-}
-```
-
-2. Component Pattern
-
-role Component provides a set of services to a class, namely:
-- a class variable `%holder` which holds all the instances of a particular component
-- an attribute `$.id` which allocates a unique id to new instances of a particular component
-- a set of overridable methods to load, create, delete and update a component
-- a trait `is routable` that, applied to a method, will autogenerate Cro routes via `^add-routes`
-
-
-make the tree
-- html
-  - body
-    - header
-    - main
-    - footer
-
-show the tree
-load the tree

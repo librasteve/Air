@@ -1,18 +1,27 @@
 {
-    "name": "Air",
-    "description": "blah blah blah",
-    "version": "0.0.1",
-    "authors": [
-        "librasteve"
-    ],
-    "auth": "zef:librasteve",
-    "build-depends": [],
-    "provides": {
-        "Air": "lib/Air.rakumod",
-        "Air::Functional": "lib/Air/Functional.rakumod",
-        "Air::Component": "lib/Air/Component.rakumod",
-        "Air::BaseLib": "lib/Air/BaseLib.rakumod"
-    },
-    "license": "Artistic-2.0",
-    "source-url": "https://github.com/librasteve/Air.git"
+  "auth": "zef:librasteve",
+  "authors": [
+    "librasteve"
+  ],
+  "build-depends": [
+  ],
+  "depends": [
+  ],
+  "description": "A way create web components without cro templates",
+  "license": "Artistic-2.0",
+  "name": "Air",
+  "provides": {
+    "Air": "lib/Air.rakumod",
+    "Air::Base": "lib/Air/Base.rakumod",
+    "Air::Component": "lib/Air/Component.rakumod",
+    "Air::Functional": "lib/Air/Functional.rakumod"
+  },
+  "resources": [
+  ],
+  "source-url": "https://github.com/librasteve/Air.git",
+  "tags": [
+  ],
+  "test-depends": [
+  ],
+  "version": "0.0.1"
 }
