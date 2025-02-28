@@ -10,7 +10,7 @@ my $p;
 
     $p = Page.new:
         title => "Raku HTMX",
-        main => '<p>Hello World!</p>';
+        main => Main.new: p 'Hello World!';
 
     $p.html.head.style = Style.new: 'p {color: blue;}';
 }

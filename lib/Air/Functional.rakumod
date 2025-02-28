@@ -3,7 +3,7 @@ unit class Air::Functional;
 use HTML::Escape;
 
 # the Escaped class is used to "label" html snippets as "not text" and thus disable HTML escape
-class Escaped is Str is export(:MANDATORY) {}
+class Tag is Str is export(:MANDATORY) {}
 
 ##### Declare Constants #####
 
@@ -52,19 +52,19 @@ sub opener($tag, *%h) is export {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ '>'
 }
 
-multi sub render(Str $inner) {
+multi sub trender(Str $inner) {
     escape-html($inner)
 }
 
-multi sub render(Escaped $inner) {
-    $inner
+multi sub trender(Tag $inner) {
+    $inner.?HTML // $inner
 }
 
 sub inner(@inners) is export {
     given @inners {
         when * == 0 {   ''   }
-        when * == 1 { .first.&render }
-        when * >= 2 { .map(*.&render).join }
+        when * == 1 { .first.&trender }
+        when * >= 2 { .map(*.&trender).join }
     }
 }
 
@@ -73,12 +73,12 @@ sub closer($tag, :$nl) is export(:MANDATORY)  {
     '</' ~ $tag ~ '>'
 }
 
-sub do-regular-tag($tag, *@inners, *%h --> Escaped() ) is export(:MANDATORY)  {
+sub do-regular-tag($tag, *@inners, *%h --> Tag() ) is export(:MANDATORY)  {
     my $nl = @inners >= 2;
     opener($tag, |%h) ~ inner(@inners) ~ closer($tag, :$nl)
 }
 
-sub do-singular-tag($tag, *%h --> Escaped() ) is export(:MANDATORY)  {
+sub do-singular-tag($tag, *%h --> Tag() ) is export(:MANDATORY)  {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ ' />'
 }
 

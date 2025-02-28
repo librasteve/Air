@@ -3,18 +3,19 @@ use Air::Component;
 
 my @components = <External Content Page Nav Body Header Main Footer Table Grid>;
 
-##### Tag Role #####
+##### Tagged Role #####
 
-#| The Tag Role provides an HTML method so that the consuming class behaves like a standard HTML tag that
+#| The Tagged Role provides an HTML method so that the consuming class behaves like a standard HTML tag that
 #| can be provided with inner and attr attributes
 
 enum TagType is export <Singular Regular>;
 subset Attr of Str;
 
-role Tag[TagType $tag-type] is Escaped is export {
-    has Str         $.name = ::?CLASS.^name.lc;
-    has Attr()      %.attrs is rw;   #coercion is friendly to attr values with spaces
-    has Escaped()   @.inners;        #Tags disable implicit text escape
+role Tagged[TagType $tag-type] is Tag is export {
+    has Str     $.name = ::?CLASS.^name.lc;
+    has Attr()  %.attrs is rw;   #coercion accepts multi-valued attrs with spaces
+    has         @.inners;
+
 
     multi method new(@inners, *%attrs) {
         self.new: :@inners, |%attrs
@@ -34,21 +35,27 @@ role Tag[TagType $tag-type] is Escaped is export {
     }
 }
 
-##### Tag Roles #####
+##### Tagged Roles #####
 
-role A does Tag[Regular] {}
+class Nav  { ... }
+class Page { ... }
 
-role Meta does Tag[Singular] {}
+role A      does Tagged[Regular]  {}
+role Meta   does Tagged[Singular] {}
+role Title  does Tagged[Regular]  {}
+role Script does Tagged[Regular]  {}
+role Link   does Tagged[Singular] {}
 
-role Title does Tag[Regular] {}
+role Style  does Tagged[Regular]  {
+    # Shun html escape even though inner is Sttr
+    multi method HTML {
+        opener($.name)  ~
+        @.inners.first  ~
+        closer($.name)  ~ "\n"
+    }
+}
 
-role Script does Tag[Regular] {}
-
-role Link does Tag[Singular] {}
-
-role Style does Tag[Regular] {}
-
-role Head does Tag[Regular] {
+role Head   does Tagged[Regular] {
 
     # Singleton pattern (ie. same Head for all pages)
     my Head $instance;
@@ -89,10 +96,7 @@ role Head does Tag[Regular] {
     }
 }
 
-class Nav { ... }
-class Page { ... }
-
-role Header does Tag[Regular] {
+role Header does Tagged[Regular] {
     has Nav $.nav is rw;
     has Str $.tagline = '';
 
@@ -106,27 +110,27 @@ role Header does Tag[Regular] {
     }
 }
 
-role Main does Tag[Regular] {
+role Main   does Tagged[Regular] {
     multi method HTML {
         %.attrs = |%.attrs, :class<container>;
 
         opener($.name, |%.attrs) ~
-        @.inners                 ~
+        inner(@.inners)          ~
         closer($.name)           ~ "\n"
     }
 }
 
-role Footer does Tag[Regular] {
+role Footer does Tagged[Regular] {
     multi method HTML {
         %.attrs = |%.attrs, :class<container>;
 
         opener($.name, |%.attrs) ~
-        @.inners                 ~
+        inner(@.inners)          ~
         closer($.name)           ~ "\n"
     }
 }
 
-role Body does Tag[Regular] {
+role Body   does Tagged[Regular] {
     has Header $.header is rw .= new;
     has Main   $.main   is rw .= new;
     has Footer $.footer is rw .= new;
@@ -140,7 +144,7 @@ role Body does Tag[Regular] {
     }
 }
 
-role Html does Tag[Regular] {
+role Html   does Tagged[Regular] {
     my $loaded = 0;
 
     has Head $.head .= instance;
@@ -165,7 +169,7 @@ role Html does Tag[Regular] {
 
 ##### Widgets #####
 
-role LightDark does Tag[Regular] {
+role LightDark does Tagged[Regular] {
     has $.show = 'icon';
 
     multi method HTML {
@@ -452,8 +456,8 @@ class Page does Component {
     has Str     $.title;
     has Str     $.description;
     has Nav     $.nav is rw;  #\ either or
-    has Header  $.header;     #/
-    has         $.main is rw;
+    has Header  $.header;     #/ header wins
+    has Main    $.main is rw;
     has Footer  $.footer;
 
     has Html $.html .= new;
@@ -470,8 +474,8 @@ class Page does Component {
 
             self.html.body.header.nav = $.nav                           with $.nav;
             self.html.body.header = $.header                            with $.header;
-            self.html.body.main   = $.main                              if $.main ~~ Main;
-            self.html.body.main   = Main.new: $.main                    if $.main ~~ Str;
+
+            self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
         }
     }
@@ -606,7 +610,7 @@ class Site {
 ##### Tag Classes #####
 # viz. https://picocss.com/docs
 
-class Table {
+class Table is Tag {
     has $.tbody = [];
     has $.thead = [];
     has $.tfoot = [];
@@ -637,7 +641,7 @@ class Table {
     }
 }
 
-class Grid {
+class Grid is Tag {
     has @.items;
 
     multi method new(@items, *%h) {
@@ -680,8 +684,7 @@ my package EXPORT::DEFAULT {
 
         OUR::{'&' ~ $name.lc} :=
             sub (*@a, *%h) {
-#                ::($name).new( |@a, |%h )
-                ::($name).new( |@a, |%h ).HTML
+                ::($name).new( |@a, |%h )
             }
     }
 }
