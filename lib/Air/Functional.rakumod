@@ -2,7 +2,8 @@ unit class Air::Functional;
 
 use HTML::Escape;
 
-class Node is Str is export(:MANDATORY) {}
+# the Escaped class is used to "label" html snippets as "not text" and thus disable HTML escape
+class Escaped is Str is export(:MANDATORY) {}
 
 ##### Declare Constants #####
 
@@ -55,7 +56,7 @@ multi sub render(Str $inner) {
     escape-html($inner)
 }
 
-multi sub render(Node $inner) {
+multi sub render(Escaped $inner) {
     $inner
 }
 
@@ -72,12 +73,12 @@ sub closer($tag, :$nl) is export(:MANDATORY)  {
     '</' ~ $tag ~ '>'
 }
 
-sub do-regular-tag($tag, *@inners, *%h --> Node() ) is export(:MANDATORY)  {
+sub do-regular-tag($tag, *@inners, *%h --> Escaped() ) is export(:MANDATORY)  {
     my $nl = @inners >= 2;
     opener($tag, |%h) ~ inner(@inners) ~ closer($tag, :$nl)
 }
 
-sub do-singular-tag($tag, *%h --> Node() ) is export(:MANDATORY)  {
+sub do-singular-tag($tag, *%h --> Escaped() ) is export(:MANDATORY)  {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ ' />'
 }
 

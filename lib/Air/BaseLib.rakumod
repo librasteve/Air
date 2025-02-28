@@ -11,10 +11,10 @@ my @components = <External Content Page Nav Body Header Main Footer Table Grid>;
 enum TagType is export <Singular Regular>;
 subset Attr of Str;
 
-role Tag[TagType $tag-type] is Node is export {   #iamerejh
-    has Str    $.name = ::?CLASS.^name.lc;
-    has Attr() %.attrs is rw;   #coercion is friendly to attr values with spaces
-    has Node() @.inners;        #Tags never do implicit text escape
+role Tag[TagType $tag-type] is Escaped is export {
+    has Str         $.name = ::?CLASS.^name.lc;
+    has Attr()      %.attrs is rw;   #coercion is friendly to attr values with spaces
+    has Escaped()   @.inners;        #Tags disable implicit text escape
 
     multi method new(@inners, *%attrs) {
         self.new: :@inners, |%attrs
