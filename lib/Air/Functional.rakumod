@@ -34,8 +34,8 @@ sub escape(Str:D() $s) is export {
 sub attrs(%h) is export {
     #| Discard attrs with False or undefined values
     my @discards = %h.keys.grep: {
-        %h{$_} === False //
-        %h{$_}.undefined
+        %h{$_} === False     ||
+        %h{$_}.defined.not
     };
     @discards.map: { %h{$_}:delete };
 
