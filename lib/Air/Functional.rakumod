@@ -2,9 +2,6 @@ unit class Air::Functional;
 
 use HTML::Escape;
 
-# the Escaped class is used to "label" html snippets as "not text" and thus disable HTML escape
-class Tag is Str is export(:MANDATORY) {}
-
 ##### Declare Constants #####
 
 #| viz. https://www.w3schools.com/tags/default.asp
@@ -29,7 +26,10 @@ sub escape(Str:D() $s) is export {
     escape-html($s)
 }
 
-##### HTML Tag Export #####
+##### Tag Rendering #####
+
+# the Escaped class is used to "label" html snippets as "not text" and thus disable HTML escape
+class Tag is Str is export(:MANDATORY) {}
 
 sub attrs(%h) is export {
     #| Discard attrs with False or undefined values
@@ -55,7 +55,6 @@ sub opener($tag, *%h) is export {
 multi sub trender(Str $inner) {
     escape-html($inner)
 }
-
 multi sub trender(Tag $inner) {
     $inner.?HTML // $inner
 }
@@ -82,6 +81,7 @@ sub do-singular-tag($tag, *%h --> Tag() ) is export(:MANDATORY)  {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ ' />'
 }
 
+##### Tag Export #####
 
 # put in all the tags programmatically
 # viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing

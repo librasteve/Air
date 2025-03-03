@@ -56,6 +56,8 @@ AUTHOR
 
 Steve Roe <librasteve@furnival.net>
 
+The `Air::Component` module provided is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>.
+
 COPYRIGHT AND LICENSE
 =====================
 

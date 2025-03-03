@@ -1,7 +1,7 @@
 use Air::Functional;
 use Air::Component;
 
-my @components = <Site Page External Content Nav Body Header Main Footer Table Grid Safe>;
+my @functions = <Site Page External Content Nav Body Header Main Footer Table Grid Safe>;
 
 ##### Tagged Role #####
 
@@ -42,7 +42,6 @@ class Page { ... }
 role A      does Tagged[Regular]  {}
 role Meta   does Tagged[Singular] {}
 role Title  does Tagged[Regular]  {}
-role Script does Tagged[Regular]  {}
 role Link   does Tagged[Singular] {}
 
 role Safe   does Tagged[Regular]  {
@@ -52,13 +51,20 @@ role Safe   does Tagged[Regular]  {
         @.inners.join
     }
 }
-
+role Script does Tagged[Regular]  {
+    # Shun html escape even though inner is Str
+    multi method HTML {
+        opener($.name, |%.attrs) ~
+        (@.inners.first// '')    ~
+        closer($.name)           ~ "\n"
+    }
+}
 role Style  does Tagged[Regular]  {
     # Shun html escape even though inner is Str
     multi method HTML {
-        opener($.name)  ~
-        @.inners.first  ~
-        closer($.name)  ~ "\n"
+        opener($.name, |%.attrs)  ~
+        @.inners.first            ~
+        closer($.name)            ~ "\n"
     }
 }
 
@@ -92,48 +98,42 @@ role Head   does Tagged[Regular] {
     }
 
     multi method HTML {
-        opener($.name)                     ~
-        "{ (.HTML with $!title         )}" ~
-        "{ (.HTML with $!description   )}" ~
-        "{ (.HTML for  @!metas   ).join }" ~
-        "{ (.HTML for  @!scripts ).join }" ~
-        "{ (.HTML for  @!links   ).join }" ~
-        "{ (.HTML with $!style         )}" ~
-        closer($.name)                     ~ "\n"
+        opener($.name, |%.attrs)                    ~
+        "{ .HTML with $!title          }" ~
+        "{ .HTML with $!description    }" ~
+        "{(.HTML for  @!metas   ).join }" ~
+        "{(.HTML for  @!scripts ).join }" ~
+        "{(.HTML for  @!links   ).join }" ~
+        "{ .HTML with $!style          }" ~
+        closer($.name)                    ~ "\n"
     }
 }
 
 role Header does Tagged[Regular] {
-    has Nav $.nav is rw;
-    has Str $.tagline = '';
+    has Nav  $.nav is rw;
+    has Safe $.tagline;
 
     multi method HTML {
-        %.attrs = |%.attrs, :class<container>;
+        my %attrs = |%.attrs, :class<container>;
 
-        opener($.name, |%.attrs)    ~
-        ($!nav ?? $!nav.HTML !! '') ~
-        $!tagline                   ~
+        opener($.name, |%attrs)     ~
+        "{.HTML with $!nav    }"    ~
+        "{.HTML with $!tagline}"    ~
         closer($.name)              ~ "\n"
     }
 }
 
 role Main   does Tagged[Regular] {
     multi method HTML {
-        %.attrs = |%.attrs, :class<container>;
-
-        opener($.name, |%.attrs) ~
-        inner(@.inners)          ~
-        closer($.name)           ~ "\n"
+        my %attrs = |%.attrs, :class<container>;
+        do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
 
 role Footer does Tagged[Regular] {
     multi method HTML {
-        %.attrs = |%.attrs, :class<container>;
-
-        opener($.name, |%.attrs) ~
-        inner(@.inners)          ~
-        closer($.name)           ~ "\n"
+        my %attrs = |%.attrs, :class<container>;
+        do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
 
@@ -181,12 +181,12 @@ role LightDark does Tagged[Regular] {
 
     multi method HTML {
         given self.show {
-            when 'buttons' { self.buttons }
-            when 'icon'    { self.icon   }
+            when 'buttons' { Safe.new: self.buttons }
+            when 'icon'    { Safe.new: self.icon   }
         }
     }
 
-    has $.buttons = Q:to/END/;
+    method buttons { Q:to/END/;
         <div role="group">
             <button class="contrast"  id="themeToggle">Toggle</button>
             <button                   id="themeLight" >Light</button>
@@ -227,8 +227,9 @@ role LightDark does Tagged[Regular] {
             document.getElementById("themeSystem").addEventListener("click", () => setTheme("system"));
         </script>
         END
+    }
 
-    has $.icon = Q:to/END/;
+    method icon { Q:to/END/;
         <a style="font-variant-emoji: text" id ="sunIcon">&#9728;</a>
         <a style="font-variant-emoji: text" id ="moonIcon">&#9790;</a>
         <script>
@@ -280,14 +281,15 @@ role LightDark does Tagged[Regular] {
             document.getElementById("moonIcon").addEventListener("click", () => setTheme("light"));
         </script>
         END
+    }
 }
 
 # More Roles TBD?
 role Theme {}
 
-##### Site Classes #####
+##### Site Roles & Classes #####
 
-class External does A {
+role External does A {
     has Str $!label;
 
     has $.href is required;
@@ -308,15 +310,9 @@ class External does A {
     }
 }
 
-class Content does Component {
-    has $.inner;
-
-    multi method new($inner, *%attrs) {  # fixme @inners
-        self.new: :$inner, |%attrs
-    }
-
-    method HTML {
-        div :id<content>, [|$!inner]
+role Content does Tagged[Regular] does Component {
+    multi method HTML {
+        div :id<content>, @.inners
     }
 }
 
@@ -324,66 +320,17 @@ subset NavItem of Pair where .value ~~ External | Content | Page;
 subset Widget of Any where * ~~ LightDark;
 
 class Nav does Component {
-    my $loaded = 0;
-
-    has Str  $.hx-target = '#content';
-    has Str  $.logo;
+    has Str     $.hx-target = '#content';
+    has Safe    $.logo;
     has NavItem @.items;
     has Widget  @.widgets;
-
-    method style { q:to/END/
-        <style>
-            /* Custom styles for the hamburger menu */
-            .menu {
-                display: none;
-                flex-direction: column;
-                gap: 10px;
-                position: absolute;
-                top: 60px;
-                right: 20px;
-                background: rgba(128, 128, 128, .97);
-                padding: 1rem;
-                border-radius: 8px;
-                box-shadow: 0 4px 6px rgba(128, 128, 128, .2);
-            }
-
-            .menu a {
-                display: block;
-            }
-
-            .menu.show {
-                display: flex;
-            }
-
-            .hamburger {
-                color: var(--pico-primary);
-                display: none;
-                cursor: pointer;
-                font-size: 2.5rem;
-                background: none;
-                border: none;
-                padding: 0.5rem;
-            }
-
-            @media (max-width: 768px) {
-                .hamburger {
-                    display: block;
-                }
-
-                .nav-links {
-                    display: none;
-                }
-            }
-        </style>
-    END
-	}
 
     method make-routes() {
         unless self.^methods.grep: * ~~ IsRoutable {
             for self.items.map: *.kv -> ($name, $target) {
                 given $target {
                     when * ~~ Content {
-                        my &new-method = method {respond $target};
+                        my &new-method = method {respond $target.?HTML};
                         trait_mod:<is>(&new-method, :routable, :$name);
                         self.^add_method($name, &new-method);
                     }
@@ -400,22 +347,22 @@ class Nav does Component {
                     li $target.HTML
                 }
                 when * ~~ Content {
-                    li a(:hx-get("$.url-part/$.id/" ~ $name), $name)
+                    li a(:hx-get("$.url-part/$.id/" ~ $name), Safe.new: $name)
                 }
                 when * ~~ Page {
-                    li a(:href("/{.url-part}/{.id}"), $name)
+                    li a(:href("/{.url-part}/{.id}"), Safe.new: $name)
                 }
             }
         }
     }
 
     multi method HTML {
-        self.style ~
+        self.style.HTML ~ (
 
         nav [
             { ul li :class<logo>, :href</>, $.logo } with $.logo;
 
-            button( :class<hamburger>, :id<hamburger>, '&#9776;' );
+            button( :class<hamburger>, :id<hamburger>, Safe.new: '&#9776;' );
 
             ul( :$!hx-target, :class<nav-links>,
                 self.nav-items,
@@ -427,32 +374,75 @@ class Nav does Component {
             );
         ]
 
-        ~ self.js;
+        ) ~ self.script.HTML
     }
 
-    method js { Q:to/END/;
-        <script>
-            const hamburger = document.getElementById('hamburger');
-            const menu = document.getElementById('menu');
+    method style { Style.new: q:to/END/
+        /* Custom styles for the hamburger menu */
+        .menu {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: rgba(128, 128, 128, .97);
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(128, 128, 128, .2);
+        }
 
-            hamburger.addEventListener('click', () => {
-                menu.classList.toggle('show');
-            });
+        .menu a {
+            display: block;
+        }
 
-            document.addEventListener('click', (e) => {
-                if (!menu.contains(e.target) && !hamburger.contains(e.target)) {
-                    menu.classList.remove('show');
-                }
-            });
+        .menu.show {
+            display: flex;
+        }
 
-            // Hide the menu when resizing the viewport to a wider width
-            window.addEventListener('resize', () => {
-                if (window.innerWidth > 768) {
-                    menu.classList.remove('show');
-                }
-            });
-        </script>
-        END
+        .hamburger {
+            color: var(--pico-primary);
+            display: none;
+            cursor: pointer;
+            font-size: 2.5rem;
+            background: none;
+            border: none;
+            padding: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: block;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    END
+	}
+
+    method script { Script.new: Q:to/END/;
+        const hamburger = document.getElementById('hamburger');
+        const menu = document.getElementById('menu');
+
+        hamburger.addEventListener('click', () => {
+            menu.classList.toggle('show');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!menu.contains(e.target) && !hamburger.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+        });
+
+        // Hide the menu when resizing the viewport to a wider width
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                menu.classList.remove('show');
+            }
+        });
+    END
     }
 }
 
@@ -463,7 +453,7 @@ class Page does Component {
     has Str     $.title;
     has Str     $.description;
     has Nav     $.nav is rw;  #\ either or
-    has Header  $.header;     #/ header wins
+    has Header  $.header;     #/ nav wins
     has Main    $.main is rw;
     has Footer  $.footer;
 
@@ -479,8 +469,8 @@ class Page does Component {
             self.html.head.description = Meta.new: attrs =>
                         { :name<description>, :content($.description) } with $.description;
 
-            self.html.body.header.nav = $.nav                           with $.nav;
-            self.html.body.header = $.header                            with $.header;
+            with $.nav { self.html.body.header.nav = $.nav }
+            else       { self.html.body.header = $.header  }
 
             self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
@@ -687,7 +677,7 @@ class Grid is Tag {
 #| viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 my package EXPORT::DEFAULT {
 
-    for @components -> $name {
+    for @functions -> $name {
 
         OUR::{'&' ~ $name.lc} :=
             sub (*@a, *%h) {
