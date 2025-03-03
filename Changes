@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.3  2025-03-03T19:01:33Z
+    - Disable README overwrite
+
 0.0.2  2025-03-03T16:48:24Z
     - Improved README
 
