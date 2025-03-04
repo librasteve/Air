@@ -7,7 +7,7 @@ Please raise an Issue if you would like to feedback or assist.
 NAME
 ====
 
-Air - A way create web sites without cro templates
+Air - breathing life into HARC (HTMX, Air, Raku, Cro)
 
 SYNOPSIS
 ========
@@ -38,11 +38,11 @@ my &planets = &table.assuming(
 sub SITE is export {
     site #:bold-color<blue>,
         index
-        main
-            div [
-                h3 'Planetary Table';
-                planets;
-            ]
+            main
+                div [
+                    h3 'Planetary Table';
+                    planets;
+                ]
 }
 ```
 
@@ -56,7 +56,7 @@ AUTHOR
 
 Steve Roe <librasteve@furnival.net>
 
-The `Air::Component` module provided is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>.
+The `Air::Component` module provided is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
 
 COPYRIGHT AND LICENSE
 =====================
