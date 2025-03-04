@@ -1,7 +1,7 @@
 use Air::Functional;
 use Air::Component;
 
-my @functions = <Site Page External Content Nav Body Header Main Footer Table Grid Safe>;
+my @functions = <Site Page A External Content Nav LightDark Body Header Main Footer Table Grid Safe>;
 
 ##### Tagged Role #####
 
@@ -17,10 +17,10 @@ role Tagged[TagType $tag-type] is Tag is export {
     has         @.inners;
 
     multi method new(@inners, *%attrs) {
-        self.new: :@inners, |%attrs
+        self.new: :@inners, :%attrs
     }
     multi method new($inner, *%attrs) {
-        self.new: :inners[$inner], |%attrs
+        self.new: :inners[$inner], :%attrs
     }
 
     multi method HTML {
@@ -39,10 +39,16 @@ role Tagged[TagType $tag-type] is Tag is export {
 class Nav  { ... }
 class Page { ... }
 
-role A      does Tagged[Regular]  {}
 role Meta   does Tagged[Singular] {}
 role Title  does Tagged[Regular]  {}
 role Link   does Tagged[Singular] {}
+
+role A      does Tagged[Regular]  {
+    multi method HTML {
+        my %attrs = |%.attrs, :target<_blank>;
+        do-regular-tag( $.name, @.inners, |%attrs )
+    }
+}
 
 role Safe   does Tagged[Regular]  {
     #| Shun html escape even though inner is Str
@@ -122,14 +128,12 @@ role Header does Tagged[Regular] {
         closer($.name)              ~ "\n"
     }
 }
-
 role Main   does Tagged[Regular] {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
-
 role Footer does Tagged[Regular] {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
@@ -206,12 +210,14 @@ role LightDark does Tagged[Regular] {
                 }
 
                 htmlElement.setAttribute("data-theme", newTheme);
+                localStorage.setItem("theme", newTheme); // Save theme to localStorage
             }
 
             // Load saved theme on page load
             document.addEventListener("DOMContentLoaded", () => {
+                const savedTheme = localStorage.getItem("theme") || "light";  //default to light
                 const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                const initialTheme = systemPrefersDark ? "dark" : "light";
+                const initialTheme = savedTheme || (systemPrefersDark ? "dark" : "light");
                 document.documentElement.setAttribute("data-theme", initialTheme);
             });
 
@@ -259,6 +265,7 @@ role LightDark does Tagged[Regular] {
                 }
 
                 htmlElement.setAttribute("data-theme", newTheme);
+                localStorage.setItem("theme", newTheme); // Save theme to localStorage
                 updateIcons(newTheme);
             }
 
@@ -266,7 +273,8 @@ role LightDark does Tagged[Regular] {
             document.addEventListener("DOMContentLoaded", () => {
                 const savedTheme = localStorage.getItem("theme") || "light";  //default to light
                 const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                const initialTheme = systemPrefersDark ? "dark" : "light";
+                const initialTheme = savedTheme || (systemPrefersDark ? "dark" : "light");
+
                 updateIcons(initialTheme);
                 document.documentElement.setAttribute("data-theme", initialTheme);
             });
@@ -289,28 +297,18 @@ role Theme {}
 
 ##### Site Roles & Classes #####
 
-role External does A {
-    has Str $!label;
-
-    has $.href is required;
-    has %!href = {:$!href};
+role External does Tagged[Regular] {
+    has Str $.label is rw = '';
+    has Str $.href  is required;
     has %.others = {:target<_blank>, :rel<noopener noreferrer>};
 
-    multi method label($_) {
-        $!label = $_
-    }
-
-    multi method label {
-        $!label // ''
-    }
-
     multi method HTML {
-        %.attrs = |self.others, |%!href;
-        do-regular-tag( 'a', [$.label // ''], |%.attrs )
+        my %attrs = |self.others, :$!href, |%.attrs;
+        do-regular-tag( 'a', [$.label], |%attrs )
     }
 }
 
-role Content does Tagged[Regular] does Component {
+role Content does Tagged[Regular] {
     multi method HTML {
         div :id<content>, @.inners
     }
@@ -343,7 +341,7 @@ class Nav does Component {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
                 when * ~~ External {
-                    $target.label: $name;
+                    $target.label = $name;
                     li $target.HTML
                 }
                 when * ~~ Content {
@@ -469,8 +467,8 @@ class Page does Component {
             self.html.head.description = Meta.new: attrs =>
                         { :name<description>, :content($.description) } with $.description;
 
-            with $.nav { self.html.body.header.nav = $.nav }
-            else       { self.html.body.header = $.header  }
+            with $.nav      { self.html.body.header.nav = $.nav }
+            orwith $.header { self.html.body.header = $.header  }
 
             self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
