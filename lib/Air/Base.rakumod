@@ -533,7 +533,7 @@ class Page does Component {
             gap: 20px;
         }
         aside {
-            background-color: #f0f0f0;
+            background-color: #707070;
             padding: 20px;
             border-radius: 5px;
         }
