@@ -1,7 +1,7 @@
 use Air::Functional;
 use Air::Component;
 
-my @functions = <Site Page A External Content Nav LightDark Body Header Main Footer Table Grid Safe>;
+my @functions = <Site Page A External Internal Content Time Nav LightDark Body Header Main Footer Table Grid Safe>;
 
 ##### Tagged Role #####
 
@@ -34,21 +34,10 @@ role Tagged[TagType $tag-type] is Tag is export {
     }
 }
 
-##### Tagged Roles #####
+##### Basic Tags #####
 
 class Nav  { ... }
 class Page { ... }
-
-role Meta   does Tagged[Singular] {}
-role Title  does Tagged[Regular]  {}
-role Link   does Tagged[Singular] {}
-
-role A      does Tagged[Regular]  {
-    multi method HTML {
-        my %attrs = |%.attrs, :target<_blank>;
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
 
 role Safe   does Tagged[Regular]  {
     #| Shun html escape even though inner is Str
@@ -74,7 +63,18 @@ role Style  does Tagged[Regular]  {
     }
 }
 
-role Head   does Tagged[Regular] {
+role Meta   does Tagged[Singular] {}
+role Title  does Tagged[Regular]  {}
+role Link   does Tagged[Singular] {}
+
+role A      does Tagged[Regular]  {
+    multi method HTML {
+        my %attrs = |%.attrs, :target<_blank>;
+        do-regular-tag( $.name, @.inners, |%attrs )
+    }
+}
+
+role Head   does Tagged[Regular]  {
 
     # Singleton pattern (ie. same Head for all pages)
     my Head $instance;
@@ -115,33 +115,31 @@ role Head   does Tagged[Regular] {
     }
 }
 
-role Header does Tagged[Regular] {
+role Header does Tagged[Regular]  {
     has Nav  $.nav is rw;
     has Safe $.tagline;
 
     multi method HTML {
-        my %attrs = |%.attrs, :class<container>;
+        my %attrs  = |%.attrs, :class<container>;
+        my @inners = |@.inners, $.nav // Empty, $.tagline // Empty;
 
-        opener($.name, |%attrs)     ~
-        "{.HTML with $!nav    }"    ~
-        "{.HTML with $!tagline}"    ~
-        closer($.name)              ~ "\n"
+        do-regular-tag( $.name, @inners, |%attrs )
     }
 }
-role Main   does Tagged[Regular] {
+role Main   does Tagged[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
-role Footer does Tagged[Regular] {
+role Footer does Tagged[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
 
-role Body   does Tagged[Regular] {
+role Body   does Tagged[Regular]  {
     has Header $.header is rw .= new;
     has Main   $.main   is rw .= new;
     has Footer $.footer is rw .= new;
@@ -155,7 +153,7 @@ role Body   does Tagged[Regular] {
     }
 }
 
-role Html   does Tagged[Regular] {
+role Html   does Tagged[Regular]  {
     my $loaded = 0;
 
     has Head $.head .= instance;
@@ -291,13 +289,28 @@ role LightDark does Tagged[Regular] {
         END
     }
 }
+subset Widget  of Any  where * ~~ LightDark;
 
-# More Roles TBD?
-role Theme {}
+# TODO Roles?
+#role Theme {...}
+#role Form  {...}
 
-##### Site Roles & Classes #####
+##### Semantic Tags #####
 
-role External does Tagged[Regular] {
+role Content   does Tagged[Regular] {
+    multi method HTML {
+        div :id<content>, @.inners
+    }
+}
+#role Section   does Tagged[Regular] {}
+#role Article   does Tagged[Regular] {}
+#role Aside     does Tagged[Regular] {}
+
+role Time      does Tagged[Regular] {}
+
+##### Site Tags #####
+
+role External  does Tagged[Regular] {
     has Str $.label is rw = '';
     has Str $.href  is required;
     has %.others = {:target<_blank>, :rel<noopener noreferrer>};
@@ -307,21 +320,26 @@ role External does Tagged[Regular] {
         do-regular-tag( 'a', [$.label], |%attrs )
     }
 }
+role Internal  does Tagged[Regular] {
+    has Str $.label is rw = '';
+    has Str $.href  is required;
 
-role Content does Tagged[Regular] {
     multi method HTML {
-        div :id<content>, @.inners
+        my %attrs = :$!href, |%.attrs;
+        do-regular-tag( 'a', [$.label], |%attrs )
     }
 }
+subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-subset NavItem of Pair where .value ~~ External | Content | Page;
-subset Widget of Any where * ~~ LightDark;
-
-class Nav does Component {
+class Nav  does Component does Tagged[Regular] {
     has Str     $.hx-target = '#content';
     has Safe    $.logo;
     has NavItem @.items;
     has Widget  @.widgets;
+
+    multi method new(@items, *%h) {
+      self.new: :@items, |%h;
+    }
 
     method make-routes() {
         unless self.^methods.grep: * ~~ IsRoutable {
@@ -340,9 +358,9 @@ class Nav does Component {
     method nav-items {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
-                when * ~~ External {
-                    $target.label = $name;
-                    li $target.HTML
+                when * ~~ External | Internal {
+                  $target.label = $name;
+                  li $target.HTML
                 }
                 when * ~~ Content {
                     li a(:hx-get("$.url-part/$.id/" ~ $name), Safe.new: $name)
@@ -455,6 +473,8 @@ class Page does Component {
     has Main    $.main is rw;
     has Footer  $.footer;
 
+    has Bool    $.styled-aside;
+
     has Html $.html .= new;
 
     method defaults {
@@ -467,21 +487,44 @@ class Page does Component {
             self.html.head.description = Meta.new: attrs =>
                         { :name<description>, :content($.description) } with $.description;
 
-            with $.nav      { self.html.body.header.nav = $.nav }
+            with   $.nav    { self.html.body.header.nav = $.nav }
             orwith $.header { self.html.body.header = $.header  }
 
             self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
+
+            self.html.head.style  = $.styled-aside                      with $.styled-aside;
         }
     }
 
-    multi method new($main, *%h) {
+    multi method new(Main $main, *%h) {
         self.new: :$main, |%h;
+    }
+    multi method new(Main $main, Footer $footer, *%h) {
+      self.new: :$main, :$footer, |%h;
+    }
+    multi method new(Header $header, Main $main, Footer $footer, *%h) {
+      self.new: :$header, :$main, :$footer, |%h;
     }
 
     multi method HTML {
         self.defaults unless $.loaded;
         '<!doctype html>' ~ $!html.HTML
+    }
+
+    method styled-aside { Style.new: q:to/END/
+        /* Custom styles for aside layout */
+        main {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 20px;
+        }
+        aside {
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        END
     }
 }
 
@@ -496,7 +539,7 @@ class Site {
     has Str  $.theme-color = 'green';
 
     #| one from <aqua black blue fuchsia gray green lime maroon navy
-    # | olive purple red silver teal white yellow> (basic css)
+    #| olive purple red silver teal white yellow> (basic css)
     has Str  $.bold-color  = 'red';
 
     multi method new(Page $index, *%h) {
@@ -602,7 +645,7 @@ class Site {
     }
 }
 
-##### Tag Classes #####
+##### Element Tags #####
 # viz. https://picocss.com/docs
 
 class Table is Tag {
