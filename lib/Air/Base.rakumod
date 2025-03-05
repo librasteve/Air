@@ -1,7 +1,7 @@
 use Air::Functional;
 use Air::Component;
 
-my @functions = <Site Page A External Internal Content Time Nav LightDark Body Header Main Footer Table Grid Safe>;
+my @functions = <Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Safe>;
 
 ##### Tagged Role #####
 
@@ -16,11 +16,8 @@ role Tagged[TagType $tag-type] is Tag is export {
     has Attr()  %.attrs is rw;   #coercion accepts multi-valued attrs with spaces
     has         @.inners;
 
-    multi method new(@inners, *%attrs) {
-        self.new: :@inners, :%attrs
-    }
-    multi method new($inner, *%attrs) {
-        self.new: :inners[$inner], :%attrs
+    multi method new(*@inners, *%attrs) {
+        self.bless:  :@inners, :%attrs
     }
 
     multi method HTML {
@@ -95,12 +92,12 @@ role Head   does Tagged[Regular]  {
     has Style  $.style is rw;
 
     method defaults {
-        self.metas.append: Meta.new: attrs => {:charset<utf-8>};
-        self.metas.append: Meta.new: attrs => {:name<viewport>, :content<width=device-width, initial-scale=1>};
-        self.links.append: Link.new: attrs => {:rel<stylesheet>, :href</css/styles.css> };
-        self.links.append: Link.new: attrs => {:rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>};
-        self.scripts.append: Script.new: attrs => {:src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
-                                        :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>};
+        self.metas.append: Meta.new: :charset<utf-8>;
+        self.metas.append: Meta.new: :name<viewport>, :content<width=device-width, initial-scale=1>;
+        self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
+        self.links.append: Link.new: :rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>;
+        self.scripts.append: Script.new: :src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
+                :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>;
     }
 
     multi method HTML {
@@ -299,46 +296,62 @@ subset Widget  of Any  where * ~~ LightDark;
 
 role Content   does Tagged[Regular] {
     multi method HTML {
-        div :id<content>, @.inners
+#        div :id<content>, @.inners
+
+        my %attrs  = |%.attrs, :id<content>;
+        do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
-#role Section   does Tagged[Regular] {}
-#role Article   does Tagged[Regular] {}
-#role Aside     does Tagged[Regular] {}
+role Section   does Tagged[Regular] {}
+role Article   does Tagged[Regular] {}
+role Aside     does Tagged[Regular] {}
 
-role Time      does Tagged[Regular] {}
+role Time      does Tagged[Regular] {
+    use DateTime::Format;
+
+    multi method HTML {
+        my $dt = DateTime.new(%.attrs<datetime>);
+
+        sub inner {
+            given %.attrs<mode> {
+                when     'time' { strftime('%l:%M%P', $dt) }
+                when 'datetime' { strftime('%l:%M%P on %B %d, %Y', $dt) }
+                default         { strftime('%B %d, %Y', $dt) }
+            }
+        }
+
+        do-regular-tag( $.name, [inner], |%.attrs )
+    }
+}
 
 ##### Site Tags #####
 
 role External  does Tagged[Regular] {
     has Str $.label is rw = '';
-    has Str $.href  is required;
     has %.others = {:target<_blank>, :rel<noopener noreferrer>};
 
     multi method HTML {
-        my %attrs = |self.others, :$!href, |%.attrs;
+        my %attrs = |self.others, |%.attrs;
         do-regular-tag( 'a', [$.label], |%attrs )
     }
 }
 role Internal  does Tagged[Regular] {
     has Str $.label is rw = '';
-    has Str $.href  is required;
 
     multi method HTML {
-        my %attrs = :$!href, |%.attrs;
-        do-regular-tag( 'a', [$.label], |%attrs )
+        do-regular-tag( 'a', [$.label], |%.attrs )
     }
 }
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-class Nav  does Component does Tagged[Regular] {
+class Nav  does Component is Tag { #} does Tagged[Regular] {
     has Str     $.hx-target = '#content';
     has Safe    $.logo;
     has NavItem @.items;
     has Widget  @.widgets;
 
-    multi method new(@items, *%h) {
-      self.new: :@items, |%h;
+    multi method new(*@items, *%h) {
+        self.bless:  :@items, |%h;
     }
 
     method make-routes() {
@@ -473,19 +486,19 @@ class Page does Component {
     has Main    $.main is rw;
     has Footer  $.footer;
 
-    has Bool    $.styled-aside;
+    has Bool    $.styled-aside-on = False;
 
-    has Html $.html .= new;
+    has Html    $.html .= new;
 
     method defaults {
         unless $.loaded++ {
-            self.html.head.metas.append: Meta.new: attrs =>
-                        { :http-equiv<refresh>, :content($.REFRESH) }   with $.REFRESH;
+            self.html.head.metas.append: Meta.new:
+                         :http-equiv<refresh>, :content($.REFRESH)      with $.REFRESH;
 
             self.html.head.title = Title.new: $.title                   with $.title;
 
-            self.html.head.description = Meta.new: attrs =>
-                        { :name<description>, :content($.description) } with $.description;
+            self.html.head.description = Meta.new:
+                         :name<description>, :content($.description)    with $.description;
 
             with   $.nav    { self.html.body.header.nav = $.nav }
             orwith $.header { self.html.body.header = $.header  }
@@ -493,18 +506,18 @@ class Page does Component {
             self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
 
-            self.html.head.style  = $.styled-aside                      with $.styled-aside;
+            self.html.head.style  = $.styled-aside                      if $.styled-aside-on;
         }
     }
 
     multi method new(Main $main, *%h) {
-        self.new: :$main, |%h;
+        self.bless: :$main, |%h
     }
     multi method new(Main $main, Footer $footer, *%h) {
-      self.new: :$main, :$footer, |%h;
+        self.bless: :$main, :$footer, |%h
     }
     multi method new(Header $header, Main $main, Footer $footer, *%h) {
-      self.new: :$header, :$main, :$footer, |%h;
+        self.bless: :$header, :$main, :$footer, |%h
     }
 
     multi method HTML {
@@ -543,7 +556,7 @@ class Site {
     has Str  $.bold-color  = 'red';
 
     multi method new(Page $index, *%h) {
-        self.new: :$index, |%h;
+        self.bless: :$index, |%h;
     }
 
     use Cro::HTTP::Router;
@@ -654,8 +667,8 @@ class Table is Tag {
     has $.tfoot = [];
     has $.class;
 
-    multi method new(@tbody, *%h) {
-        self.new: :@tbody, |%h;
+    multi method new(*@tbody, *%h) {
+        self.bless:  :@tbody, |%h;
     }
 
     sub part($part, :$head) {
@@ -682,8 +695,8 @@ class Table is Tag {
 class Grid is Tag {
     has @.items;
 
-    multi method new(@items, *%h) {
-        self.new: :@items, |%h;
+    multi method new(*@items, *%h) {
+        self.bless:  :@items, |%h;
     }
 
     #| example of optional grid style from
