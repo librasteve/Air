@@ -129,3 +129,7 @@ my package EXPORT::BASE {
         OUR::{'&' ~ $tag} := sub (*%h) { do-singular-tag( "$tag", |%h ) }
     }
 }
+
+our sub import(*@names) {
+    say "Imported with: @names[]";
+}
