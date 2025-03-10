@@ -30,7 +30,7 @@ sub MAIN (:$filename, :$output = 'index.md') {
         }
 
         print "Processing { $newFile }...";
-        my $docs = qqx{perl6 -Ilib --doc=Markdown $_};
+        my $docs = qqx{raku -Ilib --doc=Markdown $_};
 
         if $docs.trim {
             my $destFile = $newFile.extension('md');

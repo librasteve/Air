@@ -668,7 +668,8 @@ class Table is Tag {
     has $.class;
 
     multi method new(*@tbody, *%h) {
-        self.bless:  :@tbody, |%h;
+
+        self.bless: :@tbody, |%h;
     }
 
     sub part($part, :$head) {
@@ -694,13 +695,13 @@ class Table is Tag {
 
 class Grid is Tag {
     has @.items;
+    has Bool $.styled;
 
     multi method new(*@items, *%h) {
         self.bless:  :@items, |%h;
     }
 
-    #| example of optional grid style from
-    #| https://cssgrid-generator.netlify.app/
+    #| optional grid style from https://cssgrid-generator.netlify.app/
     method style {
         q:to/END/
 		<style>
@@ -716,7 +717,8 @@ class Grid is Tag {
 	}
 
     method HTML {
-        #		$.style ~
+        ($.styled ?? $.style !! '') ~
+
         div :class<grid>,
             do for @!items -> $item {
                 div $item
