@@ -6,7 +6,7 @@ unit module Air;
 
 =head1 Air
 
-This raku module provides the glue for the B<HARC stack> (HTMX, Air, Raku, Cro).
+This raku module provides the glue for the B<HARC stack> (HTMX, Air, Raku|Red, Cro).
 
 B<HARC> websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site, rather than boilerplate markup that can often obscure the intention.
 
@@ -83,6 +83,8 @@ Air is comprised of three core libraries:
 =item Air::Functional - wraps HTML tags as functions
 =item Air::Base - a set of handy prebuilt components
 =item Air::Component - make your own components
+
+The Air documentation is at L<https://librasteve.github.io/Air>
 
 =head1 AUTHOR
 

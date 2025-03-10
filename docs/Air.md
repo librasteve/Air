@@ -1,7 +1,7 @@
 Air
 ===
 
-This raku module provides the glue for the **HARC stack** (HTMX, Air, Raku, Cro).
+This raku module provides the glue for the **HARC stack** (HTMX, Air, Raku|Red, Cro).
 
 **HARC** websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site, rather than boilerplate markup that can often obscure the intention.
 
@@ -80,6 +80,8 @@ Air is comprised of three core libraries:
   * Air::Base - a set of handy prebuilt components
 
   * Air::Component - make your own components
+
+The Air documentation is at [https://librasteve.github.io/Air](https://librasteve.github.io/Air)
 
 AUTHOR
 ======
