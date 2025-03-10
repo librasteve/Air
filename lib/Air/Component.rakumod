@@ -1,3 +1,75 @@
+=begin pod
+
+=head1 Air::Component
+
+This raku module is one of the core libraries of the raku B<Air> module.
+
+It exports HTML tags as raku subs that can be composed as functional code within a raku program.
+
+It replaces the HTML::Functional module by the same author.
+
+
+=head1 SYNOPSIS
+
+Here's a regular HTML page:
+
+=begin code :lang<html>
+<div class="jumbotron">
+  <h1>Welcome to Dunder Mifflin!</h1>
+  <p>
+    Dunder Mifflin Inc. (stock symbol <strong>DMI</strong>) is
+    a micro-cap regional paper and office supply distributor with
+    an emphasis on servicing small-business clients.
+  </p>
+</div>
+=end code
+
+And here is the same page using Air::Functional:
+
+=begin code :lang<raku>
+use Air::Functional;
+
+div :class<jumbotron>, [
+    h1 "Welcome to Dunder Mifflin!";
+    p  [
+        "Dunder Mifflin Inc. (stock symbol "; strong 'DMI'; ") ";
+        q:to/END/;
+            is a micro-cap regional paper and office
+            supply distributor with an emphasis on servicing
+            small-business clients.
+        END
+    ];
+];
+=end code
+
+
+=head1 DESCRIPTION
+
+Key features of the module are:
+=item HTML tags are implemented as raku functions: C<div, h1, p> and so on
+=item parens C<()> are optional in raku function calls
+=item HTML tag attributes are passed as raku named arguments
+=item HTML tag inners (e.g. the Str in C<h1>) are passed as raku positional arguments
+=item the raku Pair syntax is used for each attribute i.e. C<:name<value>>
+=item multiple C<@inners> are passed as a literal Array C<[]> – div contains h1 and p
+=item the raku parser looks at functions from the inside out, so C<strong> is evaluated before C<p>, before C<div> and so on
+=item semicolon C<;> is used as the Array literal separator to suppress nesting of tags
+
+Normally the items in a raku literal Array are comma C<,> separated. Raku precedence considers that C<div [h1 x, p y];> is equivalent to C<div( h1(x, p(y) ) );> … so the p tag is embedded within the h1 tag unless parens are used to clarify. But replace the comma C<,> with a semi colon C<;> and predisposition to nest is reversed. So C<div [h1 x; p y];> is equivalent to C<div( h1(x), p(y) )>. Boy that Larry Wall was smart!
+
+The raku example also shows the power of the raku B<Q-lang> at work:
+
+=item double quotes C<""> interpolate their contents
+=item curlies denote an embedded code block C<"{fn x}">
+=item tilde C<~> is for Str concatenation
+=item the heredoc form C<q:to/END/;> can be used for verbatim text blocks
+
+This module generally returns C<Str> values to be string concatenated and included in an HTML content/text response.
+
+It also defines a programmatic API for the use of HTML tags for raku functional coding and so is offered as a basis for sister modules that preserve the API, but have a different technical implementation such as a MemoizedDOM.
+
+=end pod
+
 role IsRoutable {
 	has Str $.is-routable-name;
 	method is-routable { True }

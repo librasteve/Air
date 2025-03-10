@@ -1,7 +1,7 @@
 Air
 ===
 
-This raku module provides the glue for the **HARC stack** (HTMX, Air, Raku|Red, Cro).
+This raku module is the glue for the **HARC stack** (HTMX, Air, Raku|Red, Cro).
 
 **HARC** websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site, rather than boilerplate markup that can often obscure the intention.
 
