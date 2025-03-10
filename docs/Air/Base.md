@@ -24,7 +24,7 @@ one from <aqua black blue fuchsia gray green lime maroon navy olive purple red s
 method style() returns Mu
 ```
 
-example of optional grid style from https://cssgrid-generator.netlify.app/
+optional grid style from https://cssgrid-generator.netlify.app/
 
 package EXPORT::DEFAULT
 -----------------------
