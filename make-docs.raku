@@ -45,7 +45,7 @@ sub MAIN (:$filename, :$output = 'index.md') {
     # If processing a single file, do NOT write out the index.
     unless $filename {
         # Write index file
-        my $index = "Air Docs\n";
+        my $index = "Document Index\n";
         $index ~= '=' x $index.chars.chomp ~ "\n\n";
 
         for sort @destFiles {
