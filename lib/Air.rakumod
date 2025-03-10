@@ -84,11 +84,15 @@ Air is comprised of three core libraries:
 =item Air::Base - a set of handy prebuilt components
 =item Air::Component - make your own components
 
+B<L<Air::Play|https://raku.land/zef:librasteve/Air::Play>> is a companion raku module with various B<Air> website examples.
+
 The Air documentation is at L<https://librasteve.github.io/Air>
 
 =head1 AUTHOR
 
 Steve Roe <librasteve@furnival.net>
+
+The `Air::Component` module provided is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
 
 =head1 COPYRIGHT AND LICENSE
 
