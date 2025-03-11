@@ -769,7 +769,6 @@ class Table is Tag {
 
 class Grid is Tag {
     has @.items;
-    has Bool $.styled;
 
     multi method new(*@items, *%h) {
         self.bless:  :@items, |%h;
@@ -791,7 +790,7 @@ class Grid is Tag {
 	}
 
     method HTML {
-        ($.styled ?? $.style !! '') ~
+        $.style ~
 
         div :class<grid>,
             do for @!items -> $item {

@@ -46,10 +46,10 @@ sub SITE is export {
 }
 ```
 
-DESCRIPTION
-===========
+DOCS
+====
 
-blah blah
+Check out the docs at https://librasteve.github.io/Air/ for Getting Started and running Examples
 
 AUTHOR
 ======

@@ -6,11 +6,14 @@ unit module Air;
 
 =head1 Air
 
-This raku module is the glue for the B<HARC stack> (HTMX, Air, Red, Cro).
+Breathing life into the raku B<HARC stack> (HTMX, Air, Red, Cro).
 
-B<HARC> websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site, rather than boilerplate markup that can often obscure the intention.
+B<Air> aims to be the purest possible expression of the power of L<HTMX|https://htmx.org>.
 
-The result is a compact, legible and easy-to-maintain website codebase.
+B<HARC> websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site,
+rather than boilerplate markup that can often obscure the intention.
+
+The result is a concise, legible and easy-to-maintain website codebase.
 
 
 =head1 SYNOPSIS
@@ -55,16 +58,17 @@ sub SITE is export {
 
 Install raku - eg. from L<rakubrew|https://rakubrew.org>, then:
 
-=begin code :lang<bash>
-### Install Air, Cro & Red
+=begin code
+Install Air, Cro & Red
 - zef install --/test cro
 - zef install Red --exclude="pq:ver<5>"
-- zef install Air, Air::Play
+- zef install Air
 
-### Run and view it
+Run and view some examples
+- git clone https://github.com/librasteve/Air-Play.git && cd Air-Play
 - export WEBSITE_HOST="0.0.0.0" && export WEBSITE_PORT="3000"
 - raku -Ilib service.raku
-- Open a browser and go to http://localhost:3000
+- browse to http://localhost:3000
 =end code
 
 Cro has many other options as documented at L<Cro|https://cro.raku.org> for deployment to a production server.
@@ -74,7 +78,7 @@ Cro has many other options as documented at L<Cro|https://cro.raku.org> for depl
 
 Air is not a framework, but a set of libraries. Full control over the application loop is retained by the coder.
 
-Air does not provide an HTML templating language, instead each HTML tag is written as a subroutine call where the argument is a list of C<@inners> and attributes are passed via the raku Pair syntax C<:name<value>>. L<Cro templates|https://cro.raku.org/docs/reference/cro-webapp-template-syntax> are great if you prefer that approach.
+Air does not provide an HTML templating language, instead each HTML tag is written as a subroutine call where the argument is a list of C<@inners> and attributes are passed via the raku Pair syntax C<:name<value>>. L<Cro templates|https://cro.raku.org/docs/reference/cro-webapp-template-syntax> are great if you would rather take the template approach.
 
 Reusability is promoted by the structure of the libraries - individuals and teams can create and install your own libraries to encapsulate design themes, re-usable web components and best practice.
 
@@ -87,6 +91,14 @@ Air is comprised of three core libraries:
 B<L<Air::Play|https://raku.land/zef:librasteve/Air::Play>> is a companion raku module with various B<Air> website examples.
 
 The Air documentation is at L<https://librasteve.github.io/Air>
+
+=head1 TIPS & TRICKS
+
+=item When debugging, use the raku C<note> sub to out put debuggin info to stderr (ie in the Cro Log stream)
+=item When passing a 2D Array to a tag function, make sure that there is a trailing comma C<:tbody[["Mercury",  "4,880", "0.39",  "88"],]>
+=item An error message like I<insufficient arguments> is often caused by separating two tag functions with a comma C<,> instead of a semicolon C<;>
+=otem In development set CRO_DEV=1 in the [environment](https://cro.services/docs/reference/cro-webapp-template#Template_auto-reload)
+
 
 =head1 AUTHOR
 
