@@ -97,7 +97,7 @@ The Air documentation is at L<https://librasteve.github.io/Air>
 =item When debugging, use the raku C<note> sub to out put debuggin info to stderr (ie in the Cro Log stream)
 =item When passing a 2D Array to a tag function, make sure that there is a trailing comma C<:tbody[["Mercury",  "4,880", "0.39",  "88"],]>
 =item An error message like I<insufficient arguments> is often caused by separating two tag functions with a comma C<,> instead of a semicolon C<;>
-=otem In development set CRO_DEV=1 in the [environment](https://cro.services/docs/reference/cro-webapp-template#Template_auto-reload)
+=otem In development set CRO_DEV=1 in the L<environment|https://cro.services/docs/reference/cro-webapp-template#Template_auto-reload>
 
 
 =head1 AUTHOR
