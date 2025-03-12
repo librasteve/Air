@@ -85,7 +85,7 @@ my @functions = <Site Page A External Internal Content Section Article Aside Tim
 enum TagType is export <Singular Regular>;
 subset Attr of Str;
 
-role Tagged[TagType $tag-type] is Tag is export {
+role Tagged[TagType $tag-type] does Tag is export {
     has Str     $.name = ::?CLASS.^name.lc;
     has Attr()  %.attrs is rw;   #coercion accepts multi-valued attrs with spaces
     has         @.inners;
@@ -418,7 +418,7 @@ role Internal  does Tagged[Regular] {
 }
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-class Nav  does Component is Tag {
+class Nav  does Component does Tag {
     has Str     $.hx-target = '#content';
     has Safe    $.logo;
     has NavItem @.items;
@@ -641,7 +641,7 @@ class Site {
         self.scss with $!scss;
 
         route {
-            { .^add-routes } for @!components;
+            { .^add-routes } for @!components.unique( as => *.^name );
 
             get ->               { content 'text/html', $.index.HTML }
             get -> 'css', *@path { static 'static/css', @path }
@@ -737,7 +737,7 @@ class Site {
 ##### Element Tags #####
 # viz. https://picocss.com/docs
 
-class Table is Tag {
+class Table does Tag {
     has $.tbody = [];
     has $.thead;
     has $.tfoot;
@@ -778,7 +778,7 @@ class Table is Tag {
     }
 }
 
-class Grid is Tag {
+class Grid does Tag {
     has @.items;
 
     multi method new(*@items, *%h) {

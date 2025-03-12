@@ -96,6 +96,7 @@ role Component {
 	# ID, Holder & URL Setup
 	my  UInt $next = 1;
 	has UInt $.id;   # fixme hash of ids by type
+	has Str  $.base = '';
 
 	my %holder;
 	method holder { %holder }
