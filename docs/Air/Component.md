@@ -1,6 +1,10 @@
 Air::Component
 ==============
 
+When writing component
+
+  * custom multi method HTML inners must be explicitly rendered with .HTML or wrapped in a tag eg. `div` since being passed as inner will call `trender` which will, in turn, call `.HTML`
+
 This raku module is one of the core libraries of the raku **Air** module.
 
 It exports HTML tags as raku subs that can be composed as functional code within a raku program.
