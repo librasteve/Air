@@ -206,7 +206,7 @@ my package EXPORT::CRO {
 }
 
 #| use :BASE as package to avoid collisions with Cro::Router, Air::Base & Air::Component names
-my @exclude-base  = <section article aside time a body main header content footer nav table>;
+my @exclude-base  = <section article aside time a body main header content footer nav table grid>;
 
 my @regular-base  = @regular-tags.grep:  { $_ ∉ @exclude-base };
 my @singular-base = @singular-tags.grep: { $_ ∉ @exclude-base };

@@ -418,7 +418,7 @@ role Internal  does Tagged[Regular] {
 }
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-class Nav  does Component is Tag { #} does Tagged[Regular] {
+class Nav  does Component is Tag {
     has Str     $.hx-target = '#content';
     has Safe    $.logo;
     has NavItem @.items;
@@ -607,7 +607,8 @@ class Page does Component {
             gap: 20px;
         }
         aside {
-            background-color: #707070;
+            background-color: aliceblue;
+            opacity: 0.9;
             padding: 20px;
             border-radius: 5px;
         }
@@ -618,6 +619,7 @@ class Page does Component {
 class Site {
     has Page @.pages;
     has Page $.index is rw = @!pages[0];
+    has Component @.components = [Nav.new];
 
     has Bool $.scss = True;  # run sass compiler
 
@@ -639,7 +641,7 @@ class Site {
         self.scss with $!scss;
 
         route {
-            Nav.^add-routes;
+            { .^add-routes } for @!components;
 
             get ->               { content 'text/html', $.index.HTML }
             get -> 'css', *@path { static 'static/css', @path }
@@ -740,10 +742,16 @@ class Table is Tag {
     has $.thead = [];
     has $.tfoot = [];
     has $.class;
+    has $.tbody-id;
 
     multi method new(*@tbody, *%h) {
+        self.bless:  :@tbody, |%h;
+    }
 
-        self.bless: :@tbody, |%h;
+    method TWEAK {   # fixme genericize
+        my %tbody-attrs = $!tbody.grep: * ~~ Pair;
+        $!tbody-id = %tbody-attrs<id>;
+        $!tbody = $!tbody.grep: !(* ~~ Pair);
     }
 
     sub part($part, :$head) {
@@ -758,11 +766,11 @@ class Table is Tag {
         }
     }
 
-    method thead { thead part($!thead, :head) }
-    method tbody { tbody part($!tbody) }
+    method thead { thead part($!thead,  :head) }
+    method tbody { tbody part($!tbody), :id($!tbody-id)}
     method tfoot { tfoot part($!tfoot) }
 
-    method HTML {
+    multi method HTML {
         table |%(:$!class if $!class), [$.thead; $.tbody; $.tfoot;];
     }
 }
@@ -789,7 +797,7 @@ class Grid is Tag {
 		END
 	}
 
-    method HTML {
+    multi method HTML {
         $.style ~
 
         div :class<grid>,

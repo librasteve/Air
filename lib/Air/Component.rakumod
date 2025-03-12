@@ -2,6 +2,13 @@
 
 =head1 Air::Component
 
+When writing component
+
+=item custom multi method HTML inners must be explicitly rendered with .HTML or wrapped in a tag eg. C<div> since being passed as inner will call C<trender> which will, in turn, call C<.HTML>
+
+
+
+
 This raku module is one of the core libraries of the raku B<Air> module.
 
 It exports HTML tags as raku subs that can be composed as functional code within a raku program.
@@ -88,7 +95,7 @@ use Cro::HTTP::Router;
 role Component {
 	# ID, Holder & URL Setup
 	my  UInt $next = 1;
-	has UInt $.id;   # fixme hash of ids per type
+	has UInt $.id;   # fixme hash of ids by type
 
 	my %holder;
 	method holder { %holder }
