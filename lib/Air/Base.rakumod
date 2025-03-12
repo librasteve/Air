@@ -739,23 +739,26 @@ class Site {
 
 class Table is Tag {
     has $.tbody = [];
-    has $.thead = [];
-    has $.tfoot = [];
+    has $.thead;
+    has $.tfoot;
     has $.class;
-    has $.tbody-id;
+    has %!tbody-attrs;
 
     multi method new(*@tbody, *%h) {
         self.bless:  :@tbody, |%h;
     }
 
-    method TWEAK {   # fixme genericize
-        my %tbody-attrs = $!tbody.grep: * ~~ Pair;
-        $!tbody-id = %tbody-attrs<id>;
-        $!tbody = $!tbody.grep: !(* ~~ Pair);
+    submethod TWEAK {
+        %!tbody-attrs = $!tbody.grep:   * ~~ Pair;
+        $!tbody       = $!tbody.grep: !(* ~~ Pair);
     }
 
-    sub part($part, :$head) {
-        do for |$part -> @row {
+    multi sub do-part($part, :$head) { '' }
+    multi sub do-part(@part where .all ~~ Tag|Component) {
+        tbody @part.map(*.HTML)
+    }
+    multi sub do-part(@part where .all ~~ Array, :$head) {
+        do for @part -> @row {
             tr do for @row.kv -> $col, $cell {
                 given    	$col, $head {
                     when   	  *,    *.so  { th $cell, :scope<col> }
@@ -766,12 +769,12 @@ class Table is Tag {
         }
     }
 
-    method thead { thead part($!thead,  :head) }
-    method tbody { tbody part($!tbody), :id($!tbody-id)}
-    method tfoot { tfoot part($!tfoot) }
-
     multi method HTML {
-        table |%(:$!class if $!class), [$.thead; $.tbody; $.tfoot;];
+        table |%(:$!class if $!class), [
+            thead do-part($!thead, :head);
+            tbody do-part($!tbody),  :attrs(|%!tbody-attrs);
+            tfoot do-part($!tfoot);
+        ]
     }
 }
 

@@ -185,7 +185,6 @@ role Component {
 multi sub respond(Any $comp) is export {
 	content 'text/html', $comp.HTML
 }
-
 multi sub respond(Str $html) is export {
 	content 'text/html', $html
 }
