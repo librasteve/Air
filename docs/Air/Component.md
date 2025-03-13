@@ -8,7 +8,7 @@ It is a scaffold to build dynamic, reusable web components.
 SYNOPSIS
 ========
 
-First, import the Air core libraries.
+The synopsis is split so that each part can be annotated. First, we import the Air core libraries.
 
 ```raku
 use Air::Functional :BASE;      # import all HTML tags as raku subs
@@ -16,8 +16,7 @@ use Air::Base;					# import Base components (site, page, nav...)
 use Air::Component;
 ```
 
-role HxTodo
------------
+#### role HxTodo
 
 Predeclares some custom HTMX actions. This declutters `class Todo` and `class Frame`.
 
@@ -53,8 +52,7 @@ Key features of `role HxTodo` are:
 
   * return values are coerced to a raku `Hash` containing HTMX attrs
 
-class Todo
-----------
+#### class Todo
 
 The core of our synopsis. It `does role Component` to bring in the scaffolding.
 
@@ -95,8 +93,7 @@ Key features of `class Todo` are:
 
 The result is a concise, legible and easy-to-maintain component implementation.
 
-class Frame
------------
+#### class Frame
 
 Provides a frame our Todo components and a form to add new ones.
 
@@ -130,8 +127,7 @@ Key features of `class Frame` are:
 
   * `multi method HTML` is called when rendered
 
-sub SITE
---------
+#### sub SITE
 
 Finally, we can export a webite as follows:
 
