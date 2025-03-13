@@ -566,8 +566,7 @@ class Page does Component {
 
     method defaults {
         unless $.loaded++ {
-            self.html.head.metas.append: Meta.new:
-                         :http-equiv<refresh>, :content($.REFRESH)      with $.REFRESH;
+            self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
 
             self.html.head.title = Title.new: $.title                   with $.title;
 
@@ -612,6 +611,28 @@ class Page does Component {
             padding: 20px;
             border-radius: 5px;
         }
+        END
+    }
+
+    method scripted-refresh { Script.new: qq:to/END/
+        function checkServer() \{
+            console.log("Checking server...");
+
+            fetch(window.location.href, \{ method: "GET", cache: "no-store" \})
+                .then(response => \{
+                    console.log("Server responded with status:", response.status);
+
+                    if (response.ok) \{
+                        console.log("Server is up! Refreshing now...");
+                        location.reload(); // Refresh immediately when the server is back
+                    \}
+                \})
+                .catch(error => \{
+                    console.log("Server is down, not refreshing.");
+                \});
+        }
+
+        setInterval(checkServer, {$!REFRESH*1000}); // Check every $!REFRESH seconds
         END
     }
 }
