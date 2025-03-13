@@ -1,5 +1,3 @@
-unit class Air::Functional;
-
 =begin pod
 
 =head1 Air::Functional
@@ -47,7 +45,7 @@ div :class<jumbotron>, [
 
 =head1 DESCRIPTION
 
-Key features of the module are:
+Key features shown are:
 =item HTML tags are implemented as raku functions: C<div, h1, p> and so on
 =item parens C<()> are optional in raku function calls
 =item HTML tag attributes are passed as raku named arguments
@@ -71,6 +69,8 @@ This module generally returns C<Str> values to be string concatenated and includ
 It also defines a programmatic API for the use of HTML tags for raku functional coding and so is offered as a basis for sister modules that preserve the API, but have a different technical implementation such as a MemoizedDOM.
 
 =end pod
+
+unit class Air::Functional;
 
 use HTML::Escape;
 

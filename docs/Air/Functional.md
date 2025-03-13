@@ -44,7 +44,7 @@ div :class<jumbotron>, [
 DESCRIPTION
 ===========
 
-Key features of the module are:
+Key features shown are:
 
   * HTML tags are implemented as raku functions: `div, h1, p` and so on
 

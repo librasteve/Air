@@ -17,7 +17,7 @@ use Air::Base;					# import Base components (site, page, nav...)
 use Air::Component;
 =end code
 
-=head4 role HxTodo
+=head3 role HxTodo
 
 Predeclares some custom HTMX actions. This declutters C<class Todo> and C<class Frame>.
 
@@ -49,7 +49,7 @@ Key features of C<role HxTodo> are:
 =item attributes C<$.url> and C<.id> are provided by C<role Component>
 =item return values are coerced to a raku C<Hash> containing HTMX attrs
 
-=head4 class Todo
+=head3 class Todo
 
 The core of our synopsis. It C<does role Component> to bring in the scaffolding.
 
@@ -85,7 +85,7 @@ Key features of C<class Todo> are:
 
 The result is a concise, legible and easy-to-maintain component implementation.
 
-=head4 class Frame
+=head3 class Frame
 
 Provides a frame our Todo components and a form to add new ones.
 
@@ -115,9 +115,9 @@ Key features of C<class Frame> are:
 =item uses functional tags to make HTML
 =item C<multi method HTML> is called when rendered
 
-=head4 sub SITE
+=head3 sub SITE
 
-Finally, we can export a webite as follows:
+Finally, we can export a website as follows:
 
 =begin code :lang<raku>
 my &index = &page.assuming(
@@ -162,13 +162,75 @@ adding GET todo/<id>/toggle
 Listening at http://0.0.0.0:3000
 =end code
 
----
+=head1 DESCRIPTION
+
+The rationale for Air Components is rooted in the powerful raku code composition capabilities. It builds on the notion of Locality of Behaviour (aka L<LOB|https://htmx.org/essays/locality-of-behaviour/>) and the intent is that a Component can represent and render every aspect of a piece of website behaviour.
+
+=item Content
+=item Layout
+=item Theme
+=item Data Model
+=item Actions
+
+As Air evolves, it is expected that common code idioms will emerge to make each dimensions independent (ie HTML, CSS and JS relating to Air::Theme::Font would be local, and distinct from HTML, CSS and JS for Air::Theme::Nav).
+
+Air is an integral part of the HARC stack (HTMX, Air, Red, Cro). The Synopsis shows how a Component can externalize and consume HTMX attributes for method actions, perhaps even a set of Air::HTMX libraries can be anticipated. One implication of this is that each Component can use the L<hx-swap-oob|https://htmx.org/attributes/hx-swap-oob/> attribute to deliver Content, Style and Script anywhere in the DOM (except the C<html> tag). An instance of this could be a blog website where a common Red C<model Post> could be harnessed to populate each blog post, a total page count calculation for paging and a post summary list in an C<aside>.
+
+In the Synopsis, both raku class inheritance and role composition provide coding dimensions to greatly improve code clarity and evolution. While simple samples are shown, raku has comprehensive encapsulation and type capabilities in a friendly and approachable language.
+
+Raku is a multi-paradigm language for both Functional and Object Oriented (OO) coding styles. OO is a widely understood approach to code and state encapsulation - suitable for code evolution across many aspects - and is well suited for Component implementations. Functional is a surprisingly good paradigm for embedding HTML standard and custom tags into general raku source code. The example below illustrates the power of Functional tags inline when used in more intricate stanzas.
+
+While this kind of logic can in theory be delivered in a web app using web template files, as the author of the Cro Template language L<comments|https://cro.raku.org/docs/reference/cro-webapp-template-syntax#Conditionals>
+I<Those wishing for more are encouraged to consider writing their logic outside of the template.>
+
+=begin code :lang<raku>
+    method nav-items {
+        do for @.items.map: *.kv -> ($name, $target) {
+            given $target {
+                when * ~~ External | Internal {
+                  $target.label = $name;
+                  li $target.HTML
+                }
+                when * ~~ Content {
+                    li a(:hx-get("$.url-part/$.id/" ~ $name), safe $name)
+                }
+                when * ~~ Page {
+                    li a(:href("/{.url-part}/{.id}"), safe $name)
+                }
+            }
+        }
+    }
+
+    multi method HTML {
+        self.style.HTML ~ (
+
+        nav [
+            { ul li :class<logo>, :href</>, $.logo } with $.logo;
+
+            button( :class<hamburger>, :id<hamburger>, safe '&#9776;' );
+
+            ul( :$!hx-target, :class<nav-links>,
+                self.nav-items,
+                do for @.widgets { li .HTML },
+            );
+
+            ul( :$!hx-target, :class<menu>, :id<menu>,
+                self.nav-items,
+            );
+        ]
+
+        ) ~ self.script.HTML
+    }
+=end code
+
+From the implementation of the Air::Base::Nav component.
+
 
 =head1 TIPS & TRICKS
 
 When writing components:
 
-=item custom multi method HTML inners must be explicitly rendered with .HTML or wrapped in a tag eg. C<div> since being passed as inner will call C<trender> which will, in turn, call C<.HTML>
+=item custom C<multi method HTML> inners must be explicitly rendered with .HTML or wrapped in a tag eg. C<div> since being passed as AN inner will call C<trender> which will, in turn, call C<.HTML>
 
 =end pod
 
@@ -186,7 +248,6 @@ multi trait_mod:<is>(Method $m, :$routable!, :$name = $m.name) is export {
 }
 
 use Cro::HTTP::Router;
-
 
 =head2 role Component
 

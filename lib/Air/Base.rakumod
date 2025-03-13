@@ -1,75 +1,135 @@
-#unit module Air::Base;   #iamerejh
-
 =begin pod
 
 =head1 Air::Base
 
 This raku module is one of the core libraries of the raku B<Air> module.
 
-It exports HTML tags as raku subs that can be composed as functional code within a raku program.
+It provides a Base library of functional Tags and Components that can be composed into web applications.
 
-It replaces the HTML::Functional module by the same author.
+Air::Base uses Air::Functional for standard HTML tags expressed as raku subs. Air::Base uses Air::Component for scaffolding for library Components.
+
+
+=head2 Architecture
+
+Here's a diagram of the various Air parts. (Air::Play is a separate raku module with several examples of Air websites.)
+
+=begin code
+            +----------------+
+            |    Air::Play   |    <-- Web App
+            +----------------+
+                    |
+          +-------------------+
+          |  Air::Play::Site  |   <-- Site Lib
+          +-------------------+
+                    |
+            +----------------+
+            |    Air::Base   |    <-- Base Lib
+            +----------------+
+               /           \
+  +----------------+  +----------------+
+  | Air::Functional|  | Air::Component |  <-- Services
+  +----------------+  +----------------+
+=end code
+
+=para The general idea is that there will a small number of Base libraries, typically provided by raku module authors that package code that implements a specific CSS package and/or site theme. Then, each user of Air - be they an individual or team - can create and selectively load their own Site library modules that extend and use the lower modules. All library Tags and Components can then be composed by the Web App.
+
+=para This facilitates an approach where Air users can curate and share back their own Tag and Component libraries. Therefore it is common to find a Base Lib and a Site Lib used together in the same Web App.
+
+=para In many cases Air::Base will consume a standard HTML tag (eg. C<table>), customize and then re-export it with the same sub name. Therefore two export packages C<:CRO> and C<:BASE> are included to prevent namespace conflict.
+
+=para The current Air::Base package is unashamedly opionated about CSS and is based on L<Pico CSS|https://picocss.org>. Pico was selected for its semantic tags and very low level of HTML attribute noise. Pico SASS is used to control high level theme variables at the Site level.
+
+=head4 Notes
+
+=item Higher layers also use Air::Functional and Air::Component services directly
+=item Externally loadable packages such as Air::Theme are on the development backlog
+=item Other CSS modules - Air::Base::TailWind? | Air::Base::Bootstrap? - are anticipated
 
 
 =head1 SYNOPSIS
 
-Here's a regular HTML page:
+The synopsis is split so that each part can be annotated.
 
-=begin code :lang<html>
-<div class="jumbotron">
-  <h1>Welcome to Dunder Mifflin!</h1>
-  <p>
-    Dunder Mifflin Inc. (stock symbol <strong>DMI</strong>) is
-    a micro-cap regional paper and office supply distributor with
-    an emphasis on servicing small-business clients.
-  </p>
-</div>
-=end code
-
-And here is the same page using Air::Functional:
+=head3 Content
 
 =begin code :lang<raku>
-use Air::Functional;
+use Air::Functional :BASE;
+use Air::Base;
 
-div :class<jumbotron>, [
-    h1 "Welcome to Dunder Mifflin!";
-    p  [
-        "Dunder Mifflin Inc. (stock symbol "; strong 'DMI'; ") ";
-        q:to/END/;
-            is a micro-cap regional paper and office
-            supply distributor with an emphasis on servicing
-            small-business clients.
-        END
-    ];
+my %data =
+    :thead[["Planet", "Diameter (km)", "Distance to Sun (AU)", "Orbit (days)"],],
+    :tbody[
+        ["Mercury",  "4,880", "0.39",  "88"],
+        ["Venus"  , "12,104", "0.72", "225"],
+        ["Earth"  , "12,742", "1.00", "365"],
+        ["Mars"   ,  "6,779", "1.52", "687"],
+    ],
+    :tfoot[["Average", "9,126", "0.91", "341"],];
+
+my $Content1 = content [
+    h3 'Content 1';
+    table |%data, :class<striped>;
 ];
+
+my $Content2 = content [
+    h3 'Content 2';
+    table |%data;
+];
+
+my $Google = external :href<https://google.com>;
 =end code
 
+Key features shown are:
+=item application of the C<:BASE> modifier on C<use Air::Functional> to avoid namespace conflict
+=item definition of table content as a Hash C<%data> of Pairs C<:name[[2D Array],]>
+=item assignment of two functional C<content> tags and their arguments to vars
+=item assignment of a functional C<external> tag with attrs to a var
+
+=head3 Theme
+
+=begin code :lang<raku>
+my &index = &page.assuming(
+    title       => 'hÅrc',
+    description => 'HTMX, Air, Raku, Cro',
+    nav         => nav(
+        logo    => safe('<a href="/">h<b>&Aring;</b>rc</a>'),
+        items   => [:$Content1, :$Content2, :$Google],
+        widgets => [lightdark],
+    ),
+    footer      => footer p ['Aloft on ', b 'Åir'],
+);
+=end code
+
+Key features shown are:
+=item definition of C<index> functional tag as a modified C<page> tag from Air::Base
+=item use of C<.assuming> for functional code composition
+=item use of => arrow Pair syntax to set a custom page theme with title, description, nav, footer
+=item note that the theme is implemented as a custom C<page> ... C<index> is set up as the template page
+=item use of C<nav> functional tag and passing it attrs of the C<NavItems> defined
+=item use of C<:$Content1> Pair syntax to pass in both nav link text (ie the var name as key) and value
+=item Nav routes are automagically generated and HTMX attrs are used to swap in the content inners
+=item use of C<safe> functional tag to suppress HTML escape
+=item use of C<lightdark> widget to toggle theme according to system and user preference
+
+=head3 Site
+
+=begin code :lang<raku>
+sub SITE is export {
+    site
+        index
+            main $Content1
+}
+=end code
+
+Key features shown are:
+=item use of C<site> functional tag - that sets up the site Cro routes and Pico SASS theme
+=item C<site> takes the C<index> page as positional argument
+=item C<index> takes a C<main> functional tag as positional argument
+=item C<main> takes the initial content
 
 =head1 DESCRIPTION
 
-Key features of the module are:
-=item HTML tags are implemented as raku functions: C<div, h1, p> and so on
-=item parens C<()> are optional in raku function calls
-=item HTML tag attributes are passed as raku named arguments
-=item HTML tag inners (e.g. the Str in C<h1>) are passed as raku positional arguments
-=item the raku Pair syntax is used for each attribute i.e. C<:name<value>>
-=item multiple C<@inners> are passed as a literal Array C<[]> – div contains h1 and p
-=item the raku parser looks at functions from the inside out, so C<strong> is evaluated before C<p>, before C<div> and so on
-=item semicolon C<;> is used as the Array literal separator to suppress nesting of tags
-
-Normally the items in a raku literal Array are comma C<,> separated. Raku precedence considers that C<div [h1 x, p y];> is equivalent to C<div( h1(x, p(y) ) );> … so the p tag is embedded within the h1 tag unless parens are used to clarify. But replace the comma C<,> with a semi colon C<;> and predisposition to nest is reversed. So C<div [h1 x; p y];> is equivalent to C<div( h1(x), p(y) )>. Boy that Larry Wall was smart!
-
-The raku example also shows the power of the raku B<Q-lang> at work:
-
-=item double quotes C<""> interpolate their contents
-=item curlies denote an embedded code block C<"{fn x}">
-=item tilde C<~> is for Str concatenation
-=item the heredoc form C<q:to/END/;> can be used for verbatim text blocks
-
-This module generally returns C<Str> values to be string concatenated and included in an HTML content/text response.
-
-It also defines a programmatic API for the use of HTML tags for raku functional coding and so is offered as a basis for sister modules that preserve the API, but have a different technical implementation such as a MemoizedDOM.
-
+Each feature of Air::Base is set out below:
 =end pod
 
 use Air::Functional;
@@ -77,23 +137,27 @@ use Air::Component;
 
 my @functions = <Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Safe>;
 
-##### Tagged Role #####
-
-#| The Tagged Role provides an HTML method so that the consuming class behaves like a standard HTML tag that
-#| can be provided with inner and attr attributes
-
 enum TagType is export <Singular Regular>;
 subset Attr of Str;
 
-role Tagged[TagType $tag-type] does Tag is export {
+=head2 role Tagged[Singular|Regular] does Tag
+
+#| consuming class behaves like a standard HTML tag from Air::Functional
+role Tagged[TagType $tag-type] does Tag {
     has Str     $.name = ::?CLASS.^name.lc;
+
+    #| can be provided with attrs
     has Attr()  %.attrs is rw;   #coercion accepts multi-valued attrs with spaces
+
+    #| can be provided with inners
     has         @.inners;
 
+    #| ok to call .new with @inners as Positional
     multi method new(*@inners, *%attrs) {
         self.bless:  :@inners, :%attrs
     }
 
+    #| provides default .HTML method used by tag render
     multi method HTML {
         samewith $tag-type
     }
@@ -105,28 +169,37 @@ role Tagged[TagType $tag-type] does Tag is export {
     }
 }
 
-##### Basic Tags #####
+=head2 Basic Tags
+
+=para A subset of Air::Functional basic HTML tags, provided as roles, that are slightly adjusted by Air::Base to provide a convenient set of elements for the Page Tags.
 
 class Nav  { ... }
 class Page { ... }
 
+=head3 role Safe   does Tagged[Regular] {...}
+
 role Safe   does Tagged[Regular]  {
-    #| Shun html escape even though inner is Str
-    #| No opener, closer required
+    #| avoids HTML escape
     multi method HTML {
         @.inners.join
     }
 }
+
+=head3 role Script does Tagged[Regular] {...}
+
 role Script does Tagged[Regular]  {
-    # Shun html escape even though inner is Str
+    #| no html escape
     multi method HTML {
         opener($.name, |%.attrs) ~
         (@.inners.first// '')    ~
         closer($.name)           ~ "\n"
     }
 }
+
+=head3 role Style  does Tagged[Regular] {...}
+
 role Style  does Tagged[Regular]  {
-    # Shun html escape even though inner is Str
+    #| no html escape
     multi method HTML {
         opener($.name, |%.attrs)  ~
         @.inners.first            ~
@@ -134,9 +207,19 @@ role Style  does Tagged[Regular]  {
     }
 }
 
+=head3 role Meta   does Tagged[Singular] {}
+
 role Meta   does Tagged[Singular] {}
+
+=head3 role Title  does Tagged[Regular]  {}
+
 role Title  does Tagged[Regular]  {}
+
+=head3 role Link  does Tagged[Regular]  {}
+
 role Link   does Tagged[Singular] {}
+
+=head3 role A      does Tagged[Regular] {...}
 
 role A      does Tagged[Regular]  {
     multi method HTML {
@@ -145,9 +228,16 @@ role A      does Tagged[Regular]  {
     }
 }
 
+=head2 Page Tags
+
+=para A subset of Air::Functional basic HTML tags, provided as roles, that are slightly adjusted by Air::Base to provide a convenient and opinionated set of defaults for C<html>, C<head>, C<body>, C<header>, C<nav>, C<main> & C<footer>. Several of the page tags offer shortcut attrs that are populated up the DOM immediately prior to first use.
+
+=head3 role Head   does Tagged[Regular] {...}
+
 role Head   does Tagged[Regular]  {
 
-    # Singleton pattern (ie. same Head for all pages)
+    =para Singleton pattern (ie. same Head for all pages)
+
     my Head $instance;
     multi method new {note "Please use Head.instance rather than Head.new!\n"; self.instance}
     submethod instance {
@@ -158,13 +248,20 @@ role Head   does Tagged[Regular]  {
         $instance;
     }
 
+    #| title
     has Title  $.title is rw;
+    #| description
     has Meta   $.description is rw;
+    #| metas
     has Meta   @.metas;
+    #| scripts
     has Script @.scripts;
+    #| links
     has Link   @.links;
+    #| style
     has Style  $.style is rw;
 
+    #| set up common defaults (called on instantiation)
     method defaults {
         self.metas.append: Meta.new: :charset<utf-8>;
         self.metas.append: Meta.new: :name<viewport>, :content<width=device-width, initial-scale=1>;
@@ -174,6 +271,7 @@ role Head   does Tagged[Regular]  {
                 :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>;
     }
 
+    #| .HTML method calls .HTML on all attrs
     multi method HTML {
         opener($.name, |%.attrs)                    ~
         "{ .HTML with $!title          }" ~
@@ -186,8 +284,12 @@ role Head   does Tagged[Regular]  {
     }
 }
 
+=head3 role Header does Tagged[Regular] {...}
+
 role Header does Tagged[Regular]  {
+    #| nav
     has Nav  $.nav is rw;
+    #| tagline
     has Safe $.tagline;
 
     multi method HTML {
@@ -197,12 +299,18 @@ role Header does Tagged[Regular]  {
         do-regular-tag( $.name, @inners, |%attrs )
     }
 }
+
+=head3 role Main   does Tagged[Regular] {...}
+
 role Main   does Tagged[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
+
+=head3 role Footer does Tagged[Regular] {...}
+
 role Footer does Tagged[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
@@ -210,9 +318,14 @@ role Footer does Tagged[Regular]  {
     }
 }
 
+=head 3 role Body   does Tagged[Regular] {...}
+
 role Body   does Tagged[Regular]  {
+    #| header
     has Header $.header is rw .= new;
+    #| main
     has Main   $.main   is rw .= new;
+    #| footer
     has Footer $.footer is rw .= new;
 
     multi method HTML {
@@ -224,13 +337,19 @@ role Body   does Tagged[Regular]  {
     }
 }
 
+=head3 role Html   does Tagged[Regular] {...}
+
 role Html   does Tagged[Regular]  {
     my $loaded = 0;
 
+    #| head
     has Head $.head .= instance;
+    #| body
     has Body $.body is rw .= new;
 
+    #| default :lang<en>
     has Attr %.lang is rw = :lang<en>;
+    #| default :data-theme<dark>
     has Attr %.mode is rw = :data-theme<dark>;
 
     method defaults {
@@ -247,10 +366,15 @@ role Html   does Tagged[Regular]  {
     }
 }
 
-##### Widgets #####
+=head2 Widgets
+
+=para Active tags that can be used eg in Nav, typically load in some JS behaviours
+
+=head3 role LightDark does Tagged[Regular] {...}
 
 role LightDark does Tagged[Regular] {
-    has $.show = 'icon';
+    #| <icon buttons>
+    has Str $.show = 'icon';
 
     multi method HTML {
         given self.show {
@@ -366,25 +490,42 @@ subset Widget  of Any  where * ~~ LightDark;
 #role Theme {...}
 #role Form  {...}
 
-##### Semantic Tags #####
+=head2 Semantic Tags
+
+=para These are re-published with minor adjustments and align with Pico CSS semantic tags
+
+=head3 role Content   does Tagged[Regular] {...}
 
 role Content   does Tagged[Regular] {
     multi method HTML {
-#        div :id<content>, @.inners
-
         my %attrs  = |%.attrs, :id<content>;
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
+
+=head3 role Section   does Tagged[Regular] {}
+
 role Section   does Tagged[Regular] {}
+
+=head3 role Article   does Tagged[Regular] {}
+
 role Article   does Tagged[Regular] {}
+
+=head3 role Article   does Tagged[Regular] {}
+
 role Aside     does Tagged[Regular] {}
+
+=head3 role Time      does Tagged[Regular] {...}
+
+=para In HTML the time tag is typically of the form E<lt> time datetime="2025-03-13" E<gt> 13 March, 2025 E<lt> /time E<gt> . In Air you can just go time(:datetime E<lt> 2025-02-27 E<gt> ); and raku will auto format and fill out the inner human readable text.
 
 role Time      does Tagged[Regular] {
     use DateTime::Format;
 
     multi method HTML {
         my $dt = DateTime.new(%.attrs<datetime>);
+
+        =para optionally specify mode => [time | datetime], mode => date is default
 
         sub inner {
             given %.attrs<mode> {
@@ -398,7 +539,13 @@ role Time      does Tagged[Regular] {
     }
 }
 
-##### Site Tags #####
+=head2 Site Tags
+
+=para These are the central elements of Air::Base
+
+=para First we set up the NavItems = Internal | External | Content | Page
+
+=head3 role External  does Tagged[Regular] {...}
 
 role External  does Tagged[Regular] {
     has Str $.label is rw = '';
@@ -409,6 +556,9 @@ role External  does Tagged[Regular] {
         do-regular-tag( 'a', [$.label], |%attrs )
     }
 }
+
+=head3 role Internal  does Tagged[Regular] {...}
+
 role Internal  does Tagged[Regular] {
     has Str $.label is rw = '';
 
@@ -418,10 +568,14 @@ role Internal  does Tagged[Regular] {
 }
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
+#| Nav is specified as a class since it does Component, also does Tag
 class Nav  does Component does Tag {
     has Str     $.hx-target = '#content';
+    #| logo
     has Safe    $.logo;
+    #| NavItems
     has NavItem @.items;
+    #| Widgets
     has Widget  @.widgets;
 
     multi method new(*@items, *%h) {
@@ -459,6 +613,7 @@ class Nav  does Component does Tag {
         }
     }
 
+    #| applies Style and Script for Hamburger reactive menu
     multi method HTML {
         self.style.HTML ~ (
 
@@ -549,6 +704,7 @@ class Nav  does Component does Tag {
     }
 }
 
+#| Page is specified as a class since it does Component iamerejh
 class Page does Component {
     has $.loaded is rw = 0;
     has Int     $.REFRESH;    #auto refresh every n secs in dev't
