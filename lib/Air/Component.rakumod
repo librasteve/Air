@@ -2,78 +2,173 @@
 
 =head1 Air::Component
 
-When writing component
-
-=item custom multi method HTML inners must be explicitly rendered with .HTML or wrapped in a tag eg. C<div> since being passed as inner will call C<trender> which will, in turn, call C<.HTML>
-
-
-
-
 This raku module is one of the core libraries of the raku B<Air> module.
 
-It exports HTML tags as raku subs that can be composed as functional code within a raku program.
-
-It replaces the HTML::Functional module by the same author.
+It is a scaffold to build dynamic, reusable web components.
 
 
 =head1 SYNOPSIS
 
-Here's a regular HTML page:
-
-=begin code :lang<html>
-<div class="jumbotron">
-  <h1>Welcome to Dunder Mifflin!</h1>
-  <p>
-    Dunder Mifflin Inc. (stock symbol <strong>DMI</strong>) is
-    a micro-cap regional paper and office supply distributor with
-    an emphasis on servicing small-business clients.
-  </p>
-</div>
-=end code
-
-And here is the same page using Air::Functional:
+First, import the Air core libraries.
 
 =begin code :lang<raku>
-use Air::Functional;
-
-div :class<jumbotron>, [
-    h1 "Welcome to Dunder Mifflin!";
-    p  [
-        "Dunder Mifflin Inc. (stock symbol "; strong 'DMI'; ") ";
-        q:to/END/;
-            is a micro-cap regional paper and office
-            supply distributor with an emphasis on servicing
-            small-business clients.
-        END
-    ];
-];
+use Air::Functional :BASE;      # import all HTML tags as raku subs
+use Air::Base;					# import Base components (site, page, nav...)
+use Air::Component;
 =end code
 
+=head2 role HxTodo
 
-=head1 DESCRIPTION
+Predeclares some custom HTMX actions. This declutters C<class Todo> and C<class Frame>.
 
-Key features of the module are:
-=item HTML tags are implemented as raku functions: C<div, h1, p> and so on
-=item parens C<()> are optional in raku function calls
-=item HTML tag attributes are passed as raku named arguments
-=item HTML tag inners (e.g. the Str in C<h1>) are passed as raku positional arguments
-=item the raku Pair syntax is used for each attribute i.e. C<:name<value>>
-=item multiple C<@inners> are passed as a literal Array C<[]> – div contains h1 and p
-=item the raku parser looks at functions from the inside out, so C<strong> is evaluated before C<p>, before C<div> and so on
-=item semicolon C<;> is used as the Array literal separator to suppress nesting of tags
+=begin code :lang<raku>
+role HxTodo {
+    method hx-toggle(--> Hash()) {
+        :hx-get("$.url/$.id/toggle"),
+        :hx-target<closest tr>,
+        :hx-swap<outerHTML>,
+    }
+    method hx-create(--> Hash()) {
+        :hx-post("$.url"),
+        :hx-target<table>,
+        :hx-swap<beforeend>,
+        :hx-on:htmx:after-request<this.reset()>,
+    }
+    method hx-delete(--> Hash()) {
+        :hx-delete("$.url/$.id"),
+        :hx-confirm<Are you sure?>,
+        :hx-target<closest tr>,
+        :hx-swap<delete>,
+    }
+}
+=end code
 
-Normally the items in a raku literal Array are comma C<,> separated. Raku precedence considers that C<div [h1 x, p y];> is equivalent to C<div( h1(x, p(y) ) );> … so the p tag is embedded within the h1 tag unless parens are used to clarify. But replace the comma C<,> with a semi colon C<;> and predisposition to nest is reversed. So C<div [h1 x; p y];> is equivalent to C<div( h1(x), p(y) )>. Boy that Larry Wall was smart!
+Key features of C<role HxTodo> are:
+=item uses a standard raku C<role> for code separation
+=item method names C<hx-toggle> are chosen to echo standard HTMX attributes such as C<hx-get>
+=item attributes C<$.url> and C<.id> are provided by C<role Component>
+=item return values are coerced to a raku C<Hash> containing HTMX attrs
 
-The raku example also shows the power of the raku B<Q-lang> at work:
+=head2 class Todo
 
-=item double quotes C<""> interpolate their contents
-=item curlies denote an embedded code block C<"{fn x}">
-=item tilde C<~> is for Str concatenation
-=item the heredoc form C<q:to/END/;> can be used for verbatim text blocks
+The core of our synopsis. It C<does role Component> to bring in the scaffolding.
 
-This module generally returns C<Str> values to be string concatenated and included in an HTML content/text response.
+The general idea is that a raku class implements a web Component, multiple instances of the Component are represented by objects of the class and the methods of the class represent actions that can be performed on the Component in the browser.
 
-It also defines a programmatic API for the use of HTML tags for raku functional coding and so is offered as a basis for sister modules that preserve the API, but have a different technical implementation such as a MemoizedDOM.
+=begin code :lang<raku>
+class Todo does Component {
+    also does HxTodo;
+
+    has Bool $.checked is rw = False;
+    has Str  $.text;
+
+    method toggle is routable {
+        $!checked = !$!checked;
+        respond self;
+    }
+
+    multi method HTML {
+        tr
+            td(input :type<checkbox>, :$!checked, |$.hx-toggle),
+            td($!checked ?? del $!text !! $!text),
+            td(button :type<submit>, :style<width:50px>, |$.hx-delete, '-'),
+    }
+}
+=end code
+
+Key features of C<class Todo> are:
+=item Todo objects have state C<$.checked> and C<$.text>
+=item C<method toggle> takes the trait C<is routable>
+=item C<method toggle> adjusts the state and ends with the C<respond> sub (which calls C<.HTML>)
+=item C<class Todo> provides a C<multi method HTML>
+=item C<method HTML> uses functional HTML tags and brings in HxTodo actions
+
+The result is a concise, legible and easy-to-maintain component implementation.
+
+=head2 class Frame
+
+Provides a frame our Todo components and a form to add new ones.
+
+=begin code :lang<raku>
+class Frame does Tag {
+    also does HxTodo;
+
+    has Todo @.todos;
+    has $.url = "todo";
+
+    multi method HTML {
+        div [
+            h3 'Todos';
+            table @!todos;
+            form  |$.hx-create, [
+                input  :name<text>;
+                button :type<submit>, '+';
+            ];
+        ]
+    }
+}
+=end code
+
+Key features of C<class Frame> are:
+=item C<does Tag> to suppress HTML escape
+=item maintains our C<@.todos> list state
+=item uses functional tags to make HTML
+=item C<multi method HTML> is called when rendered
+
+=head2 sub SITE
+
+Finally, we can export a webite as follows:
+
+=begin code :lang<raku>
+my &index = &page.assuming(
+        title       => 'hÅrc',
+        description => 'HTMX, Air, Raku, Cro',
+        footer      => footer p ['Aloft on ', b 'Åir'],
+    );
+
+my @todos = do for <one two> -> $text { Todo.new: :$text };
+
+sub SITE is export {
+    site :components(@todos), #:theme-color<azure>,
+        index
+            main
+                Frame.new: :@todos;
+}
+=end code
+
+Key features of C<sub SITE> are:
+=item1 we make our own function C<&index> that
+=item2 (i) uses C<.assuming> to preset some attributes (title, description, footer) and
+=item2 (ii) then calls the C<page> function provided by Air::Base
+=item1 we set up our list of Todo components calling C<Todo.new>
+=item1 we use the Air::Base C<site> function to make our website
+=item1 the call chain C<site(index(main(Frame.new: :@todos;)))> then makes our website
+=item1 C<site> is passed C<:components(@todos)> to make the component cro routes
+=item1 C<site> may optionally be passed theme settings also
+
+
+=head2 Run Cro service.raku
+
+Component automagically creates some cro routes for Todo when we start our website...
+=begin code
+> raku -Ilib service.raku
+theme-color=azure
+bold-color=red
+adding GET todo/<id>
+adding POST todo
+adding DELETE todo/<id>
+adding PUT todo/<id>
+adding GET todo/<id>/toggle
+Listening at http://0.0.0.0:3000
+=end code
+
+---
+
+=head1 TIPS & TRICKS
+
+When writing components:
+
+=item custom multi method HTML inners must be explicitly rendered with .HTML or wrapped in a tag eg. C<div> since being passed as inner will call C<trender> which will, in turn, call C<.HTML>
 
 =end pod
 
@@ -92,14 +187,25 @@ multi trait_mod:<is>(Method $m, :$routable!, :$name = $m.name) is export {
 
 use Cro::HTTP::Router;
 
+
+=head2 role Component
+
 role Component {
-	# ID, Holder & URL Setup
 	my  UInt $next = 1;
+
+	#| assigns and tracks instance ids
 	has UInt $.id;   # fixme hash of ids by type
+
+	#| optional attr to specify url base
 	has Str  $.base = '';
 
 	my %holder;
-	method holder { %holder }
+	#| populates an instance holder [class method],
+	#| may be overridden for external instance holder
+	method holder(--> Hash) { %holder }
+
+	#| get all instances in holder
+	method all { self.holder.keys.sort.map: { $.holder{$_} } }
 
 	submethod TWEAK {
 		$!id //= $next++;
@@ -107,19 +213,25 @@ role Component {
 		self.?make-routes;
 	}
 
-	method url-part { ::?CLASS.^name.subst('::','-').lc }
-	method url { do with self.base { "$_/" } ~ self.url-part }
+	#| get url part
+	method url-part(-->Str) { ::?CLASS.^name.subst('::','-').lc }
+	#| get url (ie base/part)
+	method url(--> Str) { do with self.base { "$_/" } ~ self.url-part }
 
-	# Default Actions
+	#| Default load action (called on GET) - may be overridden
 	method LOAD($id)      { self.holder{$id} }
+
+	#| Default create action (called on POST) - may be overridden
 	method CREATE(*%data) { ::?CLASS.new: |%data }
+
+	#| Default delete action (called on DELETE) - may be overridden
 	method DELETE         { self.holder{$!id}:delete }
+
+	#| Default update action (called on PUT) - may be overridden
 	method UPDATE(*%data) { self.data = |self.data, |%data }
-	method all { self.holder.keys.sort.map: { $.holder{$_} } }
 
-
-	# Method Routes
 	::?CLASS.HOW does my role ExportMethod {
+		#| Meta Method ^add-routes typically called from Air::Base::Site in a Cro route block
 		method add-routes(
 			$component is copy,
 			:$url-part = $component.url-part;
@@ -183,12 +295,11 @@ role Component {
 	}
 }
 
+#| calls Cro: content 'text/html', $comp.HTML
 multi sub respond(Any $comp) is export {
 	content 'text/html', $comp.HTML
 }
+#| calls Cro: content 'text/html', $html
 multi sub respond(Str $html) is export {
 	content 'text/html', $html
 }
-
-
-
