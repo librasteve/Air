@@ -1,4 +1,5 @@
 [![Actions Status](https://github.com/librasteve/Air/actions/workflows/test.yml/badge.svg)](https://github.com/librasteve/Air/actions)
+![SparrowCI](https://ci.sparrowhub.io/project/gh-melezhik-sparky/badge)
 
 ### WORK IN PROGRESS ###
 
