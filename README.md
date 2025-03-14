@@ -1,4 +1,5 @@
 [![Actions Status](https://github.com/librasteve/Air/actions/workflows/test.yml/badge.svg)](https://github.com/librasteve/Air/actions)
+![Sparky](https://sparky.sparrowhub.io/badge/librasteve-Air?foo=bar)
 
 
 ### WORK IN PROGRESS ###
