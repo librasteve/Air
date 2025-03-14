@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.6  2025-03-14T16:44:09Z
+    - docs & test
+
 0.0.5  2025-03-12T21:29:08Z
     - Air::Play Site examples x09
 
