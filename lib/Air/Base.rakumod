@@ -429,7 +429,7 @@ role Time      does Tagged[Regular] {
 =head3 role LightDark does Tagged[Regular] {...}
 
 role LightDark does Tagged[Regular] {
-    #| <icon buttons>
+    #| set to icon(default) or buttons
     has Str $.show = 'icon';
 
     multi method HTML {

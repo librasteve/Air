@@ -351,7 +351,7 @@ Active tags that can be used eg in Nav, typically load in some JS behaviours
 
 ### has Str $.show
 
-<icon buttons>
+set to icon(default) or buttons
 
 Site Tags
 ---------
