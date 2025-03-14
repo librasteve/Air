@@ -2,7 +2,7 @@
 
 ### WORK IN PROGRESS ###
 
-Please do raise an Issue if you would like to feedback or assist.
+Please raise an Issue if you would like to feedback or assist.
 
 Air
 ===
