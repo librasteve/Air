@@ -364,3 +364,18 @@ multi sub respond(Any $comp) is export {
 multi sub respond(Str $html) is export {
 	content 'text/html', $html
 }
+
+=begin pod
+=head1 AUTHOR
+
+Steve Roe <librasteve@furnival.net>
+
+The `Air::Component` module provided is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
+
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright(c) 2025 Henley Cloud Consulting Ltd.
+
+This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
+=end pod

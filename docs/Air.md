@@ -95,10 +95,7 @@ TIPS & TRICKS
 
   * An error message like *insufficient arguments* is often caused by separating two tag functions with a comma `,` instead of a semicolon `;`
 
-otem
-====
-
-In development set CRO_DEV=1 in the [environment](https://cro.services/docs/reference/cro-webapp-template#Template_auto-reload)
+  * In development set CRO_DEV=1 in the [environment](https://cro.services/docs/reference/cro-webapp-template#Template_auto-reload)
 
 AUTHOR
 ======
@@ -110,7 +107,7 @@ The `Air::Component` module provided is based on an early version of the raku `C
 COPYRIGHT AND LICENSE
 =====================
 
-Copyright 2025 Steve Roe
+Copyright(c) 2025 Henley Cloud Consulting Ltd.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 

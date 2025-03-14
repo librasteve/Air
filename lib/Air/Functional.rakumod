@@ -230,11 +230,10 @@ our sub import(*@names) {
 
 Steve Roe <librasteve@furnival.net>
 
-The `Air::Component` module provided is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2025 Steve Roe
+Copyright(c) 2025 Henley Cloud Consulting Ltd.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 =end pod

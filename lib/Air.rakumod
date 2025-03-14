@@ -92,12 +92,13 @@ B<L<Air::Play|https://raku.land/zef:librasteve/Air::Play>> is a companion raku m
 
 The Air documentation is at L<https://librasteve.github.io/Air>
 
+
 =head1 TIPS & TRICKS
 
 =item When debugging, use the raku C<note> sub to out put debuggin info to stderr (ie in the Cro Log stream)
 =item When passing a 2D Array to a tag function, make sure that there is a trailing comma C<:tbody[["Mercury",  "4,880", "0.39",  "88"],]>
 =item An error message like I<insufficient arguments> is often caused by separating two tag functions with a comma C<,> instead of a semicolon C<;>
-=otem In development set CRO_DEV=1 in the L<environment|https://cro.services/docs/reference/cro-webapp-template#Template_auto-reload>
+=item In development set CRO_DEV=1 in the L<environment|https://cro.services/docs/reference/cro-webapp-template#Template_auto-reload>
 
 
 =head1 AUTHOR
@@ -106,12 +107,10 @@ Steve Roe <librasteve@furnival.net>
 
 The `Air::Component` module provided is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
 
+
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2025 Steve Roe
+Copyright(c) 2025 Henley Cloud Consulting Ltd.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
-
 =end pod
-
-
