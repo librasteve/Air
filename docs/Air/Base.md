@@ -347,7 +347,7 @@ Widgets
 
 Active tags that can be used eg in Nav, typically load in some JS behaviours
 
-### role LightDark does Tagged[Regular] {..
+### role LightDark does Tagged[Regular] {...}
 
 ### has Str $.show
 

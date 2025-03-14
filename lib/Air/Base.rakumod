@@ -426,7 +426,7 @@ role Time      does Tagged[Regular] {
 
 =para Active tags that can be used eg in Nav, typically load in some JS behaviours
 
-=head3 role LightDark does Tagged[Regular] {..
+=head3 role LightDark does Tagged[Regular] {...}
 
 role LightDark does Tagged[Regular] {
     #| <icon buttons>
