@@ -11,7 +11,7 @@ Air
 
 Breathing life into the raku **HARC stack** (HTMX, Air, Red, Cro).
 
-**Air** aims to be the purest possible expression of the power of [HTMX](https://htmx.org).
+**Air** aims to be the purest possible expression of [HTMX](https://htmx.org).
 
 **HARC** websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site, rather than boilerplate markup that can often obscure the intention.
 

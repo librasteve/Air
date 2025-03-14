@@ -8,7 +8,7 @@ unit module Air;
 
 Breathing life into the raku B<HARC stack> (HTMX, Air, Red, Cro).
 
-B<Air> aims to be the purest possible expression of the power of L<HTMX|https://htmx.org>.
+B<Air> aims to be the purest possible expression of L<HTMX|https://htmx.org>.
 
 B<HARC> websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site,
 rather than boilerplate markup that can often obscure the intention.
