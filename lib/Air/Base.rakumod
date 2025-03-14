@@ -85,7 +85,9 @@ Key features shown are:
 =item assignment of two functional C<content> tags and their arguments to vars
 =item assignment of a functional C<external> tag with attrs to a var
 
-=head3 Theme
+=head3 Page
+
+=para The template of an Air website (header, nav, logo, footer) is applied by making a custom C<page> ... here C<index> is set up as the template page. In this SPA example navlinks dynamically update the same page content via HTMX, so index is only used once, but in general multiple instances of the template page can be cookie cuttered. Any number of page template can be set up in this way and can reuse custom Components.
 
 =begin code :lang<raku>
 my &index = &page.assuming(
@@ -101,10 +103,9 @@ my &index = &page.assuming(
 =end code
 
 Key features shown are:
-=item definition of C<index> functional tag as a modified C<page> tag from Air::Base
+=item set the C<index> functional tag as a modified Air::Base C<page> tag
 =item use of C<.assuming> for functional code composition
 =item use of => arrow Pair syntax to set a custom page theme with title, description, nav, footer
-=item note that the theme is implemented as a custom C<page> ... C<index> is set up as the template page
 =item use of C<nav> functional tag and passing it attrs of the C<NavItems> defined
 =item use of C<:$Content1> Pair syntax to pass in both nav link text (ie the var name as key) and value
 =item Nav routes are automagically generated and HTMX attrs are used to swap in the content inners
@@ -131,6 +132,10 @@ Key features shown are:
 
 Each feature of Air::Base is set out below:
 =end pod
+
+# TODO items
+#role Theme {...}
+#role Form  {...}
 
 use Air::Functional;
 use Air::Component;
@@ -366,11 +371,62 @@ role Html   does Tagged[Regular]  {
     }
 }
 
+
+=head2 Semantic Tags
+
+=para These are re-published with minor adjustments and align with Pico CSS semantic tags
+
+=head3 role Content   does Tagged[Regular] {...}
+
+role Content   does Tagged[Regular] {
+    multi method HTML {
+        my %attrs  = |%.attrs, :id<content>;
+        do-regular-tag( $.name, @.inners, |%attrs )
+    }
+}
+
+=head3 role Section   does Tagged[Regular] {}
+
+role Section   does Tagged[Regular] {}
+
+=head3 role Article   does Tagged[Regular] {}
+
+role Article   does Tagged[Regular] {}
+
+=head3 role Article   does Tagged[Regular] {}
+
+role Aside     does Tagged[Regular] {}
+
+=head3 role Time      does Tagged[Regular] {...}
+
+=para In HTML the time tag is typically of the form E<lt> time datetime="2025-03-13" E<gt> 13 March, 2025 E<lt> /time E<gt> . In Air you can just go time(:datetime E<lt> 2025-02-27 E<gt> ); and raku will auto format and fill out the inner human readable text.
+
+role Time      does Tagged[Regular] {
+    use DateTime::Format;
+
+    multi method HTML {
+        my $dt = DateTime.new(%.attrs<datetime>);
+
+        =para optionally specify mode => [time | datetime], mode => date is default
+
+        sub inner {
+            given %.attrs<mode> {
+                when     'time' { strftime('%l:%M%P', $dt) }
+                when 'datetime' { strftime('%l:%M%P on %B %d, %Y', $dt) }
+                default         { strftime('%B %d, %Y', $dt) }
+            }
+        }
+
+        do-regular-tag( $.name, [inner], |%.attrs )
+    }
+}
+
+
 =head2 Widgets
 
 =para Active tags that can be used eg in Nav, typically load in some JS behaviours
 
-=head3 role LightDark does Tagged[Regular] {...}
+=head3 role LightDark does Tagged[Regular] {..
 
 role LightDark does Tagged[Regular] {
     #| <icon buttons>
@@ -486,59 +542,6 @@ role LightDark does Tagged[Regular] {
 }
 subset Widget  of Any  where * ~~ LightDark;
 
-# TODO Roles?
-#role Theme {...}
-#role Form  {...}
-
-=head2 Semantic Tags
-
-=para These are re-published with minor adjustments and align with Pico CSS semantic tags
-
-=head3 role Content   does Tagged[Regular] {...}
-
-role Content   does Tagged[Regular] {
-    multi method HTML {
-        my %attrs  = |%.attrs, :id<content>;
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
-
-=head3 role Section   does Tagged[Regular] {}
-
-role Section   does Tagged[Regular] {}
-
-=head3 role Article   does Tagged[Regular] {}
-
-role Article   does Tagged[Regular] {}
-
-=head3 role Article   does Tagged[Regular] {}
-
-role Aside     does Tagged[Regular] {}
-
-=head3 role Time      does Tagged[Regular] {...}
-
-=para In HTML the time tag is typically of the form E<lt> time datetime="2025-03-13" E<gt> 13 March, 2025 E<lt> /time E<gt> . In Air you can just go time(:datetime E<lt> 2025-02-27 E<gt> ); and raku will auto format and fill out the inner human readable text.
-
-role Time      does Tagged[Regular] {
-    use DateTime::Format;
-
-    multi method HTML {
-        my $dt = DateTime.new(%.attrs<datetime>);
-
-        =para optionally specify mode => [time | datetime], mode => date is default
-
-        sub inner {
-            given %.attrs<mode> {
-                when     'time' { strftime('%l:%M%P', $dt) }
-                when 'datetime' { strftime('%l:%M%P on %B %d, %Y', $dt) }
-                default         { strftime('%B %d, %Y', $dt) }
-            }
-        }
-
-        do-regular-tag( $.name, [inner], |%.attrs )
-    }
-}
-
 =head2 Site Tags
 
 =para These are the central elements of Air::Base
@@ -568,7 +571,9 @@ role Internal  does Tagged[Regular] {
 }
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-#| Nav is specified as a class since it does Component, also does Tag
+#| Nav does Component in order to support
+#| multiple nav instances with distinct NavItem and Widget attributes.
+#| Also does Tag so that nav tags can be placed anywhere on a page.
 class Nav  does Component does Tag {
     has Str     $.hx-target = '#content';
     #| logo
@@ -582,6 +587,7 @@ class Nav  does Component does Tag {
         self.bless:  :@items, |%h;
     }
 
+    #| makes routes for Content NavItems (SPA links that use HTMX), must be called from within a Cro route block
     method make-routes() {
         unless self.^methods.grep: * ~~ IsRoutable {
             for self.items.map: *.kv -> ($name, $target) {
@@ -596,6 +602,7 @@ class Nav  does Component does Tag {
         }
     }
 
+    #| renders NavItems [subset NavItem of Pair where .value ~~ Internal | External | Content | Page;]
     method nav-items {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
@@ -704,22 +711,36 @@ class Nav  does Component does Tag {
     }
 }
 
-#| Page is specified as a class since it does Component iamerejh
+#| Page does Component in order to support
+#| multiple page instances with distinct content and attributes.
 class Page does Component {
     has $.loaded is rw = 0;
-    has Int     $.REFRESH;    #auto refresh every n secs in dev't
 
+    #| auto refresh browser every n secs in dev't
+    has Int     $.REFRESH;
+
+    =para page implements several shortcuts that are populated up the DOM, for example C<page :title('My Page")> will go C<self.html.head.title = Title.new: $.title with $.title;>
+
+    #| shortcut self.html.head.title
     has Str     $.title;
+    #| shortcut self.html.head.description
     has Str     $.description;
-    has Nav     $.nav is rw;  #\ either or
-    has Header  $.header;     #/ nav wins
+    #| shortcut self.html.body.header.nav -or-
+    has Nav     $.nav is rw;
+    #| shortcut self.html.body.header [nav wins if both attrs set]
+    has Header  $.header;
+    #| shortcut self.html.body.main
     has Main    $.main is rw;
+    #| shortcut self.html.body.footer
     has Footer  $.footer;
 
+    #| set to True with :styled-aside-on to apply self.html.head.style with right hand aside block
     has Bool    $.styled-aside-on = False;
 
+    #| build page DOM by calling Air tags
     has Html    $.html .= new;
 
+    #| set all provided shortcuts on first use
     method defaults {
         unless $.loaded++ {
             self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
@@ -739,16 +760,20 @@ class Page does Component {
         }
     }
 
+    #| .new positional with main only
     multi method new(Main $main, *%h) {
         self.bless: :$main, |%h
     }
+    #| .new positional with main & footer only
     multi method new(Main $main, Footer $footer, *%h) {
         self.bless: :$main, :$footer, |%h
     }
+    #| .new positional with header, main & footer only
     multi method new(Header $header, Main $main, Footer $footer, *%h) {
         self.bless: :$header, :$main, :$footer, |%h
     }
 
+    #| issue page DOM
     multi method HTML {
         self.defaults unless $.loaded;
         '<!doctype html>' ~ $!html.HTML
@@ -793,21 +818,28 @@ class Page does Component {
     }
 }
 
+#| Site is a holder for pages, performs setup
+#| of Cro routes and offers high level controls for style via Pico SASS.
 class Site {
+    #| Page holder
     has Page @.pages;
+    #| index Page [defaults to @!pages[0]
     has Page $.index is rw = @!pages[0];
+    #| Components for route setup; default = [Nav.new]
     has Component @.components = [Nav.new];
 
-    has Bool $.scss = True;  # run sass compiler
+    #| use :!scss to disable SASS compiler run
+    has Bool $.scss = True;
 
-    #| <amber azure blue cyan fuchsia green indigo jade lime orange
-    #| pink pumpkin purple red violet yellow> (pico theme)
+    #| pick from: amber azure blue cyan fuchsia green indigo jade lime orange
+    #| pink pumpkin purple red violet yellow (pico theme)
     has Str  $.theme-color = 'green';
 
-    #| one from <aqua black blue fuchsia gray green lime maroon navy
-    #| olive purple red silver teal white yellow> (basic css)
+    #| pick from:- aqua black blue fuchsia gray green lime maroon navy
+    #| olive purple red silver teal white yellow (basic css)
     has Str  $.bold-color  = 'red';
 
+    #| .new positional with index only
     multi method new(Page $index, *%h) {
         self.bless: :$index, |%h;
     }
@@ -911,16 +943,33 @@ class Site {
     }
 }
 
-##### Element Tags #####
-# viz. https://picocss.com/docs
 
-class Table does Tag {
+=head2 Pico Tags
+
+=para  The Air roadmap is to provide a full set of pre-styled tags as defined in the Pico L<docs|https://picocss.com/docs>. Did we say that Air::Base implements Pico CSS?
+
+=head3 role Table does Tag
+
+role Table does Tag {
+
+    =para Attrs thead, tbody and tfoot can each be a 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for multi-row thead and tfoot.
+
+    =para Table applies col and row header tags as required for Pico styles.
+
+    =para Attrs provided as Pairs via tbody are extracted and applied. This is needed for :id<target> where HTMX is targetting the table body.
+
+    #| default = [] is provided
     has $.tbody = [];
+    #| optional
     has $.thead;
+    #| optional
     has $.tfoot;
+    #| class for table
     has $.class;
+
     has %!tbody-attrs;
 
+    #| .new positional takes tbody [[]]
     multi method new(*@tbody, *%h) {
         self.bless:  :@tbody, |%h;
     }
@@ -955,14 +1004,19 @@ class Table does Tag {
     }
 }
 
-class Grid does Tag {
+=head3 role Table does Tag
+
+role Grid does Tag {
+    #| list of items to populate grid, each item is wrapped in a span tag
     has @.items;
 
+    #| .new positional takes @items
     multi method new(*@items, *%h) {
         self.bless:  :@items, |%h;
     }
 
-    #| optional grid style from https://cssgrid-generator.netlify.app/
+    # optional grid style from https://cssgrid-generator.netlify.app/
+    # todo .... expose some of this as attrs
     method style {
         q:to/END/
 		<style>
@@ -981,17 +1035,14 @@ class Grid does Tag {
         $.style ~
 
         div :class<grid>,
-            do for @!items -> $item {
-                div $item
-            }
-        ;
+            do for @!items { span $_ };
     }
 }
 
 ##### Functions Export #####
 
-#| put in all the @components as functions
-#| viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
+#| put in all the @components as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
+# viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 my package EXPORT::DEFAULT {
 
     for @functions -> $name {

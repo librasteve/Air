@@ -88,7 +88,9 @@ Key features shown are:
 
   * assignment of a functional `external` tag with attrs to a var
 
-### Theme
+### Page
+
+The template of an Air website (header, nav, logo, footer) is applied by making a custom `page` ... here `index` is set up as the template page. In this SPA example navlinks dynamically update the same page content via HTMX, so index is only used once, but in general multiple instances of the template page can be cookie cuttered. Any number of page template can be set up in this way and can reuse custom Components.
 
 ```raku
 my &index = &page.assuming(
@@ -105,13 +107,11 @@ my &index = &page.assuming(
 
 Key features shown are:
 
-  * definition of `index` functional tag as a modified `page` tag from Air::Base
+  * set the `index` functional tag as a modified Air::Base `page` tag
 
   * use of `.assuming` for functional code composition
 
   * use of => arrow Pair syntax to set a custom page theme with title, description, nav, footer
-
-  * note that the theme is implemented as a custom `page` ... `index` is set up as the template page
 
   * use of `nav` functional tag and passing it attrs of the `NavItems` defined
 
@@ -323,17 +323,6 @@ default :lang<en>
 
 default :data-theme<dark>
 
-Widgets
--------
-
-Active tags that can be used eg in Nav, typically load in some JS behaviours
-
-### role LightDark does Tagged[Regular] {...}
-
-### has Str $.show
-
-<icon buttons>
-
 Semantic Tags
 -------------
 
@@ -353,6 +342,17 @@ In HTML the time tag is typically of the form < time datetime="2025-03-13" > 13 
 
 optionally specify mode => [time | datetime], mode => date is default
 
+Widgets
+-------
+
+Active tags that can be used eg in Nav, typically load in some JS behaviours
+
+### role LightDark does Tagged[Regular] {..
+
+### has Str $.show
+
+<icon buttons>
+
 Site Tags
 ---------
 
@@ -367,7 +367,7 @@ First we set up the NavItems = Internal | External | Content | Page
 class Nav
 ---------
 
-Nav is specified as a class since it does Component, also does Tag
+Nav does Component in order to support multiple nav instances with distinct NavItem and Widget attributes. Also does Tag so that nav tags can be placed anywhere on a page.
 
 ### has Safe $.logo
 
@@ -381,6 +381,22 @@ NavItems
 
 Widgets
 
+### method make-routes
+
+```raku
+method make-routes() returns Mu
+```
+
+makes routes for Content NavItems (SPA links that use HTMX), must be called from within a Cro route block
+
+### method nav-items
+
+```raku
+method nav-items() returns Mu
+```
+
+renders NavItems [subset NavItem of Pair where .value ~~ Internal | External | Content | Page;]
+
 ### multi method HTML
 
 ```raku
@@ -392,26 +408,197 @@ applies Style and Script for Hamburger reactive menu
 class Page
 ----------
 
-Page is specified as a class since it does Component iamerejh
+Page does Component in order to support multiple page instances with distinct content and attributes.
+
+### has Int $.REFRESH
+
+auto refresh browser every n secs in dev't
+
+page implements several shortcuts that are populated up the DOM, for example `page :title('My Page")` will go `self.html.head.title = Title.new: $.title with $.title;`
+
+### has Str $.title
+
+shortcut self.html.head.title
+
+### has Str $.description
+
+shortcut self.html.head.description
+
+### has Nav $.nav
+
+shortcut self.html.body.header.nav -or-
+
+### has Header $.header
+
+shortcut self.html.body.header [nav wins if both attrs set]
+
+### has Main $.main
+
+shortcut self.html.body.main
+
+### has Footer $.footer
+
+shortcut self.html.body.footer
+
+### has Bool $.styled-aside-on
+
+set to True with :styled-aside-on to apply self.html.head.style with right hand aside block
+
+### has Html $.html
+
+build page DOM by calling Air tags
+
+### method defaults
+
+```raku
+method defaults() returns Mu
+```
+
+set all provided shortcuts on first use
+
+### multi method new
+
+```raku
+multi method new(
+    Main $main,
+    *%h
+) returns Mu
+```
+
+.new positional with main only
+
+### multi method new
+
+```raku
+multi method new(
+    Main $main,
+    Footer $footer,
+    *%h
+) returns Mu
+```
+
+.new positional with main & footer only
+
+### multi method new
+
+```raku
+multi method new(
+    Header $header,
+    Main $main,
+    Footer $footer,
+    *%h
+) returns Mu
+```
+
+.new positional with header, main & footer only
+
+### multi method HTML
+
+```raku
+multi method HTML() returns Mu
+```
+
+issue page DOM
+
+class Site
+----------
+
+Site is a holder for pages, performs setup of Cro routes and offers high level controls for style via Pico SASS.
+
+### has Positional[Page] @.pages
+
+Page holder
+
+### has Page $.index
+
+index Page [defaults to @!pages[0]
+
+### has Positional[Component] @.components
+
+Components for route setup; default = [Nav.new]
+
+### has Bool $.scss
+
+use :!scss to disable SASS compiler run
 
 ### has Str $.theme-color
 
-<amber azure blue cyan fuchsia green indigo jade lime orange pink pumpkin purple red violet yellow> (pico theme)
+pick from: amber azure blue cyan fuchsia green indigo jade lime orange pink pumpkin purple red violet yellow (pico theme)
 
 ### has Str $.bold-color
 
-one from <aqua black blue fuchsia gray green lime maroon navy olive purple red silver teal white yellow> (basic css)
+pick from:- aqua black blue fuchsia gray green lime maroon navy olive purple red silver teal white yellow (basic css)
 
-### method style
+### multi method new
 
 ```raku
-method style() returns Mu
+multi method new(
+    Page $index,
+    *%h
+) returns Mu
 ```
 
-optional grid style from https://cssgrid-generator.netlify.app/
+.new positional with index only
+
+Pico Tags
+---------
+
+The Air roadmap is to provide a full set of pre-styled tags as defined in the Pico [docs](https://picocss.com/docs). Did we say that Air::Base implements Pico CSS?
+
+### role Table does Tag
+
+Attrs thead, tbody and tfoot can each be a 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for multi-row thead and tfoot.
+
+Table applies col and row header tags as required for Pico styles.
+
+Attrs provided as Pairs via tbody are extracted and applied. This is needed for :id<target> where HTMX is targetting the table body.
+
+### has Mu $.tbody
+
+default = [] is provided
+
+### has Mu $.thead
+
+optional
+
+### has Mu $.tfoot
+
+optional
+
+### has Mu $.class
+
+class for table
+
+### method new
+
+```raku
+method new(
+    *@tbody,
+    *%h
+) returns Mu
+```
+
+.new positional takes tbody [[]]
+
+### role Table does Tag
+
+### has Positional @.items
+
+list of items to populate grid, each item is wrapped in a span tag
+
+### method new
+
+```raku
+method new(
+    *@items,
+    *%h
+) returns Mu
+```
+
+.new positional takes @items
 
 package EXPORT::DEFAULT
 -----------------------
 
-put in all the @components as functions viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
+put in all the @components as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
 
