@@ -2,7 +2,7 @@
 
 =head1 Air::Base
 
-This raku module is one of the core libraries of the raku B<Air> module.
+This raku module is one of the core libraries of the raku B<Air> distribution.
 
 It provides a Base library of functional Tags and Components that can be composed into web applications.
 

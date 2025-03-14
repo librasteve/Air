@@ -2,7 +2,7 @@
 
 =head1 Air::Component
 
-This raku module is one of the core libraries of the raku B<Air> module.
+This raku module is one of the core libraries of the raku B<Air> distribution.
 
 It is a scaffold to build dynamic, reusable web components.
 

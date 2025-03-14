@@ -1,7 +1,7 @@
 Air::Functional
 ===============
 
-This raku module is one of the core libraries of the raku **Air** module.
+This raku module is one of the core libraries of the raku **Air** distribution.
 
 It exports HTML tags as raku subs that can be composed as functional code within a raku program.
 

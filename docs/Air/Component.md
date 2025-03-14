@@ -1,7 +1,7 @@
 Air::Component
 ==============
 
-This raku module is one of the core libraries of the raku **Air** module.
+This raku module is one of the core libraries of the raku **Air** distribution.
 
 It is a scaffold to build dynamic, reusable web components.
 
