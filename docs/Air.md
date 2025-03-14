@@ -7,7 +7,7 @@ Breathing life into the raku **HARC stack** (HTMX, Air, Red, Cro).
 
 **HARC** websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site, rather than boilerplate markup that can often obscure the intention.
 
-**Air** is basically set of libraries that, in the end of the day, produce HTML code and serve it using Cro.
+**Air** is basically a set of libraries that produce HTML code and serve it using Cro.
 
 The result is a concise, legible and easy-to-maintain website codebase.
 
