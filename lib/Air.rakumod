@@ -13,6 +13,8 @@ B<Air> aims to be the purest possible expression of the power of L<HTMX|https://
 B<HARC> websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site,
 rather than boilerplate markup that can often obscure the intention.
 
+B<Air> is basically set of libraries that, in the end of the day, produce HTML code and serve it using Cro.
+
 The result is a concise, legible and easy-to-maintain website codebase.
 
 
