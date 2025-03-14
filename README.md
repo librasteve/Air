@@ -1,7 +1,5 @@
 [![Actions Status](https://github.com/librasteve/Air/actions/workflows/test.yml/badge.svg)](https://github.com/librasteve/Air/actions)
 
-### WORK IN PROGRESS ###
-
 Please raise an Issue if you would like to feedback or assist.
 
 Air
