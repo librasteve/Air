@@ -1,0 +1,44 @@
+use Test;
+
+# Normalize and compare ignoring order differences
+sub normalize(Str $html) {
+    return $html.trans(' ' => '').comb.sort.join;
+}
+
+plan 1;
+
+use Air::Functional :BASE;
+use Air::Base;
+
+my $page = Page.new:
+    title => "Raku HTMX",
+    main => Main.new: p 'Hello World!';
+
+$page.html.head.style = Style.new: 'p {color: blue;}';
+
+my $expect =
+    q:to/END/;
+    <!doctype html>
+    <html data-theme="dark" lang="en">
+    <head>
+    <title>Raku HTMX</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script crossorigin="anonymous" integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO" src="https://unpkg.com/htmx.org@1.9.5"></script>
+
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link type="image/x-icon" href="/img/favicon.ico" rel="icon" />
+    <style>p {color: blue;}</style>
+    </head>
+
+    <body>
+    <header class="container"></header>
+    <main class="container">
+    <p>Hello World!</p></main>
+    <footer class="container"></footer></body>
+    </html>
+    END
+
+is $page.HTML.&normalize, $expect.&normalize, 'all-page';
+
+done-testing;

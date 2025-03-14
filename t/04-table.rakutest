@@ -1,0 +1,80 @@
+use Test;
+
+# Normalize and compare ignoring order differences
+sub normalize(Str $html) {
+    return $html.trans(' ' => '').comb.sort.join;
+}
+
+plan 1;
+
+use Air::Functional :BASE;
+use Air::Base;
+
+my %data =
+    :thead[["Planet", "Hexameter (km)", "Distance to Sun (AU)", "Orbit (days)"],],
+    :tbody[["Mercury",  "4,880", "0.39",  "88"],
+           ["Venus"  , "12,104", "0.72", "225"],
+           ["Earth"  , "12,742", "1.00", "365"],
+           ["Mars"   ,  "6,779", "1.52", "687"],],
+    :tfoot[["Average",  "9,126", "0.91", "341"],];
+
+my $html = div [
+    h3 'Table';
+    table |%data;
+];
+
+my $expect =
+    q:to/END/;
+    <div>
+    <h3>Table</h3>
+    <table>
+    <thead>
+    <tr>
+    <th scope="col">Planet</th>
+    <th scope="col">Hexameter (km)</th>
+    <th scope="col">Distance to Sun (AU)</th>
+    <th scope="col">Orbit (days)</th>
+    </tr></thead>
+    <tbody>
+    <tr>
+    <th scope="row">Mercury</th>
+    <td>4,880</td>
+    <td>0.39</td>
+    <td>88</td>
+    </tr>
+    <tr>
+    <th scope="row">Venus</th>
+    <td>12,104</td>
+    <td>0.72</td>
+    <td>225</td>
+    </tr>
+    <tr>
+    <th scope="row">Earth</th>
+    <td>12,742</td>
+    <td>1.00</td>
+    <td>365</td>
+    </tr>
+    <tr>
+    <th scope="row">Mars</th>
+    <td>6,779</td>
+    <td>1.52</td>
+    <td>687</td>
+    </tr>
+    </tbody>
+    <tfoot>
+    <tr>
+    <th scope="row">Average</th>
+    <td>9,126</td>
+    <td>0.91</td>
+    <td>341</td>
+    </tr></tfoot>
+    </table>
+    </div>
+    END
+
+is $html.&normalize, $expect.&normalize, 'all-table';
+
+done-testing;
+
+
+
