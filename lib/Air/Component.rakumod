@@ -58,7 +58,7 @@ class Todo does Component {
 
     method toggle is routable {
         $!checked = !$!checked;
-        respond self;
+        fragment self;
     }
 
     multi method HTML {
@@ -72,8 +72,8 @@ class Todo does Component {
 
 Key features of C<class Todo> are:
 =item Todo objects have state C<$.checked> and C<$.text>
-=item C<method toggle> takes the trait C<is routable> - this makes a corresponding Cro route
-=item C<method toggle> adjusts the state and ends with the C<respond> sub (which calls C<.HTML>)
+=item C<method toggle> takes the trait C<is routable> - this makes a corfragmenting Cro route
+=item C<method toggle> adjusts the state and ends with the C<fragment> sub (which calls C<.HTML>)
 =item C<class Todo> provides a C<multi method HTML> which uses functional HTML tags
 
 The result is a concise, legible and easy-to-maintain component implementation.
@@ -277,7 +277,7 @@ role Component {
 			note "adding GET $url-part/<id>";
 			get -> Str $ where $url-part, $id {
 				my $comp = load $id;
-				respond $comp
+				fragment $comp
 			}
 
 			note "adding POST $url-part";
@@ -325,11 +325,11 @@ role Component {
 }
 
 #| calls Cro: content 'text/html', $comp.HTML
-multi sub respond(Any $comp) is export {
+multi sub fragment(Any $comp) is export {
 	content 'text/html', $comp.HTML
 }
 #| calls Cro: content 'text/html', $html
-multi sub respond(Str $html) is export {
+multi sub fragment(Str $html) is export {
 	content 'text/html', $html
 }
 

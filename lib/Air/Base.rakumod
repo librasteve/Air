@@ -593,7 +593,7 @@ class Nav  does Component does Tag {
             for self.items.map: *.kv -> ($name, $target) {
                 given $target {
                     when * ~~ Content {
-                        my &new-method = method {respond $target.?HTML};
+                        my &new-method = method {fragment $target.?HTML};
                         trait_mod:<is>(&new-method, :routable, :$name);
                         self.^add_method($name, &new-method);
                     }

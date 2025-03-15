@@ -59,7 +59,7 @@ class Todo does Component {
 
     method toggle is routable {
         $!checked = !$!checked;
-        respond self;
+        fragment self;
     }
 
     multi method HTML {
@@ -75,9 +75,9 @@ Key features of `class Todo` are:
 
   * Todo objects have state `$.checked` and `$.text`
 
-  * `method toggle` takes the trait `is routable` - this makes a corresponding Cro route
+  * `method toggle` takes the trait `is routable` - this makes a corfragmenting Cro route
 
-  * `method toggle` adjusts the state and ends with the `respond` sub (which calls `.HTML`)
+  * `method toggle` adjusts the state and ends with the `fragment` sub (which calls `.HTML`)
 
   * `class Todo` provides a `multi method HTML` which uses functional HTML tags
 
@@ -307,20 +307,20 @@ method add-routes(
 
 Meta Method ^add-routes typically called from Air::Base::Site in a Cro route block
 
-### multi sub respond
+### multi sub fragment
 
 ```raku
-multi sub respond(
+multi sub fragment(
     $comp
 ) returns Mu
 ```
 
 calls Cro: content 'text/html', $comp.HTML
 
-### multi sub respond
+### multi sub fragment
 
 ```raku
-multi sub respond(
+multi sub fragment(
     Str $html
 ) returns Mu
 ```
