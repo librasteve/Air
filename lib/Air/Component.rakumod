@@ -17,36 +17,32 @@ use Air::Base;					# import Base components (site, page, nav...)
 use Air::Component;
 =end code
 
-=head3 role HxTodo
+=head3 HTMX functions
 
-Predeclares some custom HTMX actions. This declutters C<class Todo> and C<class Frame>.
+Predeclares some custom HTMX functions. This declutters C<class Todo>, one nice part of using an HLL to generate HTML.
 
 =begin code :lang<raku>
-role HxTodo {
-    method hx-toggle(--> Hash()) {
-        :hx-get("$.url/$.id/toggle"),
-        :hx-target<closest tr>,
-        :hx-swap<outerHTML>,
-    }
-    method hx-create(--> Hash()) {
-        :hx-post("$.url"),
-        :hx-target<table>,
-        :hx-swap<beforeend>,
-        :hx-on:htmx:after-request<this.reset()>,
-    }
-    method hx-delete(--> Hash()) {
-        :hx-delete("$.url/$.id"),
-        :hx-confirm<Are you sure?>,
-        :hx-target<closest tr>,
-        :hx-swap<delete>,
-    }
+sub hx-create($url --> Hash()) {
+    :hx-post("$url"),
+    :hx-target<table>,
+    :hx-swap<beforeend>,
+    :hx-on:htmx:after-request<this.reset()>,
+}
+sub hx-toggle($url, $id --> Hash()) {
+    :hx-get("$url/$id/toggle"),
+    :hx-target<closest tr>,
+    :hx-swap<outerHTML>,
+}
+sub hx-delete($url, $id --> Hash()) {
+    :hx-delete("$url/$id"),
+    :hx-confirm<Are you sure?>,
+    :hx-target<closest tr>,
+    :hx-swap<delete>,
 }
 =end code
 
-Key features of C<role HxTodo> are:
-=item uses a standard raku C<role> for code separation
-=item method names C<hx-toggle> are chosen to echo standard HTMX attributes such as C<hx-get>
-=item attributes C<$.url> and C<.id> are provided by C<role Component>
+Key features are:
+=item sub names C<hx-toggle> echo standard HTMX attributes such as C<hx-get>
 =item return values are coerced to a raku C<Hash> containing HTMX attrs
 
 =head3 class Todo
@@ -57,8 +53,6 @@ The general idea is that a raku class implements a web Component, multiple insta
 
 =begin code :lang<raku>
 class Todo does Component {
-    also does HxTodo;
-
     has Bool $.checked is rw = False;
     has Str  $.text;
 
@@ -69,70 +63,45 @@ class Todo does Component {
 
     multi method HTML {
         tr
-            td(input :type<checkbox>, :$!checked, |$.hx-toggle),
-            td($!checked ?? del $!text !! $!text),
-            td(button :type<submit>, :style<width:50px>, |$.hx-delete, '-'),
+            td( input :type<checkbox>, |hx-toggle($.url,$.id), :$!checked ),
+            td( $!checked ?? del $!text !! $!text),
+            td( button :type<submit>, |hx-delete($.url,$.id), :style<width:50px>, '-'),
     }
 }
 =end code
 
 Key features of C<class Todo> are:
 =item Todo objects have state C<$.checked> and C<$.text>
-=item C<method toggle> takes the trait C<is routable>
+=item C<method toggle> takes the trait C<is routable> - this makes a corresponding Cro route
 =item C<method toggle> adjusts the state and ends with the C<respond> sub (which calls C<.HTML>)
-=item C<class Todo> provides a C<multi method HTML>
-=item C<method HTML> uses functional HTML tags and brings in HxTodo actions
+=item C<class Todo> provides a C<multi method HTML> which uses functional HTML tags
 
 The result is a concise, legible and easy-to-maintain component implementation.
 
-=head3 class Frame
-
-Provides a frame our Todo components and a form to add new ones.
-
-=begin code :lang<raku>
-class Frame does Tag {
-    also does HxTodo;
-
-    has Todo @.todos;
-    has $.url = "todo";
-
-    multi method HTML {
-        div [
-            h3 'Todos';
-            table @!todos;
-            form  |$.hx-create, [
-                input  :name<text>;
-                button :type<submit>, '+';
-            ];
-        ]
-    }
-}
-=end code
-
-Key features of C<class Frame> are:
-=item C<does Tag> to suppress HTML escape
-=item maintains our C<@.todos> list state
-=item uses functional tags to make HTML
-=item C<multi method HTML> is called when rendered
-
 =head3 sub SITE
 
-Finally, we can export a website as follows:
+Now, we can export a website as follows:
 
 =begin code :lang<raku>
 my &index = &page.assuming(
-        title       => 'hÅrc',
-        description => 'HTMX, Air, Raku, Cro',
-        footer      => footer p ['Aloft on ', b 'Åir'],
-    );
+    title       => 'hÅrc',
+    description => 'HTMX, Air, Raku, Cro',
+    footer      => footer p ['Aloft on ', b 'Åir'],
+);
 
 my @todos = do for <one two> -> $text { Todo.new: :$text };
 
 sub SITE is export {
-    site :components(@todos), #:theme-color<azure>,
+    site :components(@todos),
         index
-            main
-                Frame.new: :@todos;
+            main [
+                h3 'Todos';
+                table @todos;
+                form  |hx-create("todo"), [
+                    input  :name<text>;
+                    button :type<submit>, '+';
+                ];
+            ]
 }
 =end code
 
@@ -142,9 +111,8 @@ Key features of C<sub SITE> are:
 =item2 (ii) then calls the C<page> function provided by Air::Base
 =item1 we set up our list of Todo components calling C<Todo.new>
 =item1 we use the Air::Base C<site> function to make our website
-=item1 the call chain C<site(index(main(Frame.new: :@todos;)))> then makes our website
+=item1 the call chain C<site(index(main(...))> then makes our website
 =item1 C<site> is passed C<:components(@todos)> to make the component cro routes
-=item1 C<site> may optionally be passed theme settings also
 
 
 =head2 Run Cro service.raku
