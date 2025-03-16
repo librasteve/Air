@@ -92,7 +92,7 @@ Key features shown are:
 =begin code :lang<raku>
 my &index = &page.assuming(
     title       => 'hÅrc',
-    description => 'HTMX, Air, Raku, Cro',
+    description => 'HTMX, Air, Red, Cro',
     nav         => nav(
         logo    => safe('<a href="/">h<b>&Aring;</b>rc</a>'),
         items   => [:$Content1, :$Content2, :$Google],
