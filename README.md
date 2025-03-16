@@ -2,7 +2,7 @@
 
 Please raise an Issue if you would like to feedback or assist.
 
-Air docs are published at https://librasteve.github.io/Air/
+Air docs are at https://librasteve.github.io/Air/
 
 Air
 ===
