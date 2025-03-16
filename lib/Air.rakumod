@@ -6,11 +6,11 @@ unit module Air;
 
 =head1 Air
 
-Breathing life into the raku B<HARC stack> (HTMX, Air, Red, Cro).
+Breathing life into the raku B<hArc stack> (HTMX, Air, Red, Cro).
 
 B<Air> aims to be the purest possible expression of L<HTMX|https://htmx.org>.
 
-B<HARC> websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site,
+B<hArc> websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site,
 rather than boilerplate markup that can often obscure the intention.
 
 B<Air> is basically a set of libraries that produce HTML code and serve it using Cro.

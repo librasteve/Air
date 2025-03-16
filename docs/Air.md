@@ -1,11 +1,11 @@
 Air
 ===
 
-Breathing life into the raku **HARC stack** (HTMX, Air, Red, Cro).
+Breathing life into the raku **hArc stack** (HTMX, Air, Red, Cro).
 
 **Air** aims to be the purest possible expression of [HTMX](https://htmx.org).
 
-**HARC** websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site, rather than boilerplate markup that can often obscure the intention.
+**hArc** websites are written in functional code. This puts the emphasis firmly onto the content and layout of the site, rather than boilerplate markup that can often obscure the intention.
 
 **Air** is basically a set of libraries that produce HTML code and serve it using Cro.
 
