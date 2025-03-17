@@ -9,8 +9,7 @@
     "depends": [
         "DateTime::Format",
         "HTML::Escape",
-        "Cro::HTTP::Router",
-        "Red"
+        "Cro::HTTP::Router"
     ],
     "build-depends": [],
     "provides": {
