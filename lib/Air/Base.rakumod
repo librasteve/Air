@@ -452,7 +452,7 @@ role LightDark does Tagged[Regular] {
                 let newTheme = mode;
 
                 if (mode === "toggle") {
-                    const currentTheme = htmlElement.getAttribute("data-theme") || "light";
+                    const currentTheme = htmlElement.getAttribute("data-theme") || "darkall";
                     newTheme = currentTheme === "dark" ? "light" : "dark";
                 } else if (mode === "system") {
                     newTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
