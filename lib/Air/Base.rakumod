@@ -434,8 +434,8 @@ role LightDark does Tagged[Regular] {
 
     multi method HTML {
         given self.show {
-            when 'buttons' { Safe.new: self.icon }
-            when 'icon'    { Safe.new: self.buttons   }
+            when 'buttons' { Safe.new: self.buttons }
+            when 'icon'    { Safe.new: self.icon    }
         }
     }
 
