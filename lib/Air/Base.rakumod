@@ -434,12 +434,13 @@ role LightDark does Tagged[Regular] {
 
     multi method HTML {
         given self.show {
-            when 'buttons' { Safe.new: self.buttons }
-            when 'icon'    { Safe.new: self.icon   }
+            when 'buttons' { Safe.new: self.icon }
+            when 'icon'    { Safe.new: self.buttons   }
         }
     }
 
-    method buttons { Q:to/END/;
+    method buttons {
+        Q|
         <div role="group">
             <button class="contrast"  id="themeToggle">Toggle</button>
             <button                   id="themeLight" >Light</button>
@@ -447,50 +448,42 @@ role LightDark does Tagged[Regular] {
             <button class="outline"   id="themeSystem">System</button>
         </div>
         <script>
-            function setTheme(mode) {
-                const htmlElement = document.documentElement;
-                let newTheme = mode;
+        |
 
-                if (mode === "toggle") {
-                    const currentTheme = htmlElement.getAttribute("data-theme") || "darkall";
-                    newTheme = currentTheme === "dark" ? "light" : "dark";
-                } else if (mode === "system") {
-                    newTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-                }
+        ~ self.common ~
 
-                htmlElement.setAttribute("data-theme", newTheme);
-                localStorage.setItem("theme", newTheme); // Save theme to localStorage
-            }
-
-            // Load saved theme on page load
-            document.addEventListener("DOMContentLoaded", () => {
-                const savedTheme = localStorage.getItem("theme") || "light";  //default to light
-                const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                const initialTheme = savedTheme || (systemPrefersDark ? "dark" : "light");
-                document.documentElement.setAttribute("data-theme", initialTheme);
-            });
-
-            // Listen for system dark mode changes and update the theme dynamically
-            window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-                setTheme("system"); // Follow system setting
-            });
-
-            // Example: Attach to a button click
+        Q|
+            // Attach to a button click
             document.getElementById("themeToggle").addEventListener("click", () => setTheme("toggle"));
             document.getElementById("themeDark").addEventListener("click", () => setTheme("dark"));
             document.getElementById("themeLight").addEventListener("click", () => setTheme("light"));
             document.getElementById("themeSystem").addEventListener("click", () => setTheme("system"));
         </script>
-        END
+        |;
     }
 
-    method icon { Q:to/END/;
+    method icon {
+        Q|
         <a style="font-variant-emoji: text" id ="sunIcon">&#9728;</a>
         <a style="font-variant-emoji: text" id ="moonIcon">&#9790;</a>
         <script>
+        |
+
+        ~ self.common ~
+
+        Q|
             const sunIcon = document.getElementById("sunIcon");
             const moonIcon = document.getElementById("moonIcon");
 
+            // Attach to a icon click
+            document.getElementById("sunIcon").addEventListener("click", () => setTheme("dark"));
+            document.getElementById("moonIcon").addEventListener("click", () => setTheme("light"));
+        </script>
+        |;
+    }
+
+    method common {
+        Q:to/END/
             // Function to show/hide icons
             function updateIcons(theme) {
                 if (theme === "dark") {
@@ -520,7 +513,7 @@ role LightDark does Tagged[Regular] {
 
             // Load saved theme on page load
             document.addEventListener("DOMContentLoaded", () => {
-                const savedTheme = localStorage.getItem("theme") || "light";  //default to light
+                const savedTheme = localStorage.getItem("theme") || "dark";  //default to dark
                 const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
                 const initialTheme = savedTheme || (systemPrefersDark ? "dark" : "light");
 
@@ -532,11 +525,6 @@ role LightDark does Tagged[Regular] {
             window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
                 setTheme("system"); // Follow system setting
             });
-
-            // Example: Attach to a button click
-            document.getElementById("sunIcon").addEventListener("click", () => setTheme("dark"));
-            document.getElementById("moonIcon").addEventListener("click", () => setTheme("light"));
-        </script>
         END
     }
 }
