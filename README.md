@@ -1,5 +1,6 @@
 [![License: Artistic-2.0](https://img.shields.io/badge/License-Artistic%202.0-0298c3.svg)](https://opensource.org/licenses/Artistic-2.0)
 [![Actions Status](https://github.com/librasteve/Air/actions/workflows/test.yml/badge.svg)](https://github.com/librasteve/Air/actions)
+![Sparky](https://sparky.sparrowhub.io/badge/librasteve-Air?foo=bar)
 
 
 Please raise an Issue if you would like to feedback or assist.
