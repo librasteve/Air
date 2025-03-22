@@ -809,10 +809,10 @@ class Page does Component {
 #| Site is a holder for pages, performs setup
 #| of Cro routes and offers high level controls for style via Pico SASS.
 class Site {
-    #| Page holder
+    #| Page holder -or-
     has Page @.pages;
-    #| index Page [defaults to @!pages[0]
-    has Page $.index is rw = @!pages[0];
+    #| index Page ( otherwise $!index = @!pages[0] )
+    has Page $.index;
     #| Components for route setup; default = [Nav.new]
     has Component @.components = [Nav.new];
 
@@ -827,9 +827,26 @@ class Site {
     #| olive purple red silver teal white yellow (basic css)
     has Str  $.bold-color  = 'red';
 
+    #| set up analytics tracking code (needs cloud account at https://umami.is)
+    has Attr %.analytics   = :umami<35777f61-5123-4bb8-afb1-aced487af36e>;
+
     #| .new positional with index only
     multi method new(Page $index, *%h) {
         self.bless: :$index, |%h;
+    }
+
+    submethod TWEAK {
+        if    @!pages[0] { $!index = @!pages[0] }
+        elsif $!index    { @!pages[0] = $!index }
+
+        if %!analytics<umami> {
+            for @!pages {
+                .html.head.scripts.append:
+                    Script.new: :defer,
+                        :src<https://cloud.umami.is/script.js>,
+                        :data-website-id(%!analytics<umami>);
+            }
+        }
     }
 
     use Cro::HTTP::Router;
