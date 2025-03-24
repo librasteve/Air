@@ -113,7 +113,7 @@ role Tag is Str is export(:MANDATORY) {}
 =para This level is where users want to mess around with the parts of a tag for customizations
 
 #| convert from raku Pair syntax to HTML tag attributes
-sub attrs(%h -->Str) is export {
+sub attrs(%h --> Str) is export {
     #| Discard attrs with False or undefined values
     my @discards = %h.keys.grep: {
         %h{$_} === False     ||
@@ -121,8 +121,9 @@ sub attrs(%h -->Str) is export {
     };
     @discards.map: { %h{$_}:delete };
 
-    #| Bool attrs eg <input type="checkbox" checked>
-    my @attrs = %h.keys.grep: { %h{$_} === True };
+    #| Special case Bool attrs eg <input type="checkbox" checked>
+    #| Note that Attrs() have been stringified already
+    my @attrs = %h.keys.grep: { %h{$_} eq 'True' };
     @attrs.map: { %h{$_}:delete };
 
     #| Attrs as key-value pairs

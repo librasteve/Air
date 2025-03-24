@@ -196,7 +196,7 @@ role Script does Tagged[Regular]  {
     #| no html escape
     multi method HTML {
         opener($.name, |%.attrs) ~
-        (@.inners.first// '')    ~
+        ( @.inners.first // '' ) ~
         closer($.name)           ~ "\n"
     }
 }
@@ -424,16 +424,18 @@ role Time      does Tagged[Regular] {
 
 =head2 Widgets
 
-=para Active tags that can be used eg in Nav, typically load in some JS behaviours
+=para Active tags that can be used anywhere to provide a nugget of UI behaviour, default should be a short word (or a single item) that can be used in Nav
+
+role Widget {}
 
 =head3 role LightDark does Tagged[Regular] {...}
 
-role LightDark does Tagged[Regular] {
+role LightDark does Tagged[Regular] does Widget {
     #| set to icon(default) or buttons
-    has Str $.show = 'icon';
 
     multi method HTML {
-        given self.show {
+        my $show = self.attrs<show> // 'icon';
+        given $show {
             when 'buttons' { Safe.new: self.buttons }
             when 'icon'    { Safe.new: self.icon    }
         }
@@ -467,6 +469,16 @@ role LightDark does Tagged[Regular] {
         <a style="font-variant-emoji: text" id ="sunIcon">&#9728;</a>
         <a style="font-variant-emoji: text" id ="moonIcon">&#9790;</a>
         <script>
+            // Function to show/hide icons
+            function updateIcons(theme) {
+                if (theme === "dark") {
+                    sunIcon.style.display = "none"; // Hide sun
+                    moonIcon.style.display = "block"; // Show moon
+                } else {
+                    sunIcon.style.display = "block"; // Show sun
+                    moonIcon.style.display = "none"; // Hide moon
+                }
+            }
         |
 
         ~ self.common ~
@@ -484,17 +496,6 @@ role LightDark does Tagged[Regular] {
 
     method common {
         Q:to/END/
-            // Function to show/hide icons
-            function updateIcons(theme) {
-                if (theme === "dark") {
-                    sunIcon.style.display = "none"; // Hide sun
-                    moonIcon.style.display = "block"; // Show moon
-                } else {
-                    sunIcon.style.display = "block"; // Show sun
-                    moonIcon.style.display = "none"; // Hide moon
-                }
-            }
-
             function setTheme(mode) {
                 const htmlElement = document.documentElement;
                 let newTheme = mode;
@@ -528,7 +529,32 @@ role LightDark does Tagged[Regular] {
         END
     }
 }
-subset Widget  of Any  where * ~~ LightDark;
+
+=head2 Tools
+
+=para Tools are provided to the site tag to provide a nugget of side-wide behaviour, services method defaults are applied to all pages on start
+
+role Tool {}
+
+=head3 Analytics
+
+enum Provider is export <Umami>;
+
+role Analytics does Tool {
+    has Provider $.provider;
+    has Str      $.key;
+
+    multi method defaults($page) {
+        given $!provider {
+            when Umami {
+                $page.html.head.scripts.append:
+                    Script.new: :defer,
+                        :src<https://cloud.umami.is/script.js>,
+                        :data-website-id($!key);
+            }
+        }
+    }
+}
 
 =head2 Site Tags
 
@@ -815,6 +841,8 @@ class Site {
     has Page $.index;
     #| Components for route setup; default = [Nav.new]
     has Component @.components = [Nav.new];
+    #| Tools for sitewide behaviours
+    has Tool      @.tools      = [];
 
     #| use :!scss to disable SASS compiler run
     has Bool $.scss = True;
@@ -838,13 +866,11 @@ class Site {
     submethod TWEAK {
         if    @!pages[0] { $!index = @!pages[0] }
         elsif $!index    { @!pages[0] = $!index }
+        else             { note "No pages or index found!" }
 
-        if %!analytics<umami> {
-            for @!pages {
-                .html.head.scripts.append:
-                    Script.new: :defer,
-                        :src<https://cloud.umami.is/script.js>,
-                        :data-website-id(%!analytics<umami>);
+        for @!tools -> $tool {
+            for @!pages -> $page {
+                $tool.defaults($page)
             }
         }
     }
