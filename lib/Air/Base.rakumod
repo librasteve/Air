@@ -855,9 +855,6 @@ class Site {
     #| olive purple red silver teal white yellow (basic css)
     has Str  $.bold-color  = 'red';
 
-    #| set up analytics tracking code (needs cloud account at https://umami.is)
-    has Attr %.analytics   = :umami<35777f61-5123-4bb8-afb1-aced487af36e>;
-
     #| .new positional with index only
     multi method new(Page $index, *%h) {
         self.bless: :$index, |%h;
