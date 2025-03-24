@@ -27,9 +27,9 @@ GETTING STARTED
 Install raku - eg. from [rakubrew](https://rakubrew.org), then:
 
     Install Air, Cro & Red
-    - zef install --/test cro
-    - zef install Red --exclude="pq:ver<5>" --/test
-    - zef install Air
+    - zef install --/test cro [117 sec]
+    - zef install Red --exclude="pq:ver<5>" --/test [98 sec]
+    - zef install Air [15 sec]
 
     Run and view some examples
     - git clone https://github.com/librasteve/Air-Play.git && cd Air-Play
@@ -38,6 +38,7 @@ Install raku - eg. from [rakubrew](https://rakubrew.org), then:
     - browse to http://localhost:3000
 
 Cro has many other options as documented at [Cro](https://cro.raku.org) for deployment to a production server.
+Install times are from an M1 macOS, ymmv.
 
 SYNOPSIS
 ========
