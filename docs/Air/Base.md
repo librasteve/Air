@@ -345,13 +345,32 @@ optionally specify mode => [time | datetime], mode => date is default
 Widgets
 -------
 
-Active tags that can be used eg in Nav, typically load in some JS behaviours
+Active tags that can be used anywhere to provide a nugget of UI behaviour, default should be a short word (or a single item) that can be used in Nav
 
-### role LightDark does Tagged[Regular] {...}
+### role LightDark does Tagged[Regular] does Widget {...}
 
-### has Str $.show
+### method HTML
 
-set to icon(default) or buttons
+```raku
+method HTML() returns Mu
+```
+
+attribute 'show' may be set to 'icon'(default) or 'buttons'
+
+Tools
+-----
+
+Tools are provided to the site tag to provide a nugget of side-wide behaviour, services method defaults are distributed to all pages on server start
+
+### role Analytics does Tool {...}
+
+### has Provider $.provider
+
+may be [Umami] - others TBD
+
+### has Str $.key
+
+website ID from provider
 
 Site Tags
 ---------
@@ -507,15 +526,19 @@ Site is a holder for pages, performs setup of Cro routes and offers high level c
 
 ### has Positional[Page] @.pages
 
-Page holder
+Page holder -or-
 
 ### has Page $.index
 
-index Page [defaults to @!pages[0]
+index Page ( otherwise $!index = @!pages[0] )
 
 ### has Positional[Component] @.components
 
 Components for route setup; default = [Nav.new]
+
+### has Positional[Tool] @.tools
+
+Tools for sitewide behaviours
 
 ### has Bool $.scss
 

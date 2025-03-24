@@ -428,11 +428,10 @@ role Time      does Tagged[Regular] {
 
 role Widget {}
 
-=head3 role LightDark does Tagged[Regular] {...}
+=head3 role LightDark does Tagged[Regular] does Widget {...}
 
 role LightDark does Tagged[Regular] does Widget {
-    #| set to icon(default) or buttons
-
+    #| attribute 'show' may be set to 'icon'(default) or 'buttons'
     multi method HTML {
         my $show = self.attrs<show> // 'icon';
         given $show {
@@ -532,16 +531,18 @@ role LightDark does Tagged[Regular] does Widget {
 
 =head2 Tools
 
-=para Tools are provided to the site tag to provide a nugget of side-wide behaviour, services method defaults are applied to all pages on start
+=para Tools are provided to the site tag to provide a nugget of side-wide behaviour, services method defaults are distributed to all pages on server start
 
 role Tool {}
 
-=head3 Analytics
+=head3 role Analytics does Tool {...}
 
 enum Provider is export <Umami>;
 
 role Analytics does Tool {
+    #| may be [Umami] - others TBD
     has Provider $.provider;
+    #| website ID from provider
     has Str      $.key;
 
     multi method defaults($page) {
