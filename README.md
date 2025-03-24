@@ -19,6 +19,26 @@ Breathing life into the raku **hArc stack** (HTMX, Air, Red, Cro).
 
 The result is a concise, legible and easy-to-maintain website codebase.
 
+GETTING STARTED
+===============
+
+***IMPORTANT - GET BEST RESULTS BY FOLLOWING THIS 3 STEP PROCESS***
+
+Install raku - eg. from [rakubrew](https://rakubrew.org), then:
+
+    Install Air, Cro & Red
+    - zef install --/test cro
+    - zef install Red --exclude="pq:ver<5>" --/test
+    - zef install Air
+
+    Run and view some examples
+    - git clone https://github.com/librasteve/Air-Play.git && cd Air-Play
+    - export WEBSITE_HOST="0.0.0.0" && export WEBSITE_PORT="3000"
+    - raku -Ilib service.raku
+    - browse to http://localhost:3000
+
+Cro has many other options as documented at [Cro](https://cro.raku.org) for deployment to a production server.
+
 SYNOPSIS
 ========
 
@@ -56,24 +76,6 @@ sub SITE is export {
                 ]
 }
 ```
-
-GETTING STARTED
-===============
-
-Install raku - eg. from [rakubrew](https://rakubrew.org), then:
-
-    Install Air, Cro & Red
-    - zef install --/test cro
-    - zef install Red --exclude="pq:ver<5>"
-    - zef install Air
-
-    Run and view some examples
-    - git clone https://github.com/librasteve/Air-Play.git && cd Air-Play
-    - export WEBSITE_HOST="0.0.0.0" && export WEBSITE_PORT="3000"
-    - raku -Ilib service.raku
-    - browse to http://localhost:3000
-
-Cro has many other options as documented at [Cro](https://cro.raku.org) for deployment to a production server.
 
 DESCRIPTION
 ===========
