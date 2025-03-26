@@ -626,10 +626,10 @@ class Nav  does Component does Tag {
                   li $target.HTML
                 }
                 when * ~~ Content {
-                    li a(:hx-get("$.name/$.id/" ~ $name), Safe.new: $name)
+                    li a(:hx-get("$.name/$.serial/" ~ $name), Safe.new: $name)
                 }
                 when * ~~ Page {
-                    li a(:href("/{.name}/{.id}"), Safe.new: $name)
+                    li a(:href("/{.name}/{.serial}"), Safe.new: $name)
                 }
             }
         }
@@ -887,10 +887,10 @@ class Site {
             get -> 'js',  *@path { static 'static/js',  @path }
             get ->        *@path { static 'static',     @path }
 
-            for @!pages.map: {.name, .id} -> ($name, $id) {
-                note "adding GET $name/$id";
-                get -> Str $ where $name, $id {
-                    content 'text/html', @!pages[$id-1].HTML
+            for @!pages.map: {.name, .serial} -> ($name, $id) {
+                note "adding GET $name/<#>";
+                get -> Str $ where $name, $serial {
+                    content 'text/html', @!pages[$serial-1].HTML
                 }
             }
         }
