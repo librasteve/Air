@@ -251,7 +251,7 @@ role Component {
 	#| get url-id (ie base/name/id)
 	method url-id(--> Str) { self.url ~ '/' ~ self.id }
 
-	#| get html-id (ie name-id), eg for html id attr
+	#| get html-id (ie name-id), eg for html id attr   iamerejh
 	method html-id(--> Str) { self.name ~ '-' ~ self.id }
 
 
