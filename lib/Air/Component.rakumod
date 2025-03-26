@@ -160,10 +160,10 @@ I<Those wishing for more are encouraged to consider writing their logic outside 
                   li $target.HTML
                 }
                 when * ~~ Content {
-                    li a(:hx-get("$.url-part/$.id/" ~ $name), safe $name)
+                    li a(:hx-get("$.name/$.id/" ~ $name), safe $name)
                 }
                 when * ~~ Page {
-                    li a(:href("/{.url-part}/{.id}"), safe $name)
+                    li a(:href("/{.name}/{.id}"), safe $name)
                 }
             }
         }
@@ -223,7 +223,7 @@ role Component {
 	my  UInt $next = 1;
 
 	#| assigns and tracks instance ids
-	has UInt $.id;   # fixme hash of ids by type
+	has UInt $.id;
 
 	#| optional attr to specify url base
 	has Str  $.base = '';
@@ -242,10 +242,18 @@ role Component {
 		self.?make-routes;
 	}
 
-	#| get url part
-	method url-part(-->Str) { ::?CLASS.^name.subst('::','-').lc }
-	#| get url (ie base/part)
-	method url(--> Str) { do with self.base { "$_/" } ~ self.url-part }
+	#| get url safe name of class doing Component role
+	method name { ::?CLASS.^name.subst('::','-').lc }
+
+	#| get url (ie base/name)
+	method url(--> Str) { do with self.base { "$_/" } ~ self.name }
+
+	#| get url-id (ie base/name/id)
+	method url-id(--> Str) { self.url ~ '/' ~ self.id }
+
+	#| get html-id (ie name-id), eg for html id attr
+	method html-id(--> Str) { self.name ~ '-' ~ self.id }
+
 
 	#| Default load action (called on GET) - may be overridden
 	method LOAD($id)      { self.holder{$id} }
@@ -263,7 +271,7 @@ role Component {
 		#| Meta Method ^add-routes typically called from Air::Base::Site in a Cro route block
 		method add-routes(
 			$component is copy,
-			:$url-part = $component.url-part;
+			:$comp-name = $component.name;
 		) is export {
 
 			my $route-set := $*CRO-ROUTE-SET
@@ -274,49 +282,49 @@ role Component {
 			my &del    = -> $id         { load($id).DELETE          };
 			my &update = -> $id, *%pars { load($id).UPDATE:  |%pars };
 
-			note "adding GET $url-part/<id>";
-			get -> Str $ where $url-part, $id {
+			note "adding GET $comp-name/<id>";
+			get -> Str $ where $comp-name, $id {
 				my $comp = load $id;
 				respond $comp
 			}
 
-			note "adding POST $url-part";
-			post -> Str $ where $url-part {
+			note "adding POST $comp-name";
+			post -> Str $ where $comp-name {
 				request-body -> $data {
 					my $new = create |$data.pairs.Map;
-					redirect "$url-part/{ $new.id }", :see-other
+					redirect "$comp-name/{ $new.id }", :see-other
 				}
 			}
 
-			note "adding DELETE $url-part/<id>";
-			delete -> Str $ where $url-part, $id {
+			note "adding DELETE $comp-name/<id>";
+			delete -> Str $ where $comp-name, $id {
 				del $id;
 				content 'text/html', ""
 			}
 
-			note "adding PUT $url-part/<id>";
-			put -> Str $ where $url-part, $id {
+			note "adding PUT $comp-name/<id>";
+			put -> Str $ where $comp-name, $id {
 				request-body -> $data {
 					update $id, |$data.pairs.Map;
-					redirect "{ $id }", :see-other   #hmm - this works
-#					redirect "$url-part/{ $id }", :see-other
+					redirect "{ $id }", :see-other   #hmm - this works, not sure why
+#					redirect "$comp-name/{ $id }", :see-other
 				}
 			}
 
 			for $component.^methods.grep(*.?is-routable) -> $meth {
-				my $name = $meth.is-routable-name;
+				my $meth-name = $meth.is-routable-name;
 
 				if $meth.signature.params > 2 {
-					note "adding PUT $url-part/<id>/$name";
-					put -> Str $ where $url-part, $id, Str $name {
+					note "adding PUT $comp-name/<id>/$meth-name";
+					put -> Str $ where $comp-name, $id, Str $method {
 						request-body -> $data {
-							load($id)."$name"(|$data.pairs.Map)
+							load($id).?"$method"(|$data.pairs.Map)
 						}
 					}
 				} else {
-					note "adding GET $url-part/<id>/$name";
-					get -> Str $ where $url-part, $id, Str $name {
-						load($id)."$name"()
+					note "adding GET $comp-name/<id>/$meth-name";
+					get -> Str $ where $comp-name, $id, Str $method {
+						load($id).?"$method"()
 					}
 				}
 			}

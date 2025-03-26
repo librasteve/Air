@@ -16,9 +16,9 @@ Here's a diagram of the various Air parts. (Air::Play is a separate raku module 
                 |    Air::Play   |    <-- Web App
                 +----------------+
                         |
-              +-------------------+
-              |  Air::Play::Site  |   <-- Site Lib
-              +-------------------+
+              +--------------------+
+              |  Air::Play::Site   |  <-- Site Lib
+              +------------------ -+
                         |
                 +----------------+
                 |    Air::Base   |    <-- Base Lib

@@ -18,9 +18,9 @@ Here's a diagram of the various Air parts. (Air::Play is a separate raku module 
             |    Air::Play   |    <-- Web App
             +----------------+
                     |
-          +-------------------+
-          |  Air::Play::Site  |   <-- Site Lib
-          +-------------------+
+          +--------------------+
+          |  Air::Play::Site   |  <-- Site Lib
+          +------------------ -+
                     |
             +----------------+
             |    Air::Base   |    <-- Base Lib
@@ -586,8 +586,8 @@ role Internal  does Tagged[Regular] {
 }
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-#| Nav does Component in order to support
-#| multiple nav instances with distinct NavItem and Widget attributes.
+#| Nav does Component in order to support multiple nav instances
+#| with distinct NavItem and Widget attributes.
 #| Also does Tag so that nav tags can be placed anywhere on a page.
 class Nav  does Component does Tag {
     has Str     $.hx-target = '#content';
@@ -626,10 +626,10 @@ class Nav  does Component does Tag {
                   li $target.HTML
                 }
                 when * ~~ Content {
-                    li a(:hx-get("$.url-part/$.id/" ~ $name), Safe.new: $name)
+                    li a(:hx-get("$.name/$.id/" ~ $name), Safe.new: $name)
                 }
                 when * ~~ Page {
-                    li a(:href("/{.url-part}/{.id}"), Safe.new: $name)
+                    li a(:href("/{.name}/{.id}"), Safe.new: $name)
                 }
             }
         }
@@ -887,9 +887,11 @@ class Site {
             get -> 'js',  *@path { static 'static/js',  @path }
             get ->        *@path { static 'static',     @path }
 
-            for @!pages.map: {.url-part, .id} -> ($url-part, $id) {
-                note "adding GET $url-part/$id";
-                get -> Str $ where $url-part, $id { content 'text/html', @!pages[$id-1].HTML }
+            for @!pages.map: {.name, .id} -> ($name, $id) {
+                note "adding GET $name/$id";
+                get -> Str $ where $name, $id {
+                    content 'text/html', @!pages[$id-1].HTML
+                }
             }
         }
     }

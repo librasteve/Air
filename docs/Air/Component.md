@@ -175,10 +175,10 @@ While this kind of logic can in theory be delivered in a web app using web templ
                   li $target.HTML
                 }
                 when * ~~ Content {
-                    li a(:hx-get("$.url-part/$.id/" ~ $name), safe $name)
+                    li a(:hx-get("$.name/$.id/" ~ $name), safe $name)
                 }
                 when * ~~ Page {
-                    li a(:href("/{.url-part}/{.id}"), safe $name)
+                    li a(:href("/{.name}/{.id}"), safe $name)
                 }
             }
         }
@@ -242,13 +242,13 @@ method all() returns Mu
 
 get all instances in holder
 
-### method url-part
+### method name
 
 ```raku
-method url-part() returns Str
+method name() returns Mu
 ```
 
-get url part
+get url safe name of class doing Component role
 
 ### method url
 
@@ -256,7 +256,15 @@ get url part
 method url() returns Str
 ```
 
-get url (ie base/part)
+get url (ie base/name)
+
+### method url-id
+
+```raku
+method url-id() returns Str
+```
+
+get url-id (ie base/name/id)
 
 ### method LOAD
 
@@ -301,7 +309,7 @@ Default update action (called on PUT) - may be overridden
 ```raku
 method add-routes(
     $component is copy,
-    :$url-part = Code.new
+    :$comp-name = Code.new
 ) returns Mu
 ```
 
