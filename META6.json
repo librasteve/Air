@@ -10,7 +10,7 @@
     "HTML::Escape",
     "Cro::HTTP::Router"
   ],
-  "description": "A way create web components without cro templates",
+  "description": "Just build websites the right way.",
   "license": "Artistic-2.0",
   "name": "Air",
   "provides": {
@@ -26,5 +26,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.10"
+  "version": "0.0.11"
 }
