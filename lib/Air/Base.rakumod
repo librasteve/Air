@@ -864,7 +864,7 @@ class Site {
     submethod TWEAK {
         if    @!pages[0] { $!index = @!pages[0] }
         elsif $!index    { @!pages[0] = $!index }
-        else             { note "No pages or index found!" }
+        else  { note "No pages or index found!" }
 
         for @!tools -> $tool {
             for @!pages -> $page {
@@ -887,8 +887,10 @@ class Site {
             get -> 'js',  *@path { static 'static/js',  @path }
             get ->        *@path { static 'static',     @path }
 
-            for @!pages.map: {.name, .serial} -> ($name, $id) {
-                note "adding GET $name/<#>";
+            for @!pages {
+                my ($name, $serial) = .name, .serial;
+
+                note "adding GET {$name}/<#>";
                 get -> Str $ where $name, $serial {
                     content 'text/html', @!pages[$serial-1].HTML
                 }

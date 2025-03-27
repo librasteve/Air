@@ -18,42 +18,47 @@ use Air::Component;
 
 ### HTMX functions
 
-Predeclares some custom HTMX functions. This declutters `class Todo`, one nice part of using an HLL to generate HTML.
+We prepare some custom HTMX actions for our Todo component. This declutters `class Todo` and keeps our `hx-attrs` tidy and local.
 
 ```raku
-sub hx-create($url --> Hash()) {
-    :hx-post("$url"),
-    :hx-target<table>,
-    :hx-swap<beforeend>,
-    :hx-on:htmx:after-request<this.reset()>,
-}
-sub hx-toggle($url, $id --> Hash()) {
-    :hx-get("$url/$id/toggle"),
-    :hx-target<closest tr>,
-    :hx-swap<outerHTML>,
-}
-sub hx-delete($url, $id --> Hash()) {
-    :hx-delete("$url/$id"),
-    :hx-confirm<Are you sure?>,
-    :hx-target<closest tr>,
-    :hx-swap<delete>,
+role HxTodo {
+    method hx-create(--> Hash()) {
+        :hx-post("todo"),
+        :hx-target<table>,
+        :hx-swap<beforeend>,
+    }
+    method hx-delete(--> Hash()) {
+        :hx-delete($.url-id),
+        :hx-confirm<Are you sure?>,
+        :hx-target<closest tr>,
+        :hx-swap<delete>,
+    }
+    method hx-toggle(--> Hash()) {
+        :hx-get("$.url-id/toggle"),
+        :hx-target<closest tr>,
+        :hx-swap<outerHTML>,
+    }
 }
 ```
 
 Key features are:
 
-  * sub names `hx-toggle` echo standard HTMX attributes such as `hx-get`
+  * these are packaged in a raku role which is then consumed by `class Todo`
+
+  * method names `hx-toggle` echo standard HTMX attributes such as `hx-get`
 
   * return values are coerced to a raku `Hash` containing HTMX attrs
 
 ### class Todo
 
-The core of our synopsis. It `does role Component` to bring in the scaffolding.
+The core of our synopsis. It `does Component` to bring in the scaffolding.
 
 The general idea is that a raku class implements a web Component, multiple instances of the Component are represented by objects of the class and the methods of the class represent actions that can be performed on the Component in the browser.
 
 ```raku
 class Todo does Component {
+    also does HxTodo;
+
     has Bool $.checked is rw = False;
     has Str  $.text;
 
@@ -64,28 +69,34 @@ class Todo does Component {
 
     multi method HTML {
         tr
-            td( input :type<checkbox>, |hx-toggle($.url,$.id), :$!checked ),
+            td( input :type<checkbox>, |$.hx-toggle, :$!checked ),
             td( $!checked ?? del $!text !! $!text),
-            td( button :type<submit>, |hx-delete($.url,$.id), :style<width:50px>, '-'),
+            td( button :type<submit>, |$.hx-delete, :style<width:50px>, '-'),
     }
 }
 ```
 
 Key features of `class Todo` are:
 
-  * Todo objects have state `$.checked` and `$.text`
+  * Todo objects have state `$.checked` and `$.text` with suitable defaults
 
   * `method toggle` takes the trait `is routable` - this makes a corresponding Cro route
 
   * `method toggle` adjusts the state and ends with the `respond` sub (which calls `.HTML`)
 
-  * `class Todo` provides a `multi method HTML` which uses functional HTML tags
+  * `class Todo` provides a `multi method HTML` which uses functional HTML tags `tr`, `td` and so on
+
+  * we call our HxTodo methods eg `|$.hx-toggle` with the *call self* shorthand `$.`
+
+  * the Hash is flattened into individual attrs with `|`
+
+  * a smattering of style (or any HTML attr) can be added as needed
 
 The result is a concise, legible and easy-to-maintain component implementation.
 
 ### sub SITE
 
-Now, we can export a website as follows:
+Now, we can make a website as follows:
 
 ```raku
 my &index = &page.assuming(
@@ -102,7 +113,7 @@ sub SITE is export {
             main [
                 h3 'Todos';
                 table @todos;
-                form  |hx-create("todo"), [
+                form  |Todo.hx-create, [
                     input  :name<text>;
                     button :type<submit>, '+';
                 ];
@@ -124,7 +135,7 @@ Key features of `sub SITE` are:
 
   * the call chain `site(index(main(...))` then makes our website
 
-  * `site` is passed `:components(@todos)` to make the component cro routes
+  * `site` is passed `:components(@todos)` to make the component Cro routes
 
 Run Cro service.raku
 --------------------
@@ -132,13 +143,15 @@ Run Cro service.raku
 Component automagically creates some cro routes for Todo when we start our website...
 
     > raku -Ilib service.raku
-    theme-color=azure
+    theme-color=green
     bold-color=red
-    adding GET todo/<id>
+    adding GET todo/<#>
     adding POST todo
-    adding DELETE todo/<id>
-    adding PUT todo/<id>
-    adding GET todo/<id>/toggle
+    adding DELETE todo/<#>
+    adding PUT todo/<#>
+    adding GET todo/<#>/toggle
+    adding GET page/<#>
+    Build time 0.67 sec
     Listening at http://0.0.0.0:3000
 
 DESCRIPTION
@@ -175,10 +188,10 @@ While this kind of logic can in theory be delivered in a web app using web templ
                   li $target.HTML
                 }
                 when * ~~ Content {
-                    li a(:hx-get("$.name/$.id/" ~ $name), safe $name)
+                    li a(:hx-get("$.name/$.serial/" ~ $name), safe $name)
                 }
                 when * ~~ Page {
-                    li a(:href("/{.name}/{.id}"), safe $name)
+                    li a(:href("/{.name}/{.serial}"), safe $name)
                 }
             }
         }
@@ -190,14 +203,14 @@ While this kind of logic can in theory be delivered in a web app using web templ
         nav [
             { ul li :class<logo>, :href</>, $.logo } with $.logo;
 
-            button( :class<hamburger>, :id<hamburger>, safe '&#9776;' );
+            button( :class<hamburger>, :serial<hamburger>, safe '&#9776;' );
 
             ul( :$!hx-target, :class<nav-links>,
                 self.nav-items,
-                do for @.widgets { li .HTML },
+                do for @.wserialgets { li .HTML },
             );
 
-            ul( :$!hx-target, :class<menu>, :id<menu>,
+            ul( :$!hx-target, :class<menu>, :serial<menu>,
                 self.nav-items,
             );
         ]
@@ -218,9 +231,9 @@ When writing components:
 role Component
 --------------
 
-### has UInt $.id
+### has UInt $.serial
 
-assigns and tracks instance ids
+assigns and tracks instance serials
 
 ### has Str $.base
 
@@ -264,13 +277,21 @@ get url (ie base/name)
 method url-id() returns Str
 ```
 
-get url-id (ie base/name/id)
+get url-id (ie base/name/serial)
+
+### method id
+
+```raku
+method id() returns Str
+```
+
+get html friendly id (ie name-serial), eg for html id attr
 
 ### method LOAD
 
 ```raku
 method LOAD(
-    $id
+    $serial
 ) returns Mu
 ```
 
@@ -284,7 +305,7 @@ method CREATE(
 ) returns Mu
 ```
 
-Default create action (called on POST) - may be overridden
+Default create action (called on POST) - may be overrserialden
 
 ### method DELETE
 
@@ -292,7 +313,7 @@ Default create action (called on POST) - may be overridden
 method DELETE() returns Mu
 ```
 
-Default delete action (called on DELETE) - may be overridden
+Default delete action (called on DELETE) - may be overrserialden
 
 ### method UPDATE
 
@@ -302,7 +323,7 @@ method UPDATE(
 ) returns Mu
 ```
 
-Default update action (called on PUT) - may be overridden
+Default update action (called on PUT) - may be overrserialden
 
 ### method add-routes
 

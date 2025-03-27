@@ -214,6 +214,7 @@ my @singular-base = @singular-tags.grep: { $_ ∉ @exclude-base };
 
 my package EXPORT::BASE {
     for @regular-base -> $tag {
+#        OUR::{'&' ~ $tag} := sub (*@inners, *%h) { do-regular-tag( "$tag", |@inners, |%h ) } #iamerejh
         OUR::{'&' ~ $tag} := sub (*@inners, *%h) { do-regular-tag( "$tag", @inners, |%h ) }
     }
 

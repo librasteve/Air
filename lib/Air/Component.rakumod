@@ -19,40 +19,44 @@ use Air::Component;
 
 =head3 HTMX functions
 
-Predeclares some custom HTMX functions. This declutters C<class Todo>, one nice part of using an HLL to generate HTML.
+We prepare some custom HTMX actions for our Todo component. This declutters C<class Todo> and keeps our C<hx-attrs> tidy and local.
 
 =begin code :lang<raku>
-sub hx-create($url --> Hash()) {
-    :hx-post("$url"),
-    :hx-target<table>,
-    :hx-swap<beforeend>,
-    :hx-on:htmx:after-request<this.reset()>,
-}
-sub hx-toggle($url, $serial --> Hash()) {
-    :hx-get("$url/$serial/toggle"),
-    :hx-target<closest tr>,
-    :hx-swap<outerHTML>,
-}
-sub hx-delete($url, $serial --> Hash()) {
-    :hx-delete("$url/$serial"),
-    :hx-confirm<Are you sure?>,
-    :hx-target<closest tr>,
-    :hx-swap<delete>,
+role HxTodo {
+    method hx-create(--> Hash()) {
+        :hx-post("todo"),
+        :hx-target<table>,
+        :hx-swap<beforeend>,
+    }
+    method hx-delete(--> Hash()) {
+        :hx-delete($.url-id),
+        :hx-confirm<Are you sure?>,
+        :hx-target<closest tr>,
+        :hx-swap<delete>,
+    }
+    method hx-toggle(--> Hash()) {
+        :hx-get("$.url-id/toggle"),
+        :hx-target<closest tr>,
+        :hx-swap<outerHTML>,
+    }
 }
 =end code
 
 Key features are:
-=item sub names C<hx-toggle> echo standard HTMX attributes such as C<hx-get>
+=item these are packaged in a raku role which is then consumed by C<class Todo>
+=item method names C<hx-toggle> echo standard HTMX attributes such as C<hx-get>
 =item return values are coerced to a raku C<Hash> containing HTMX attrs
 
 =head3 class Todo
 
-The core of our synopsis. It C<does role Component> to bring in the scaffolding.
+The core of our synopsis. It C<does Component> to bring in the scaffolding.
 
-The general serialea is that a raku class implements a web Component, multiple instances of the Component are represented by objects of the class and the methods of the class represent actions that can be performed on the Component in the browser.
+The general idea is that a raku class implements a web Component, multiple instances of the Component are represented by objects of the class and the methods of the class represent actions that can be performed on the Component in the browser.
 
 =begin code :lang<raku>
 class Todo does Component {
+    also does HxTodo;
+
     has Bool $.checked is rw = False;
     has Str  $.text;
 
@@ -63,24 +67,27 @@ class Todo does Component {
 
     multi method HTML {
         tr
-            td( input :type<checkbox>, |hx-toggle($.url,$.serial), :$!checked ),
+            td( input :type<checkbox>, |$.hx-toggle, :$!checked ),
             td( $!checked ?? del $!text !! $!text),
-            td( button :type<submit>, |hx-delete($.url,$.serial), :style<wserialth:50px>, '-'),
+            td( button :type<submit>, |$.hx-delete, :style<width:50px>, '-'),
     }
 }
 =end code
 
 Key features of C<class Todo> are:
-=item Todo objects have state C<$.checked> and C<$.text>
+=item Todo objects have state C<$.checked> and C<$.text> with suitable defaults
 =item C<method toggle> takes the trait C<is routable> - this makes a corresponding Cro route
 =item C<method toggle> adjusts the state and ends with the C<respond> sub (which calls C<.HTML>)
-=item C<class Todo> provseriales a C<multi method HTML> which uses functional HTML tags
+=item C<class Todo> provides a C<multi method HTML> which uses functional HTML tags C<tr>, C<td> and so on
+=item we call our HxTodo methods eg C<|$.hx-toggle> with the I<call self> shorthand C<$.>
+=item the Hash is flattened into individual attrs with C<|>
+=item a smattering of style (or any HTML attr) can be added as needed
 
 The result is a concise, legible and easy-to-maintain component implementation.
 
 =head3 sub SITE
 
-Now, we can export a website as follows:
+Now, we can make a website as follows:
 
 =begin code :lang<raku>
 my &index = &page.assuming(
@@ -97,7 +104,7 @@ sub SITE is export {
             main [
                 h3 'Todos';
                 table @todos;
-                form  |hx-create("todo"), [
+                form  |Todo.hx-create, [
                     input  :name<text>;
                     button :type<submit>, '+';
                 ];
@@ -108,11 +115,11 @@ sub SITE is export {
 Key features of C<sub SITE> are:
 =item1 we make our own function C<&index> that
 =item2 (i) uses C<.assuming> to preset some attributes (title, description, footer) and
-=item2 (ii) then calls the C<page> function provserialed by Air::Base
+=item2 (ii) then calls the C<page> function provided by Air::Base
 =item1 we set up our list of Todo components calling C<Todo.new>
 =item1 we use the Air::Base C<site> function to make our website
 =item1 the call chain C<site(index(main(...))> then makes our website
-=item1 C<site> is passed C<:components(@todos)> to make the component cro routes
+=item1 C<site> is passed C<:components(@todos)> to make the component Cro routes
 
 
 =head2 Run Cro service.raku
@@ -120,14 +127,17 @@ Key features of C<sub SITE> are:
 Component automagically creates some cro routes for Todo when we start our website...
 =begin code
 > raku -Ilib service.raku
-theme-color=azure
+theme-color=green
 bold-color=red
 adding GET todo/<#>
 adding POST todo
 adding DELETE todo/<#>
 adding PUT todo/<#>
 adding GET todo/<#>/toggle
+adding GET page/<#>
+Build time 0.67 sec
 Listening at http://0.0.0.0:3000
+
 =end code
 
 =head1 DESCRIPTION
@@ -140,16 +150,16 @@ The rationale for Air Components is rooted in the powerful raku code composition
 =item Data Model
 =item Actions
 
-As Air evolves, it is expected that common code serialioms will emerge to make each dimensions independent (ie HTML, CSS and JS relating to Air::Theme::Font would be local, and distinct from HTML, CSS and JS for Air::Theme::Nav).
+As Air evolves, it is expected that common code idioms will emerge to make each dimensions independent (ie HTML, CSS and JS relating to Air::Theme::Font would be local, and distinct from HTML, CSS and JS for Air::Theme::Nav).
 
-Air is an integral part of the hArc stack (HTMX, Air, Red, Cro). The Synopsis shows how a Component can externalize and consume HTMX attributes for method actions, perhaps even a set of Air::HTMX libraries can be anticipated. One implication of this is that each Component can use the L<hx-swap-oob|https://htmx.org/attributes/hx-swap-oob/> attribute to deliver Content, Style and Script anywhere in the DOM (except the C<html> tag). An instance of this could be a blog website where a common Red C<model Post> could be harnessed to populate each blog post, a total page count calculation for paging and a post summary list in an C<asseriale>.
+Air is an integral part of the hArc stack (HTMX, Air, Red, Cro). The Synopsis shows how a Component can externalize and consume HTMX attributes for method actions, perhaps even a set of Air::HTMX libraries can be anticipated. One implication of this is that each Component can use the L<hx-swap-oob|https://htmx.org/attributes/hx-swap-oob/> attribute to deliver Content, Style and Script anywhere in the DOM (except the C<html> tag). An instance of this could be a blog website where a common Red C<model Post> could be harnessed to populate each blog post, a total page count calculation for paging and a post summary list in an C<aside>.
 
-In the Synopsis, both raku class inheritance and role composition provseriale coding dimensions to greatly improve code clarity and evolution. While simple samples are shown, raku has comprehensive encapsulation and type capabilities in a friendly and approachable language.
+In the Synopsis, both raku class inheritance and role composition provide coding dimensions to greatly improve code clarity and evolution. While simple samples are shown, raku has comprehensive encapsulation and type capabilities in a friendly and approachable language.
 
-Raku is a multi-paradigm language for both Functional and Object Oriented (OO) coding styles. OO is a wserialely understood approach to code and state encapsulation - suitable for code evolution across many aspects - and is well suited for Component implementations. Functional is a surprisingly good paradigm for embedding HTML standard and custom tags into general raku source code. The example below illustrates the power of Functional tags inline when used in more intricate stanzas.
+Raku is a multi-paradigm language for both Functional and Object Oriented (OO) coding styles. OO is a widely understood approach to code and state encapsulation - suitable for code evolution across many aspects - and is well suited for Component implementations. Functional is a surprisingly good paradigm for embedding HTML standard and custom tags into general raku source code. The example below illustrates the power of Functional tags inline when used in more intricate stanzas.
 
 While this kind of logic can in theory be delivered in a web app using web template files, as the author of the Cro Template language L<comments|https://cro.raku.org/docs/reference/cro-webapp-template-syntax#Conditionals>
-I<Those wishing for more are encouraged to consserialer writing their logic outsseriale of the template.>
+I<Those wishing for more are encouraged to consider writing their logic outside of the template.>
 
 =begin code :lang<raku>
     method nav-items {
@@ -230,7 +240,7 @@ role Component {
 
 	my %holder;
 	#| populates an instance holder [class method],
-	#| may be overrserialden for external instance holder
+	#| may be overridden for external instance holder
 	method holder(--> Hash) { %holder }
 
 	#| get all instances in holder
@@ -242,30 +252,30 @@ role Component {
 		self.?make-routes;
 	}
 
+
 	#| get url safe name of class doing Component role
 	method name { ::?CLASS.^name.subst('::','-').lc }
 
 	#| get url (ie base/name)
 	method url(--> Str) { do with self.base { "$_/" } ~ self.name }
 
-	#| get url-serial (ie base/name/serial)
+	#| get url-id (ie base/name/serial)
 	method url-id(--> Str) { self.url ~ '/' ~ self.serial }
 
 	#| get html friendly id (ie name-serial), eg for html id attr
 	method id(--> Str) { self.name ~ '-' ~ self.serial }
 
-
-	#| Default load action (called on GET) - may be overrserialden
+	#| Default load action (called on GET) - may be overridden
 	method LOAD($serial)      { self.holder{$serial} }
 
 	#| Default create action (called on POST) - may be overrserialden
-	method CREATE(*%data) { ::?CLASS.new: |%data }
+	method CREATE(*%data)     { ::?CLASS.new: |%data }
 
 	#| Default delete action (called on DELETE) - may be overrserialden
-	method DELETE         { self.holder{$!serial}:delete }
+	method DELETE             { self.holder{$!serial}:delete }
 
 	#| Default update action (called on PUT) - may be overrserialden
-	method UPDATE(*%data) { self.data = |self.data, |%data }
+	method UPDATE(*%data)     { self.data = |self.data, |%data }
 
 	::?CLASS.HOW does my role ExportMethod {
 		#| Meta Method ^add-routes typically called from Air::Base::Site in a Cro route block
@@ -346,7 +356,7 @@ multi sub respond(Str $html) is export {
 
 Steve Roe <librasteve@furnival.net>
 
-The `Air::Component` module provserialed is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
+The `Air::Component` module provided is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
 
 
 =head1 COPYRIGHT AND LICENSE
