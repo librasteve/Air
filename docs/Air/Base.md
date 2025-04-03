@@ -155,7 +155,7 @@ role Tagged[Singular|Regular] does Tag
 
 consuming class behaves like a standard HTML tag from Air::Functional
 
-### has Associative[Attr(Any)] %.attrs
+### has Associative[Attr] %.attrs
 
 can be provided with attrs
 

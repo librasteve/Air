@@ -1,19 +1,23 @@
 use Test;
 use Air::Functional;
 
-is h1('text', :class<jumbotron>), "\n<h1 class=\"jumbotron\">text</h1>",        'h1';
+is h1('text', :class<jumbotron>), "\n<h1 class=\"jumbotron\">text</h1>", 'h1';
 
-is h1(:class<doobie>), "\n<h1 class=\"doobie\"></h1>",                          'empty';
+is h1(:class<doobie>), "\n<h1 class=\"doobie\"></h1>",                   'empty';
 
-is div(:class<jumbotron>, 'xx'), "\n<div class=\"jumbotron\">xx</div>",         'regular';
+is div(:class<jumbotron>, 'xx'), "\n<div class=\"jumbotron\">xx</div>",  'regular';
 
-is hr, "\n<hr />",                                                              'singular';
+is hr, "\n<hr />",                                                       'singular';
 
 #Str inners are auto escaped
 my $tainted = '<div class="content">Escaped & Raw HTML!</div>';
 my $expect = "\n<p>\&lt;div class=\&quot;content\&quot;\&gt;Escaped \&amp; Raw HTML!\&lt;/div\&gt;</p>";
 
-is p( $tainted ), $expect ,                                                     'escape';
+my $x = p( $tainted );
+say $x.WHAT;
+die $x;
+
+is p( $tainted ), $expect ,                                              'escape';
 
 
 done-testing;

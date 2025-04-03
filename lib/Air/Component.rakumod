@@ -208,7 +208,7 @@ From the implementation of the Air::Base::Nav component.
 
 When writing components:
 
-=item custom C<multi method HTML> inners must be explicitly rendered with .HTML or wrapped in a tag eg. C<div> since being passed as AN inner will call C<trender> which will, in turn, call C<.HTML>
+=item custom C<multi method HTML> inners must be explicitly rendered with .HTML or wrapped in a tag eg. C<div> since being passed as AN inner will call C<render-tag> which will, in turn, call C<.HTML>
 
 =end pod
 

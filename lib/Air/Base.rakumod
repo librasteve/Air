@@ -142,38 +142,6 @@ use Air::Component;
 
 my @functions = <Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Safe>;
 
-enum TagType is export <Singular Regular>;
-subset Attr of Str;
-
-=head2 role Tagged[Singular|Regular] does Tag
-
-#| consuming class behaves like a standard HTML tag from Air::Functional
-role Tagged[TagType $tag-type] does Tag {
-    has Str     $.name = ::?CLASS.^name.lc;
-
-    #| can be provided with attrs
-    has Attr()  %.attrs is rw;   #coercion accepts multi-valued attrs with spaces
-
-    #| can be provided with inners
-    has         @.inners;
-
-    #| ok to call .new with @inners as Positional
-    multi method new(*@inners, *%attrs) {
-        self.bless:  :@inners, :%attrs
-    }
-
-    #| provides default .HTML method used by tag render
-    multi method HTML {
-        samewith $tag-type
-    }
-    multi method HTML(Singular) {
-        do-singular-tag( $!name, |%.attrs )
-    }
-    multi method HTML(Regular) {
-        do-regular-tag( $!name, @.inners, |%.attrs )
-    }
-}
-
 =head2 Basic Tags
 
 =para A subset of Air::Functional basic HTML tags, provided as roles, that are slightly adjusted by Air::Base to provide a convenient set of elements for the Page Tags.
@@ -181,18 +149,18 @@ role Tagged[TagType $tag-type] does Tag {
 class Nav  { ... }
 class Page { ... }
 
-=head3 role Safe   does Tagged[Regular] {...}
+=head3 role Safe   does Tag[Regular] {...}
 
-role Safe   does Tagged[Regular]  {
+role Safe   does Tag[Regular]  {
     #| avoids HTML escape
     multi method HTML {
         @.inners.join
     }
 }
 
-=head3 role Script does Tagged[Regular] {...}
+=head3 role Script does Tag[Regular] {...}
 
-role Script does Tagged[Regular]  {
+role Script does Tag[Regular]  {
     #| no html escape
     multi method HTML {
         opener($.name, |%.attrs) ~
@@ -201,9 +169,9 @@ role Script does Tagged[Regular]  {
     }
 }
 
-=head3 role Style  does Tagged[Regular] {...}
+=head3 role Style  does Tag[Regular] {...}
 
-role Style  does Tagged[Regular]  {
+role Style  does Tag[Regular]  {
     #| no html escape
     multi method HTML {
         opener($.name, |%.attrs)  ~
@@ -212,21 +180,21 @@ role Style  does Tagged[Regular]  {
     }
 }
 
-=head3 role Meta   does Tagged[Singular] {}
+=head3 role Meta   does Tag[Singular] {}
 
-role Meta   does Tagged[Singular] {}
+role Meta   does Tag[Singular] {}
 
-=head3 role Title  does Tagged[Regular]  {}
+=head3 role Title  does Tag[Regular]  {}
 
-role Title  does Tagged[Regular]  {}
+role Title  does Tag[Regular]  {}
 
-=head3 role Link  does Tagged[Regular]  {}
+=head3 role Link  does Tag[Regular]  {}
 
-role Link   does Tagged[Singular] {}
+role Link   does Tag[Singular] {}
 
-=head3 role A      does Tagged[Regular] {...}
+=head3 role A      does Tag[Regular] {...}
 
-role A      does Tagged[Regular]  {
+role A      does Tag[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :target<_blank>;
         do-regular-tag( $.name, @.inners, |%attrs )
@@ -237,9 +205,9 @@ role A      does Tagged[Regular]  {
 
 =para A subset of Air::Functional basic HTML tags, provided as roles, that are slightly adjusted by Air::Base to provide a convenient and opinionated set of defaults for C<html>, C<head>, C<body>, C<header>, C<nav>, C<main> & C<footer>. Several of the page tags offer shortcut attrs that are populated up the DOM immediately prior to first use.
 
-=head3 role Head   does Tagged[Regular] {...}
+=head3 role Head   does Tag[Regular] {...}
 
-role Head   does Tagged[Regular]  {
+role Head   does Tag[Regular]  {
 
     =para Singleton pattern (ie. same Head for all pages)
 
@@ -269,7 +237,7 @@ role Head   does Tagged[Regular]  {
     #| set up common defaults (called on instantiation)
     method defaults {
         self.metas.append: Meta.new: :charset<utf-8>;
-        self.metas.append: Meta.new: :name<viewport>, :content<width=device-width, initial-scale=1>;
+        self.metas.append: Meta.new: :name<viewport>, :content('width=device-width, initial-scale=1');
         self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
         self.links.append: Link.new: :rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>;
         self.scripts.append: Script.new: :src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
@@ -289,9 +257,9 @@ role Head   does Tagged[Regular]  {
     }
 }
 
-=head3 role Header does Tagged[Regular] {...}
+=head3 role Header does Tag[Regular] {...}
 
-role Header does Tagged[Regular]  {
+role Header does Tag[Regular]  {
     #| nav
     has Nav  $.nav is rw;
     #| tagline
@@ -305,27 +273,27 @@ role Header does Tagged[Regular]  {
     }
 }
 
-=head3 role Main   does Tagged[Regular] {...}
+=head3 role Main   does Tag[Regular] {...}
 
-role Main   does Tagged[Regular]  {
+role Main   does Tag[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
 
-=head3 role Footer does Tagged[Regular] {...}
+=head3 role Footer does Tag[Regular] {...}
 
-role Footer does Tagged[Regular]  {
+role Footer does Tag[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
 
-=head 3 role Body   does Tagged[Regular] {...}
+=head 3 role Body   does Tag[Regular] {...}
 
-role Body   does Tagged[Regular]  {
+role Body   does Tag[Regular]  {
     #| header
     has Header $.header is rw .= new;
     #| main
@@ -342,9 +310,9 @@ role Body   does Tagged[Regular]  {
     }
 }
 
-=head3 role Html   does Tagged[Regular] {...}
+=head3 role Html   does Tag[Regular] {...}
 
-role Html   does Tagged[Regular]  {
+role Html   does Tag[Regular]  {
     my $loaded = 0;
 
     #| head
@@ -376,32 +344,32 @@ role Html   does Tagged[Regular]  {
 
 =para These are re-published with minor adjustments and align with Pico CSS semantic tags
 
-=head3 role Content   does Tagged[Regular] {...}
+=head3 role Content   does Tag[Regular] {...}
 
-role Content   does Tagged[Regular] {
+role Content   does Tag[Regular] {
     multi method HTML {
         my %attrs  = |%.attrs, :id<content>;
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
 
-=head3 role Section   does Tagged[Regular] {}
+=head3 role Section   does Tag[Regular] {}
 
-role Section   does Tagged[Regular] {}
+role Section   does Tag[Regular] {}
 
-=head3 role Article   does Tagged[Regular] {}
+=head3 role Article   does Tag[Regular] {}
 
-role Article   does Tagged[Regular] {}
+role Article   does Tag[Regular] {}
 
-=head3 role Article   does Tagged[Regular] {}
+=head3 role Article   does Tag[Regular] {}
 
-role Aside     does Tagged[Regular] {}
+role Aside     does Tag[Regular] {}
 
-=head3 role Time      does Tagged[Regular] {...}
+=head3 role Time      does Tag[Regular] {...}
 
 =para In HTML the time tag is typically of the form E<lt> time datetime="2025-03-13" E<gt> 13 March, 2025 E<lt> /time E<gt> . In Air you can just go time(:datetime E<lt> 2025-02-27 E<gt> ); and raku will auto format and fill out the inner human readable text.
 
-role Time      does Tagged[Regular] {
+role Time      does Tag[Regular] {
     use DateTime::Format;
 
     multi method HTML {
@@ -428,9 +396,9 @@ role Time      does Tagged[Regular] {
 
 role Widget {}
 
-=head3 role LightDark does Tagged[Regular] does Widget {...}
+=head3 role LightDark does Tag[Regular] does Widget {...}
 
-role LightDark does Tagged[Regular] does Widget {
+role LightDark does Tag[Regular] does Widget {
     #| attribute 'show' may be set to 'icon'(default) or 'buttons'
     multi method HTML {
         my $show = self.attrs<show> // 'icon';
@@ -563,9 +531,9 @@ role Analytics does Tool {
 
 =para First we set up the NavItems = Internal | External | Content | Page
 
-=head3 role External  does Tagged[Regular] {...}
+=head3 role External  does Tag[Regular] {...}
 
-role External  does Tagged[Regular] {
+role External  does Tag[Regular] {
     has Str $.label is rw = '';
     has %.others = {:target<_blank>, :rel<noopener noreferrer>};
 
@@ -575,9 +543,9 @@ role External  does Tagged[Regular] {
     }
 }
 
-=head3 role Internal  does Tagged[Regular] {...}
+=head3 role Internal  does Tag[Regular] {...}
 
-role Internal  does Tagged[Regular] {
+role Internal  does Tag[Regular] {
     has Str $.label is rw = '';
 
     multi method HTML {
@@ -589,7 +557,7 @@ subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 #| Nav does Component in order to support multiple nav instances
 #| with distinct NavItem and Widget attributes.
 #| Also does Tag so that nav tags can be placed anywhere on a page.
-class Nav  does Component does Tag {
+class Nav  does Component {
     has Str     $.hx-target = '#content';
     #| logo
     has Safe    $.logo;

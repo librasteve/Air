@@ -226,7 +226,7 @@ TIPS & TRICKS
 
 When writing components:
 
-  * custom `multi method HTML` inners must be explicitly rendered with .HTML or wrapped in a tag eg. `div` since being passed as AN inner will call `trender` which will, in turn, call `.HTML`
+  * custom `multi method HTML` inners must be explicitly rendered with .HTML or wrapped in a tag eg. `div` since being passed as AN inner will call `render-tag` which will, in turn, call `.HTML`
 
 role Component
 --------------
