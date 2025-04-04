@@ -102,7 +102,7 @@ multi prefix:<^>(Str:D() $s --> Str) is export {
     escape-html($s)
 }
 
-=head2 Types for Tag Rendering
+=head2 Tag Rendering
 
 role   Tag            is export(:MANDATORY) {...}
 enum   TagType        is export(:MANDATORY) <Singular Regular>;
@@ -210,12 +210,13 @@ sub do-singular-tag(Str $tag, *%h --> Markup() ) is export(:MANDATORY)  {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ ' />'
 }
 
-=head2 Tag Export
+=head2 Tag Export Options
 
 =para Exports all the tags programmatically
 
 my @regular-tags = (@all-tags (-) @singular-tags).keys;  #Set difference (-)
 
+#| export all HTML tags
 #| viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 my package EXPORT::DEFAULT {
     for @regular-tags -> $tag {
@@ -227,12 +228,12 @@ my package EXPORT::DEFAULT {
     }
 }
 
-#| use :CRO as package to avoid collisions with Cro::Router names
 my @exclude-cro = <header table template>;
 
 my @regular-cro  = @regular-tags.grep:  { $_ ∉ @exclude-cro };
 my @singular-cro = @singular-tags.grep: { $_ ∉ @exclude-cro };
 
+#| use :CRO as package to avoid collisions with Cro::Router names
 my package EXPORT::CRO {
     for @regular-cro -> $tag {
         OUR::{'&' ~ $tag} := sub (*@inners, *%h) { do-regular-tag( "$tag", @inners, |%h ) }
@@ -243,12 +244,13 @@ my package EXPORT::CRO {
     }
 }
 
-#| use :BASE as package to avoid collisions with Cro::Router, Air::Base & Air::Component names
+
 my @exclude-base  = <section article aside time a body main header content footer nav table grid>;
 
 my @regular-base  = @regular-tags.grep:  { $_ ∉ @exclude-base };
 my @singular-base = @singular-tags.grep: { $_ ∉ @exclude-base };
 
+#| use :BASE as package to avoid collisions with Cro::Router, Air::Base & Air::Component names
 my package EXPORT::BASE {
     for @regular-base -> $tag {
         OUR::{'&' ~ $tag} := sub (*@inners, *%h) { do-regular-tag( "$tag", @inners, |%h ) }

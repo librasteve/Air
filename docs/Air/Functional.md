@@ -108,8 +108,8 @@ multi sub prefix:<^>(
 
 also a shortcut ^ prefix
 
-Types for Tag Rendering
------------------------
+Tag Rendering
+-------------
 
 ### role Attr is Str {} - type for Attribute values, use Attr() for coercion
 
@@ -218,15 +218,25 @@ sub do-singular-tag(
 
 do a singular tag (ie a tag without @inners)
 
-Tag Export
-----------
+Tag Export Options
+------------------
 
 Exports all the tags programmatically
 
 package Air::Functional::EXPORT::DEFAULT
 ----------------------------------------
 
-viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
+export all HTML tags viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
+
+package Air::Functional::EXPORT::CRO
+------------------------------------
+
+use :CRO as package to avoid collisions with Cro::Router names
+
+package Air::Functional::EXPORT::BASE
+-------------------------------------
+
+use :BASE as package to avoid collisions with Cro::Router, Air::Base & Air::Component names
 
 AUTHOR
 ======
