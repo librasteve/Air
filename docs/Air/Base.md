@@ -148,46 +148,12 @@ DESCRIPTION
 
 Each feature of Air::Base is set out below:
 
-role Tagged[Singular|Regular] does Tag
---------------------------------------
-
-
-
-consuming class behaves like a standard HTML tag from Air::Functional
-
-### has Associative[Attr] %.attrs
-
-can be provided with attrs
-
-### has Positional @.inners
-
-can be provided with inners
-
-### method new
-
-```raku
-method new(
-    *@inners,
-    *%attrs
-) returns Mu
-```
-
-ok to call .new with @inners as Positional
-
-### method HTML
-
-```raku
-method HTML() returns Mu
-```
-
-provides default .HTML method used by tag render
-
 Basic Tags
 ----------
 
 A subset of Air::Functional basic HTML tags, provided as roles, that are slightly adjusted by Air::Base to provide a convenient set of elements for the Page Tags.
 
-### role Safe does Tagged[Regular] {...}
+### role Safe does Tag[Regular] {...}
 
 ### method HTML
 
@@ -197,7 +163,7 @@ method HTML() returns Mu
 
 avoids HTML escape
 
-### role Script does Tagged[Regular] {...}
+### role Script does Tag[Regular] {...}
 
 ### method HTML
 
@@ -207,7 +173,7 @@ method HTML() returns Mu
 
 no html escape
 
-### role Style does Tagged[Regular] {...}
+### role Style does Tag[Regular] {...}
 
 ### method HTML
 
@@ -217,20 +183,20 @@ method HTML() returns Mu
 
 no html escape
 
-### role Meta does Tagged[Singular] {}
+### role Meta does Tag[Singular] {}
 
-### role Title does Tagged[Regular] {}
+### role Title does Tag[Regular] {}
 
-### role Link does Tagged[Regular] {}
+### role Link does Tag[Regular] {}
 
-### role A does Tagged[Regular] {...}
+### role A does Tag[Regular] {...}
 
 Page Tags
 ---------
 
 A subset of Air::Functional basic HTML tags, provided as roles, that are slightly adjusted by Air::Base to provide a convenient and opinionated set of defaults for `html`, `head`, `body`, `header`, `nav`, `main` & `footer`. Several of the page tags offer shortcut attrs that are populated up the DOM immediately prior to first use.
 
-### role Head does Tagged[Regular] {...}
+### role Head does Tag[Regular] {...}
 
 Singleton pattern (ie. same Head for all pages)
 
@@ -274,7 +240,7 @@ method HTML() returns Mu
 
 .HTML method calls .HTML on all attrs
 
-### role Header does Tagged[Regular] {...}
+### role Header does Tag[Regular] {...}
 
 ### has Nav $.nav
 
@@ -284,14 +250,14 @@ nav
 
 tagline
 
-### role Main does Tagged[Regular] {...}
+### role Main does Tag[Regular] {...}
 
-### role Footer does Tagged[Regular] {...}
+### role Footer does Tag[Regular] {...}
 
 head
 ====
 
-3 role Body does Tagged[Regular] {...}
+3 role Body does Tag[Regular] {...}
 
 ### has Header $.header
 
@@ -305,7 +271,7 @@ main
 
 footer
 
-### role Html does Tagged[Regular] {...}
+### role Html does Tag[Regular] {...}
 
 ### has Head $.head
 
@@ -315,11 +281,11 @@ head
 
 body
 
-### has Associative[Attr] %.lang
+### has Associative[Air::Functional::Attr(Any)] %.lang
 
 default :lang<en>
 
-### has Associative[Attr] %.mode
+### has Associative[Air::Functional::Attr(Any)] %.mode
 
 default :data-theme<dark>
 
@@ -328,15 +294,15 @@ Semantic Tags
 
 These are re-published with minor adjustments and align with Pico CSS semantic tags
 
-### role Content does Tagged[Regular] {...}
+### role Content does Tag[Regular] {...}
 
-### role Section does Tagged[Regular] {}
+### role Section does Tag[Regular] {}
 
-### role Article does Tagged[Regular] {}
+### role Article does Tag[Regular] {}
 
-### role Article does Tagged[Regular] {}
+### role Article does Tag[Regular] {}
 
-### role Time does Tagged[Regular] {...}
+### role Time does Tag[Regular] {...}
 
 In HTML the time tag is typically of the form < time datetime="2025-03-13" > 13 March, 2025 < /time > . In Air you can just go time(:datetime < 2025-02-27 > ); and raku will auto format and fill out the inner human readable text.
 
@@ -347,7 +313,7 @@ Widgets
 
 Active tags that can be used anywhere to provide a nugget of UI behaviour, default should be a short word (or a single item) that can be used in Nav
 
-### role LightDark does Tagged[Regular] does Widget {...}
+### role LightDark does Tag[Regular] does Widget {...}
 
 ### method HTML
 
@@ -379,9 +345,9 @@ These are the central elements of Air::Base
 
 First we set up the NavItems = Internal | External | Content | Page
 
-### role External does Tagged[Regular] {...}
+### role External does Tag[Regular] {...}
 
-### role Internal does Tagged[Regular] {...}
+### role Internal does Tag[Regular] {...}
 
 class Nav
 ---------

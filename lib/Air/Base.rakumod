@@ -316,14 +316,14 @@ role Html   does Tag[Regular]  {
     my $loaded = 0;
 
     #| head
-    has Head $.head .= instance;
+    has Head   $.head .= instance;
     #| body
-    has Body $.body is rw .= new;
+    has Body   $.body is rw .= new;
 
     #| default :lang<en>
-    has Attr %.lang is rw = :lang<en>;
+    has Attr() %.lang is rw = :lang<en>;
     #| default :data-theme<dark>
-    has Attr %.mode is rw = :data-theme<dark>;
+    has Attr() %.mode is rw = :data-theme<dark>;
 
     method defaults {
         self.attrs = |%!lang, |%!mode, |%.attrs;
@@ -557,7 +557,7 @@ subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 #| Nav does Component in order to support multiple nav instances
 #| with distinct NavItem and Widget attributes.
 #| Also does Tag so that nav tags can be placed anywhere on a page.
-class Nav  does Component {
+class Nav      does Component does Tag[Regular] {
     has Str     $.hx-target = '#content';
     #| logo
     has Safe    $.logo;
@@ -696,7 +696,7 @@ class Nav  does Component {
 
 #| Page does Component in order to support
 #| multiple page instances with distinct content and attributes.
-class Page does Component {
+class Page     does Component {
     has $.loaded is rw = 0;
 
     #| auto refresh browser every n secs in dev't
@@ -951,7 +951,7 @@ class Site {
 
 =head3 role Table does Tag
 
-role Table does Tag {
+role Table     does Tag[Regular] {
 
     =para Attrs thead, tbody and tfoot can each be a 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for multi-row thead and tfoot.
 
@@ -1007,7 +1007,7 @@ role Table does Tag {
 
 =head3 role Table does Tag
 
-role Grid does Tag {
+role Grid      does Tag[Regular] {
     #| list of items to populate grid, each item is wrapped in a span tag
     has @.items;
 

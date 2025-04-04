@@ -13,10 +13,6 @@ is hr, "\n<hr />",                                                       'singul
 my $tainted = '<div class="content">Escaped & Raw HTML!</div>';
 my $expect = "\n<p>\&lt;div class=\&quot;content\&quot;\&gt;Escaped \&amp; Raw HTML!\&lt;/div\&gt;</p>";
 
-my $x = p( $tainted );
-say $x.WHAT;
-die $x;
-
 is p( $tainted ), $expect ,                                              'escape';
 
 
