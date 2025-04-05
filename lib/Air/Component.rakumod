@@ -60,7 +60,7 @@ class Todo does Component {
     has Bool $.checked is rw = False;
     has Str  $.text;
 
-    method toggle is routable {
+    method toggle is controller {
         $!checked = !$!checked;
         respond self;
     }
@@ -76,7 +76,7 @@ class Todo does Component {
 
 Key features of C<class Todo> are:
 =item Todo objects have state C<$.checked> and C<$.text> with suitable defaults
-=item C<method toggle> takes the trait C<is routable> - this makes a corresponding Cro route
+=item C<method toggle> takes the trait C<is controller> - this makes a corresponding Cro route
 =item C<method toggle> adjusts the state and ends with the C<respond> sub (which calls C<.HTML>)
 =item C<class Todo> provides a C<multi method HTML> which uses functional HTML tags C<tr>, C<td> and so on
 =item we call our HxTodo methods eg C<|$.hx-toggle> with the I<call self> shorthand C<$.>
@@ -208,21 +208,23 @@ From the implementation of the Air::Base::Nav component.
 
 When writing components:
 
-=item custom C<multi method HTML> inners must be explicitly rendered with .HTML or wrapped in a tag eg. C<div> since being passed as AN inner will call C<trender> which will, in turn, call C<.HTML>
+=item custom C<multi method HTML> inners must be explicitly rendered with .HTML or wrapped in a tag eg. C<div> since being passed as AN inner will call C<render-tag> which will, in turn, call C<.HTML>
 
 =end pod
 
-role IsRoutable {
-	has Str $.is-routable-name;
-	method is-routable { True }
+use Air::Functional :CRO;
+
+role IsController {
+	has Str $.is-controller-name;
+	method is-controller { True }
 }
 
-multi trait_mod:<is>(Method $m, Bool :$routable!) is export {
-	trait_mod:<is>($m, :routable{})
+multi trait_mod:<is>(Method $m, Bool :$controller!) is export {
+	trait_mod:<is>($m, :controller{})
 }
 
-multi trait_mod:<is>(Method $m, :$routable!, :$name = $m.name) is export {
-	$m does IsRoutable($name)
+multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name) is export {
+	$m does IsController($name)
 }
 
 use Cro::HTTP::Router;
@@ -321,8 +323,8 @@ role Component {
 				}
 			}
 
-			for $component.^methods.grep(*.?is-routable) -> $meth {
-				my $meth-name = $meth.is-routable-name;
+			for $component.^methods.grep(*.?is-controller) -> $meth {
+				my $meth-name = $meth.is-controller-name;
 
 				if $meth.signature.params > 2 {
 					note "adding PUT $comp-name/<#>/$meth-name";
