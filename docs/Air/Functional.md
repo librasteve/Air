@@ -236,7 +236,7 @@ use :CRO as package to avoid collisions with Cro::Router names
 package Air::Functional::EXPORT::BASE
 -------------------------------------
 
-use :BASE as package to avoid collisions with Cro::Router, Air::Base & Air::Component names
+use :BASE as package to avoid collisions with Cro::Router, Air::Base & Air::Component names NB the HTML description list tags <dl dd dt> are also excluded to avoid conflict with the raku `dd` command
 
 AUTHOR
 ======

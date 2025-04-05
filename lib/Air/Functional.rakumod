@@ -245,12 +245,13 @@ my package EXPORT::CRO {
 }
 
 
-my @exclude-base  = <section article aside time a body main header content footer nav table grid>;
+my @exclude-base  = <dl dd dt section article aside time a body main header content footer nav table grid>;
 
 my @regular-base  = @regular-tags.grep:  { $_ ∉ @exclude-base };
 my @singular-base = @singular-tags.grep: { $_ ∉ @exclude-base };
 
 #| use :BASE as package to avoid collisions with Cro::Router, Air::Base & Air::Component names
+#| NB the HTML description list tags <dl dd dt> are also excluded to avoid conflict with the raku `dd` command
 my package EXPORT::BASE {
     for @regular-base -> $tag {
         OUR::{'&' ~ $tag} := sub (*@inners, *%h) { do-regular-tag( "$tag", @inners, |%h ) }
