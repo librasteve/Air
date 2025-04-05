@@ -398,7 +398,7 @@ role Widget {}
 
 =head3 role LightDark does Tag[Regular] does Widget {...}
 
-role LightDark does Tag[Regular] does Widget {
+role LightDark does Tag does Widget {
     #| attribute 'show' may be set to 'icon'(default) or 'buttons'
     multi method HTML {
         my $show = self.attrs<show> // 'icon';
@@ -533,7 +533,7 @@ role Analytics does Tool {
 
 =head3 role External  does Tag[Regular] {...}
 
-role External  does Tag[Regular] {
+role External  does Tag {
     has Str $.label is rw = '';
     has %.others = {:target<_blank>, :rel<noopener noreferrer>};
 
@@ -545,7 +545,7 @@ role External  does Tag[Regular] {
 
 =head3 role Internal  does Tag[Regular] {...}
 
-role Internal  does Tag[Regular] {
+role Internal  does Tag {
     has Str $.label is rw = '';
 
     multi method HTML {
@@ -557,7 +557,7 @@ subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 #| Nav does Component in order to support multiple nav instances
 #| with distinct NavItem and Widget attributes.
 #| Also does Tag so that nav tags can be placed anywhere on a page.
-class Nav      does Component does Tag[Regular] {
+class Nav      does Component does Tag {
     has Str     $.hx-target = '#content';
     #| logo
     has Safe    $.logo;
@@ -572,12 +572,12 @@ class Nav      does Component does Tag[Regular] {
 
     #| makes routes for Content NavItems (SPA links that use HTMX), must be called from within a Cro route block
     method make-routes() {
-        unless self.^methods.grep: * ~~ IsRoutable {
+        unless self.^methods.grep: * ~~ IsController {
             for self.items.map: *.kv -> ($name, $target) {
                 given $target {
                     when * ~~ Content {
                         my &new-method = method {respond $target.?HTML};
-                        trait_mod:<is>(&new-method, :routable, :$name);
+                        trait_mod:<is>(&new-method, :controller, :$name);
                         self.^add_method($name, &new-method);
                     }
                 }
@@ -951,7 +951,7 @@ class Site {
 
 =head3 role Table does Tag
 
-role Table     does Tag[Regular] {
+role Table     does Tag {
 
     =para Attrs thead, tbody and tfoot can each be a 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for multi-row thead and tfoot.
 
@@ -1007,7 +1007,7 @@ role Table     does Tag[Regular] {
 
 =head3 role Table does Tag
 
-role Grid      does Tag[Regular] {
+role Grid      does Tag {
     #| list of items to populate grid, each item is wrapped in a span tag
     has @.items;
 

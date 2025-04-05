@@ -10,9 +10,11 @@ plan 1;
 use Air::Functional :BASE;
 use Air::Base;
 
+my $main = Main.new: p 'Hello World!';
+
 my $page = Page.new:
-    title => "Raku HTMX",
-    main => Main.new: p 'Hello World!';
+    title => "Raku HTMX", :$main;
+#    main  => Main.new: p 'Hello World!';   #iamerejh
 
 $page.html.head.style = Style.new: 'p {color: blue;}';
 

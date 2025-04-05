@@ -62,7 +62,7 @@ class Todo does Component {
     has Bool $.checked is rw = False;
     has Str  $.text;
 
-    method toggle is routable {
+    method toggle is controller {
         $!checked = !$!checked;
         respond self;
     }
@@ -80,7 +80,7 @@ Key features of `class Todo` are:
 
   * Todo objects have state `$.checked` and `$.text` with suitable defaults
 
-  * `method toggle` takes the trait `is routable` - this makes a corresponding Cro route
+  * `method toggle` takes the trait `is controller` - this makes a corresponding Cro route
 
   * `method toggle` adjusts the state and ends with the `respond` sub (which calls `.HTML`)
 

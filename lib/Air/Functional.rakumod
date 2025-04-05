@@ -116,9 +116,9 @@ role   Attr    is Str is export(:MANDATORY) {}
 role   Markup  is Str {}
 subset Inner   where Str | Tag | Markup;
 
-=head2 role Tag [TagType Singular|Regular] {} - basics for Air functions
+=head2 role Tag [TagType Singular|Regular] {} - basis for Air functions
 
-role   Tag[TagType $tag-type] is export(:MANDATORY) {
+role   Tag[TagType $tag-type?] is export(:MANDATORY) {
     has Str    $.name = ::?CLASS.^name.lc;
 
     #| can be provided with attrs

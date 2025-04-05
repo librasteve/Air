@@ -115,8 +115,8 @@ Tag Rendering
 
 ### subset Inner where Str | Tag | Markup - type union for Inner elements
 
-role Tag [TagType Singular|Regular] {} - basics for Air functions
------------------------------------------------------------------
+role Tag [TagType Singular|Regular] {} - basis for Air functions
+----------------------------------------------------------------
 
 ### has Associative[Air::Functional::Attr(Any)] %.attrs
 
