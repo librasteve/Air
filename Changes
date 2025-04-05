@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.13  2025-04-05T18:45:21+01:00
+    - drop Data::Dump::Tree from deps
+
 0.0.12  2025-04-05T07:59:52+01:00
     - tagged -> tag refactor
     - is routable -> is controller

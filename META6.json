@@ -8,8 +8,7 @@
   "depends": [
     "DateTime::Format",
     "HTML::Escape",
-    "Cro::HTTP::Router",
-    "Data::Dump::Tree"
+    "Cro::HTTP::Router"
   ],
   "description": "Just build websites the right way.",
   "license": "Artistic-2.0",
@@ -27,5 +26,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.12"
+  "version": "0.0.13"
 }
