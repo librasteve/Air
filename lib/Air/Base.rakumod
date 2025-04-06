@@ -850,7 +850,7 @@ class Site {
             { .^add-routes } for @!components.unique( as => *.^name );
 
             get ->               { content 'text/html', $.index.HTML }
-            get -> 'css', *@path { static 'static/css', @path }
+            get -> 'css', *@path { static 'static/css', @path } #if 'static/css'.IO.d; iamerejh
             get -> 'img', *@path { static 'static/img', @path }
             get -> 'js',  *@path { static 'static/js',  @path }
             get ->        *@path { static 'static',     @path }

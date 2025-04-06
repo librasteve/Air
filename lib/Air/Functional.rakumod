@@ -245,7 +245,7 @@ my package EXPORT::CRO {
 }
 
 
-my @exclude-base  = <dl dd dt section article aside time a body main header content footer nav table grid>;
+my @exclude-base  = <section article aside time a body main header content footer nav table grid>;
 
 my @regular-base  = @regular-tags.grep:  { $_ ∉ @exclude-base };
 my @singular-base = @singular-tags.grep: { $_ ∉ @exclude-base };

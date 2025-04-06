@@ -102,7 +102,7 @@ The Air documentation is at [https://librasteve.github.io/Air](https://librastev
 TIPS & TRICKS
 =============
 
-* When debugging, use the raku `note` sub to out put debuggin info to stderr (ie in the Cro Log stream)
+* When debugging, use the raku `note` sub to out put debugging info to stderr (ie in the Cro Log stream), `note $thing.raku` instead of `dd` (`dd` is an HTML datalist description tag function)
 
 * When passing a 2D Array to a tag function, make sure that there is a trailing comma `:tbody[["Mercury", "4,880", "0.39", "88"],]`
 
