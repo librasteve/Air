@@ -570,7 +570,7 @@ class Nav      does Component does Tag {
         self.bless:  :@items, |%h;
     }
 
-    #| makes routes for Content NavItems (SPA links that use HTMX), must be called from within a Cro route block
+    #| makes routes for Content NavItems (eg. SPA links that use HTMX), must be called from within a Cro route block
     method make-routes() {
         unless self.^methods.grep: * ~~ IsController {
             for self.items.map: *.kv -> ($name, $target) {
@@ -809,9 +809,9 @@ class Site {
     #| index Page ( otherwise $!index = @!pages[0] )
     has Page $.index;
     #| Components for route setup; default = [Nav.new]
-    has Component @.components = [Nav.new];
+    has      @.components = [Nav.new];
     #| Tools for sitewide behaviours
-    has Tool      @.tools      = [];
+    has Tool @.tools      = [];
 
     #| use :!scss to disable SASS compiler run
     has Bool $.scss = True;

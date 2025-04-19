@@ -111,10 +111,11 @@ enum   TagType        is export(:MANDATORY) <Singular Regular>;
 
 role   Attr    is Str is export(:MANDATORY) {}
 
-=head3 subset Inner where Str | Tag | Markup - type union for Inner elements
+=head3 subset Inner where Str | Tag | FormTag | Markup - type union for Inner elements
 
-role   Markup  is Str {}
-subset Inner   where Str | Tag | Markup;
+role   FormTag is Str is export(:MANDATORY) {}
+role   Markup  is Str is export(:MANDATORY) {}
+subset Inner   where Str | Tag | FormTag | Markup;
 
 =head2 role Tag [TagType Singular|Regular] {} - basis for Air functions
 
@@ -171,13 +172,20 @@ sub opener($tag, *%h -->Str) is export {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ '>'
 }
 
-multi sub render-tag(Tag    $inner) {
+multi sub render-tag(Tag     $inner) {
+    note 42;
     $inner.HTML
 }
-multi sub render-tag(Markup $inner) {
+multi sub render-tag(FormTag $inner) {
+    note 45;
+    $inner.HTML
+}
+multi sub render-tag(Markup  $inner) {
+    note 43;
     $inner
 }
-multi sub render-tag(Str()  $inner) {
+multi sub render-tag(Str()   $inner) {
+    note 44;
     escape-html($inner)
 }
 
