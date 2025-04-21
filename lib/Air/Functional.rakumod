@@ -173,19 +173,15 @@ sub opener($tag, *%h -->Str) is export {
 }
 
 multi sub render-tag(Tag     $inner) {
-    note 42;
     $inner.HTML
 }
 multi sub render-tag(FormTag $inner) {
-    note 45;
     $inner.HTML
 }
 multi sub render-tag(Markup  $inner) {
-    note 43;
     $inner
 }
 multi sub render-tag(Str()   $inner) {
-    note 44;
     escape-html($inner)
 }
 

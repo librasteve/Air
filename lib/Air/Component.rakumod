@@ -227,18 +227,36 @@ multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name) is export {
 	$m does IsController($name)
 }
 
+role IsAction {
+	has Str $.is-action-name;
+	method is-action { True }
+}
+
+multi trait_mod:<is>(Method $m, Bool :$action!) is export {
+	trait_mod:<is>($m, :action{})
+}
+
+multi trait_mod:<is>(Method $m, :$action!, :$name = $m.name) is export {
+	$m does IsAction($name)
+}
+
 use Cro::HTTP::Router;
+use Cro::WebApp::Template;
+use Cro::WebApp::Form;
 
 =head2 role Component
 
 role Component {
+
 	my  UInt $next = 1;
 
 	#| assigns and tracks instance serials
-	has UInt $.serial;
+	has UInt $!serial is built;
+	method serial {$!serial}
 
 	#| optional attr to specify url base
-	has Str  $.base = '';
+	has Str  $!base is built = '';
+	method base {$!base}
 
 	my %holder;
 	#| populates an instance holder [class method],
@@ -256,43 +274,43 @@ role Component {
 
 
 	#| get url safe name of class doing Component role
-	method name { ::?CLASS.^name.subst('::','-').lc }
+	method myname { ::?CLASS.^name.subst('::','-').lc }
 
 	#| get url (ie base/name)
-	method url(--> Str) { do with self.base { "$_/" } ~ self.name }
+	method url(--> Str) { do with self.base { "$_/" } ~ self.myname}
 
 	#| get url-id (ie base/name/serial)
 	method url-id(--> Str) { self.url ~ '/' ~ self.serial }
 
 	#| get html friendly id (ie name-serial), eg for html id attr
-	method id(--> Str) { self.name ~ '-' ~ self.serial }
+	method id(--> Str) { self.myname ~ '-' ~ self.serial }
 
 	#| Default load action (called on GET) - may be overridden
-	method LOAD($serial)      { self.holder{$serial} }
+	method MYLOAD($serial)    { self.holder{$serial} }
 
-	#| Default create action (called on POST) - may be overrserialden
-	method CREATE(*%data)     { ::?CLASS.new: |%data }
+	#| Default create action (called on POST) - may be overridden
+	method MYCREATE(*%data)   { ::?CLASS.new: |%data }
 
-	#| Default delete action (called on DELETE) - may be overrserialden
-	method DELETE             { self.holder{$!serial}:delete }
+	#| Default delete action (called on DELETE) - may be overridden
+	method MYDELETE           { self.holder{$!serial}:delete }
 
-	#| Default update action (called on PUT) - may be overrserialden
-	method UPDATE(*%data)     { self.data = |self.data, |%data }
+	#| Default update action (called on PUT) - may be overridden
+	method MYUPDATE(*%data)   { self.data = |self.data, |%data }
 
 	::?CLASS.HOW does my role ExportMethod {
 		#| Meta Method ^add-routes typically called from Air::Base::Site in a Cro route block
 		method add-routes(
 			$component is copy,
-			:$comp-name = $component.name;
+			:$comp-name = $component.myname;
 		) is export {
 
 			my $route-set := $*CRO-ROUTE-SET
-					or die "Components should be added from insseriale a `route {}` block";
+					or die "Components should be added from inside a `route {}` block";
 
-			my &load   = -> $serial         { $component.LOAD:   $serial    };
-			my &create = -> *%pars      	{ $component.CREATE: |%pars };
-			my &del    = -> $serial         { load($serial).DELETE          };
-			my &update = -> $serial, *%pars { load($serial).UPDATE:  |%pars };
+			my &load   = -> $serial         { $component.MYLOAD:   $serial    };
+			my &create = -> *%pars      	{ $component.MYCREATE: |%pars };
+			my &del    = -> $serial         { load($serial).MYDELETE          };
+			my &update = -> $serial, *%pars { load($serial).MYUPDATE:  |%pars };
 
 			note "adding GET $comp-name/<#>";
 			get -> Str $ where $comp-name, $serial {
@@ -303,7 +321,7 @@ role Component {
 			note "adding POST $comp-name";
 			post -> Str $ where $comp-name {
 				request-body -> $data {
-					my $new = create |$data.pairs.Map;
+					my $new = create |$data.pairs.Map;   #iamerejh
 					redirect "$comp-name/{ $new.serial }", :see-other
 				}
 			}
@@ -339,6 +357,35 @@ role Component {
 						load($serial).?"$method"()
 					}
 				}
+			}
+
+			for $component.^methods.grep(*.?is-action) -> $meth {
+				my $meth-name = $meth.is-action-name;
+
+				note "adding POST $comp-name/<#>/$meth-name";
+				post -> Str $ where $comp-name, $serial, Str $method
+				{
+					note 42;
+					note load($serial).raku;
+					note 424;
+					do load($serial).?"$method"()
+				}
+
+#				{
+#					form-data -> ::?CLASS $form {
+#						note 44;
+#						my $formtmp = Q|<&form(.form)>|;
+#						if $form.is-valid {
+#							note "Got form data: $form.raku()";
+#							content 'text/plain', 'Thanks for your review!';
+#						}
+#						else {
+#							template-inline $formtmp, { :$form }
+#						}
+#					}
+#				}
+
+
 			}
 		}
 	}

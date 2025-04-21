@@ -135,10 +135,10 @@ Each feature of Air::Base is set out below:
 
 # TODO items
 #role Theme {...}
-#role Form  {...}
 
 use Air::Functional;
 use Air::Component;
+use Air::Farm;
 
 my @functions = <Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Safe>;
 
@@ -362,6 +362,8 @@ role Section   does Tag[Regular] {}
 role Article   does Tag[Regular] {}
 
 =head3 role Article   does Tag[Regular] {}
+
+# TODO load aside style via HTMX OOB
 
 role Aside     does Tag[Regular] {}
 
@@ -809,7 +811,7 @@ class Site {
     #| index Page ( otherwise $!index = @!pages[0] )
     has Page $.index;
     #| Components for route setup; default = [Nav.new]
-    has      @.components = [Nav.new];
+    has Component @.components = [Nav.new];
     #| Tools for sitewide behaviours
     has Tool @.tools      = [];
 
@@ -848,15 +850,19 @@ class Site {
 
         route {
             { .^add-routes } for @!components.unique( as => *.^name );
+#            for @!components.unique( as => *.^name ) {
+#                default { .^add-routes }
+##                when Farm { .form-routes }
+#            }
 
             get ->               { content 'text/html', $.index.HTML }
-            get -> 'css', *@path { static 'static/css', @path } #if 'static/css'.IO.d; iamerejh
+            get -> 'css', *@path { static 'static/css', @path }
             get -> 'img', *@path { static 'static/img', @path }
             get -> 'js',  *@path { static 'static/js',  @path }
             get ->        *@path { static 'static',     @path }
 
             for @!pages {
-                my ($name, $serial) = .name, .serial;
+                my ($name, $serial) = .myname, .serial;
 
                 note "adding GET {$name}/<#>";
                 get -> Str $ where $name, $serial {

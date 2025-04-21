@@ -133,10 +133,6 @@ Key features shown are:
 Each feature of Air::Base is set out below:
 =end pod
 
-# TODO items
-#role Theme {...}
-#role Form  {...}
-
 use Air::Functional :CRO;
 use Air::Component;
 
@@ -145,16 +141,44 @@ use Cro::WebApp::Form;
 use Cro::WebApp::Template;
 use Cro::WebApp::Template::Repository;
 
+use Cro::HTTP::Router;
+
+my @functions = <Farm>;
 
 =head2 Basic Tags
 
 =para A subset of Air::Functional basic HTML tags, provided as roles, that are slightly adjusted by Air::Base to provide a convenient set of elements for the Page Tags.
 
-=head2 Form is never Functional
+=head2 Form does not do Air::Component due to namespace overlap
 
-class Farm does Cro::WebApp::Form does FormTag {
+=head2 Form is never functional (since this parent class never has fields)
 
-#    #| makes routes for Form actions
+#role Farm does Component does FormTag {
+role Farm does Cro::WebApp::Form does Component does FormTag {
+
+
+    my $formtmp = Q|<&form(.form)>|;
+
+#    method doit is action {
+#        {
+#            note 42;
+#            form-data -> ::?CLASS $form {
+#                if $form.is-valid {
+#                    note "Got form data: $form.raku()";
+#                    content 'text/plain', 'Thanks for your review!';
+#                }
+#                else {
+#                    template-inline $formtmp, { :$form }
+#                }
+#            }
+#        }
+#    }
+
+#    multi method new(*@items, *%h) {
+#        self.bless:  :@items, |%h;
+#    }
+
+#    #| makes route for Form post action
 #    method make-routes() {
 #        unless self.^methods.grep: * ~~ IsController {
 #            for self.items.map: *.kv -> ($name, $target) {
@@ -169,123 +193,58 @@ class Farm does Cro::WebApp::Form does FormTag {
 #        }
 #    }
 
-    multi method HTML(--> Markup()) {
-        my $formtmp = Q|<&form(.form)>|;
+#    method form-routes {
+#        note self.GENERATE-NAME;
+#        note 'yo';
+#        note ::?CLASS.^name;
+#
+#        my $form-name = self.GENERATE-NAME;
+#
+##        sub cc( ::T $thing) {  #iamerejh
+##            note T.^name;
+##            note $thing.raku
+##        }
+##        cc(self);
+#
+##        sub get-type(::T $thing) {  #iamerejh
+##            T
+##        }
+##        my $t = get-type(self);
+##        note $t.^name;
+#
+#
+#        note "adding POST $form-name";
+##        post -> Str $ where $form-name {
+##            request-body -> $data {
+##                my $new = create |$data.pairs.Map;
+##                redirect "$form-name/{ $new.serial }", :see-other
+##            }
+##        }
+#
+##            post -> Str $ where $form-name {
+#        post -> {
+#            form-data -> ::?CLASS $form {   #iamerejh , callback?
+#                if $form.is-valid {
+#                    note "Got form data: $form.raku()";
+#                    content 'text/plain', 'Thanks for your review!';
+#                }
+#                else {
+#                    template-inline $formtmp, { :$form }
+#                }
+#            }
+#        }
+#
+#
+#    }
 
-        parse-template($formtmp).render: { form => self.empty };
+    multi method HTML(--> Markup()) {
+        parse-template($formtmp).render: { form => self.empty }
 
     }
-#
-#    #| renders NavItems [subset NavItem of Pair where .value ~~ Internal | External | Content | Page;]
-#    method nav-items {
-#        do for @.items.map: *.kv -> ($name, $target) {
-#            given $target {
-#                when * ~~ External | Internal {
-#                    $target.label = $name;
-#                    li $target.HTML
-#                }
-#                when * ~~ Content {
-#                    li a(:hx-get("$.name/$.serial/" ~ $name), Safe.new: $name)
-#                }
-#                when * ~~ Page {
-#                    li a(:href("/{.name}/{.serial}"), Safe.new: $name)
-#                }
-#            }
-#        }
-#    }
-#
-#    #| applies Style and Script for Hamburger reactive menu
-#    multi method HTML {
-#        self.style.HTML ~ (
-#
-#        nav [
-#            { ul li :class<logo>, :href</>, $.logo } with $.logo;
-#
-#            button( :class<hamburger>, :id<hamburger>, Safe.new: '&#9776;' );
-#
-#            ul( :$!hx-target, :class<nav-links>,
-#                self.nav-items,
-#                do for @.widgets { li .HTML },
-#                );
-#
-#            ul( :$!hx-target, :class<menu>, :id<menu>,
-#                self.nav-items,
-#                );
-#        ]
-#
-#        ) ~ self.script.HTML
-#    }
-#
-#    method style { Style.new: q:to/END/
-#        /* Custom styles for the hamburger menu */
-#        .menu {
-#            display: none;
-#            flex-direction: column;
-#            gap: 10px;
-#            position: absolute;
-#            top: 60px;
-#            right: 20px;
-#            background: rgba(128, 128, 128, .97);
-#            padding: 1rem;
-#            border-radius: 8px;
-#            box-shadow: 0 4px 6px rgba(128, 128, 128, .2);
-#        }
-#
-#        .menu a {
-#            display: block;
-#        }
-#
-#        .menu.show {
-#            display: flex;
-#        }
-#
-#        .hamburger {
-#            color: var(--pico-primary);
-#            display: none;
-#            cursor: pointer;
-#            font-size: 2.5rem;
-#            background: none;
-#            border: none;
-#            padding: 0.5rem;
-#        }
-#
-#        @media (max-width: 768px) {
-#            .hamburger {
-#                display: block;
-#            }
-#
-#            .nav-links {
-#                display: none;
-#            }
-#        }
-#    END
-#	}
-#
-#    method script { Script.new: Q:to/END/;
-#        const hamburger = document.getElementById('hamburger');
-#        const menu = document.getElementById('menu');
-#
-#        hamburger.addEventListener('click', () => {
-#            menu.classList.toggle('show');
-#        });
-#
-#        document.addEventListener('click', (e) => {
-#            if (!menu.contains(e.target) && !hamburger.contains(e.target)) {
-#                menu.classList.remove('show');
-#            }
-#        });
-#
-#        // Hide the menu when resizing the viewport to a wider width
-#        window.addEventListener('resize', () => {
-#            if (window.innerWidth > 768) {
-#                menu.classList.remove('show');
-#            }
-#        });
-#    END
-#    }
+
+
+
 }
-
-
 
 =begin pod
 =head1 AUTHOR
