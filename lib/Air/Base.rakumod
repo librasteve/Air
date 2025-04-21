@@ -811,7 +811,7 @@ class Site {
     #| index Page ( otherwise $!index = @!pages[0] )
     has Page $.index;
     #| Components for route setup; default = [Nav.new]
-    has Component @.components = [Nav.new];
+    has      @.components = [Nav.new];
     #| Tools for sitewide behaviours
     has Tool @.tools      = [];
 
@@ -849,11 +849,12 @@ class Site {
         self.scss with $!scss;
 
         route {
-            { .^add-routes } for @!components.unique( as => *.^name );
-#            for @!components.unique( as => *.^name ) {
-#                default { .^add-routes }
-##                when Farm { .form-routes }
-#            }
+#            { .^add-routes } for @!components.unique( as => *.^name );
+            for @!components.unique( as => *.^name ) {
+                when Component { .^add-routes }
+                when Farm      { .form-routes }
+                default { note "Only Component and Form types may be added" }
+            }
 
             get ->               { content 'text/html', $.index.HTML }
             get -> 'css', *@path { static 'static/css', @path }

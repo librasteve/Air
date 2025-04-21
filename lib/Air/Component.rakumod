@@ -227,27 +227,11 @@ multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name) is export {
 	$m does IsController($name)
 }
 
-role IsAction {
-	has Str $.is-action-name;
-	method is-action { True }
-}
-
-multi trait_mod:<is>(Method $m, Bool :$action!) is export {
-	trait_mod:<is>($m, :action{})
-}
-
-multi trait_mod:<is>(Method $m, :$action!, :$name = $m.name) is export {
-	$m does IsAction($name)
-}
-
 use Cro::HTTP::Router;
-use Cro::WebApp::Template;
-use Cro::WebApp::Form;
 
 =head2 role Component
 
 role Component {
-
 	my  UInt $next = 1;
 
 	#| assigns and tracks instance serials
@@ -271,7 +255,6 @@ role Component {
 		%holder{$!serial} = self;
 		self.?make-routes;
 	}
-
 
 	#| get url safe name of class doing Component role
 	method myname { ::?CLASS.^name.subst('::','-').lc }
@@ -357,35 +340,6 @@ role Component {
 						load($serial).?"$method"()
 					}
 				}
-			}
-
-			for $component.^methods.grep(*.?is-action) -> $meth {
-				my $meth-name = $meth.is-action-name;
-
-				note "adding POST $comp-name/<#>/$meth-name";
-				post -> Str $ where $comp-name, $serial, Str $method
-				{
-					note 42;
-					note load($serial).raku;
-					note 424;
-					do load($serial).?"$method"()
-				}
-
-#				{
-#					form-data -> ::?CLASS $form {
-#						note 44;
-#						my $formtmp = Q|<&form(.form)>|;
-#						if $form.is-valid {
-#							note "Got form data: $form.raku()";
-#							content 'text/plain', 'Thanks for your review!';
-#						}
-#						else {
-#							template-inline $formtmp, { :$form }
-#						}
-#					}
-#				}
-
-
 			}
 		}
 	}

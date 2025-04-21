@@ -154,95 +154,15 @@ my @functions = <Farm>;
 =head2 Form is never functional (since this parent class never has fields)
 
 #role Farm does Component does FormTag {
-role Farm does Cro::WebApp::Form does Component does FormTag {
+role Farm does Cro::WebApp::Form does FormTag {
 
 
     my $formtmp = Q|<&form(.form)>|;
-
-#    method doit is action {
-#        {
-#            note 42;
-#            form-data -> ::?CLASS $form {
-#                if $form.is-valid {
-#                    note "Got form data: $form.raku()";
-#                    content 'text/plain', 'Thanks for your review!';
-#                }
-#                else {
-#                    template-inline $formtmp, { :$form }
-#                }
-#            }
-#        }
-#    }
-
-#    multi method new(*@items, *%h) {
-#        self.bless:  :@items, |%h;
-#    }
-
-#    #| makes route for Form post action
-#    method make-routes() {
-#        unless self.^methods.grep: * ~~ IsController {
-#            for self.items.map: *.kv -> ($name, $target) {
-#                given $target {
-#                    when * ~~ Content {
-#                        my &new-method = method {respond $target.?HTML};
-#                        trait_mod:<is>(&new-method, :controller, :$name);
-#                        self.^add_method($name, &new-method);
-#                    }
-#                }
-#            }
-#        }
-#    }
-
-#    method form-routes {
-#        note self.GENERATE-NAME;
-#        note 'yo';
-#        note ::?CLASS.^name;
-#
-#        my $form-name = self.GENERATE-NAME;
-#
-##        sub cc( ::T $thing) {  #iamerejh
-##            note T.^name;
-##            note $thing.raku
-##        }
-##        cc(self);
-#
-##        sub get-type(::T $thing) {  #iamerejh
-##            T
-##        }
-##        my $t = get-type(self);
-##        note $t.^name;
-#
-#
-#        note "adding POST $form-name";
-##        post -> Str $ where $form-name {
-##            request-body -> $data {
-##                my $new = create |$data.pairs.Map;
-##                redirect "$form-name/{ $new.serial }", :see-other
-##            }
-##        }
-#
-##            post -> Str $ where $form-name {
-#        post -> {
-#            form-data -> ::?CLASS $form {   #iamerejh , callback?
-#                if $form.is-valid {
-#                    note "Got form data: $form.raku()";
-#                    content 'text/plain', 'Thanks for your review!';
-#                }
-#                else {
-#                    template-inline $formtmp, { :$form }
-#                }
-#            }
-#        }
-#
-#
-#    }
 
     multi method HTML(--> Markup()) {
         parse-template($formtmp).render: { form => self.empty }
 
     }
-
-
 
 }
 
