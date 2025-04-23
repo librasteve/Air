@@ -130,12 +130,10 @@ Key features shown are:
 
 =head1 DESCRIPTION
 
-Each feature of Air::Base is set out below:
+Each feature of Air::Form is set out below:
 =end pod
 
 use Air::Functional :CRO;
-use Air::Component;
-
 
 use Cro::WebApp::Form;
 use Cro::WebApp::Template;
@@ -145,7 +143,7 @@ use Cro::HTTP::Router;
 
 my @functions = <Farm>;
 
-=head2 Basic Tags
+=head2 Basics
 
 =para A subset of Air::Functional basic HTML tags, provided as roles, that are slightly adjusted by Air::Base to provide a convenient set of elements for the Page Tags.
 
@@ -153,18 +151,31 @@ my @functions = <Farm>;
 
 =head2 Form is never functional (since this parent class never has fields)
 
-#role Farm does Component does FormTag {
 role Farm does Cro::WebApp::Form does FormTag {
-
-
     my $formtmp = Q|<&form(.form)>|;
 
-    multi method HTML(--> Markup()) {
-        parse-template($formtmp).render: { form => self.empty }
-
+    sub adjust($form-html) {
+        $form-html.subst(
+            /'method="post"'/,
+             'method="post" hx-post="/"'
+        )
     }
 
+    multi method HTML(--> Markup()) {
+        parse-template($formtmp).render( {form => self.empty} ).&adjust
+    }
+
+    multi method HTML(Farm $form --> Markup()) {
+        parse-template($formtmp).render( {:$form} ).&adjust
+    }
+
+    method retry(Farm $form) is export {
+        content 'text/plain', self.HTML($form)
+    }
 }
+
+
+
 
 =begin pod
 =head1 AUTHOR
