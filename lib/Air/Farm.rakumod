@@ -141,8 +141,6 @@ use Cro::WebApp::Template::Repository;
 
 use Cro::HTTP::Router;
 
-my @functions = <Farm>;
-
 =head2 Basics
 
 =para A subset of Air::Functional basic HTML tags, provided as roles, that are slightly adjusted by Air::Base to provide a convenient set of elements for the Page Tags.
