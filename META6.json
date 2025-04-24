@@ -16,7 +16,7 @@
         "Air": "lib/Air.rakumod",
         "Air::Base": "lib/Air/Base.rakumod",
         "Air::Component": "lib/Air/Component.rakumod",
-        "Air::Farm": "lib/Air/Farm.rakumod",
+        "Air::Form": "lib/Air/Form.rakumod",
         "Air::Functional": "lib/Air/Functional.rakumod"
     },
     "license": "Artistic-2.0",

@@ -138,7 +138,7 @@ Each feature of Air::Base is set out below:
 
 use Air::Functional;
 use Air::Component;
-use Air::Farm;
+use Air::Form;
 
 my @functions = <Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Safe>;
 
@@ -852,7 +852,7 @@ class Site {
 #            { .^add-routes } for @!components.unique( as => *.^name );
             for @!components.unique( as => *.^name ) {
                 when Component { .^add-routes }
-                when Farm      { .form-routes }
+                when Form      { .form-routes }
                 default { note "Only Component and Form types may be added" }
             }
 

@@ -149,25 +149,38 @@ use Cro::HTTP::Router;
 
 =head2 Form is never functional (since this parent class never has fields)
 
-role Farm does Cro::WebApp::Form does FormTag {
+role Form does Cro::WebApp::Form does FormTag {
+    #| optional attr to specify url base
+    has Str  $!form-base = '';
+    multi method form-base         {$!form-base}
+    multi method form-base($value) {$!form-base = $value}
+
+    #| get url safe name of class doing Form role
+    method form-name { ::?CLASS.^name.subst('::','-').lc }
+
+    #| get url (ie base/name)
+    method form-url(--> Str) {
+        do with self.form-base { "$_/" } ~ self.form-name
+    }
+
     my $formtmp = Q|<&form(.form)>|;
 
-    sub adjust($form-html) {
+    sub adjust($form-html, $form-url) {
         $form-html.subst(
             /'method="post"'/,
-             'method="post" hx-post="/"'
+             'method="post" hx-post="/' ~ $form-url ~ '"'
         )
     }
 
     multi method HTML(--> Markup()) {
-        parse-template($formtmp).render( {form => self.empty} ).&adjust
+        parse-template($formtmp).render( {form => self.empty} ).&adjust(self.form-url)
     }
 
-    multi method HTML(Farm $form --> Markup()) {
-        parse-template($formtmp).render( {:$form} ).&adjust
+    multi method HTML(Form $form --> Markup()) {
+        parse-template($formtmp).render( {:$form} ).&adjust(self.form-url)
     }
 
-    method retry(Farm $form) is export {
+    method retry(Form $form) is export {
         content 'text/plain', self.HTML($form)
     }
 }
