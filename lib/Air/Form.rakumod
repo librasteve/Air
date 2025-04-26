@@ -149,17 +149,29 @@ use Cro::HTTP::Router;
 
 =head2 Form is never functional (since this parent class never has fields)
 
-our constant va-text     = ( /^ <[A..Za..z0..9\s.,_#-]>+ $/, 'In text, only ".,_-#" punctuation characters are allowed');
-our constant va-name     = ( /^ <[A..Za..z]> $/,             'In a name, only only "-\'" punctuation characters are allowed');
-our constant va-words    = ( /^ <[A..Za..z\s]>+ $/,          'In words, only text characters are allowed');
-our constant va-note     = ( /^ <[A..Za..z0..9\s.,_#!?()-]>+ $/,
-                                'In notes, only ".,_-#!?()" punctuation characters are allowed');
-our constant va-postcode = ( /^ <[A..Za..z0..9\s]>+ $/,      'In postcode, only alphanumeric characters are allowed');
-our constant va-url      = ( /^ <[a..z0..9:/.-]>+ $/,        'Only valid urls are allowed');
-our constant va-tel      = ( /^ <[0..9+()\s-]>+ $/,          'Only valid tels are allowed');
-our constant va-email    = ( /^ <[a..zA..Z0..9._%+-]>+ '@' <[a..zA..Z0..9.-]>+ '.' <[a..zA..Z]> ** 2..6 $/,                                                       'Only valid email addresses are allowed');
 
-#iamerejh
+#| provides some standard validation checks
+#| checks can be overridden in user code
+our %va = (
+    text     => ( /^ <[A..Za..z0..9\s.,_#-]>+ $/,
+                'In text, only ".,_-#" punctuation characters are allowed' ),
+    name     => ( /^ <[A..Za..z]> $/,
+                'In a name, only only "-\'" punctuation characters are allowed' ),
+    words    => ( /^ <[A..Za..z\s]>+ $/,
+                'In words, only text characters are allowed' ),
+    notes    => ( /^ <[A..Za..z0..9\s.,:;_#!?()%$£-]>+ $/,
+                'In notes, only ".,:;_-#!?()%$£" punctuation characters are allowed' ),
+    postcode => ( /^ <[A..Za..z0..9\s]>+ $/,
+                'In postcode, only alphanumeric characters are allowed' ),
+    url      => ( /^ <[a..z0..9:/.-]>+ $/,
+                'Only valid urls are allowed' ),
+    tel      => ( /^ <[0..9+()\s-]>+ $/,
+                'Only valid tels are allowed' ),
+    email    => ( /^ <[a..zA..Z0..9._%+-]>+ '@' <[a..zA..Z0..9.-]>+ '.' <[a..zA..Z]> ** 2..6 $/,
+                'Only valid email addresses are allowed' ),
+    password => ( ( /^ <[A..Za..z0..9!@#$%^&*()\-_=+{}\[\]|:;"'<>,.?/]> ** 8..* $/ & / <[A..Za..z]> / & /<[0..9]> /),
+                'Passwords must have minimum 8 characters with at least one letter and one number.' ),
+);
 
 
 role Form does Cro::WebApp::Form does FormTag {
