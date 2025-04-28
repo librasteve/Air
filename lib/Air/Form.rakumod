@@ -175,7 +175,7 @@ our %va = (
 
 
 role Form does Cro::WebApp::Form does FormTag {
-    #| optional attr to specify url base
+    #| optionally specify form url base
     has Str  $!form-base = '';
     multi method form-base         {$!form-base}
     multi method form-base($value) {$!form-base = $value}
@@ -188,12 +188,39 @@ role Form does Cro::WebApp::Form does FormTag {
         do with self.form-base { "$_/" } ~ self.form-name
     }
 
-    my $formtmp = Q|<&form(.form)>|;
+    #| optional form attrs for prelude.crotmp settings
+    has %!form-attrs;
+    multi method form-attrs     { %!form-attrs }
+    multi method form-attrs(%h) { %!form-attrs{.key} = .value for %h }
+
+    method do-form-prep {
+        self.do-form-styles;
+        self.do-form-attrs;
+        self.do-form-tmpl;
+    }
+
+    my $formtmp = Q|%FORM-STYLES%<&form( .form, %FORM-ATTRS% )>|;
+
+    method do-form-styles {
+        $formtmp .= subst: /'%FORM-STYLES%'/, self.form-styles
+    }
+
+    method do-form-defaults {
+        %!form-attrs = (
+            submit-button-text     => 'Submit ' ~ ::?CLASS.^name,
+            invalid-feedback-class => 'invalid-feedback-class',
+            form-errors-class      => 'form-errors-class',
+        )
+    }
+
+    method do-form-tmpl {
+        $formtmp .= subst: /'%FORM-ATTRS%'/,
+            self.form-attrs.map({":{.key}('{.value}')"}).join(',')
+    }
 
     sub adjust($form-html, $form-url) {
         $form-html.subst(
-            / 'method="post"' /,
-                "hx-post=\"$form-url\" novalidate"
+            / 'method="post"' /, "hx-post=\"$form-url\" novalidate"
         )
     }
 
@@ -210,9 +237,33 @@ role Form does Cro::WebApp::Form does FormTag {
     method retry(Form $form) is export {
         content 'text/plain', self.HTML($form)
     }
+
+    method form-styles { q:to/END/
+        <style>
+             .invalid-feedback-class {
+                margin-top: -10px;
+                margin-bottom: 10px;
+                color: var(--pico-del-color);
+            }
+             .form-errors-class > * > li {
+                color: var(--pico-del-color);
+            }
+        </style>
+        <script>
+            document.body.addEventListener('htmx:afterSwap', function(evt) {
+                if (evt.target.querySelector('form')) {
+                    //console.log('htmx:afterSwap fired', evt);
+                    const errorDiv = evt.target.querySelector('.form-errors-class');
+                    if (errorDiv && errorDiv.innerText.trim() !== '') {
+                        errorDiv.focus();
+                        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+        </script>
+        END
+    }
 }
-
-
 
 
 =begin pod
