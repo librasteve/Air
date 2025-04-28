@@ -193,8 +193,9 @@ role Form does Cro::WebApp::Form does FormTag {
     multi method form-attrs     { %!form-attrs }
     multi method form-attrs(%h) { %!form-attrs{.key} = .value for %h }
 
-    method do-form-prep {
+    method prep {
         self.do-form-styles;
+        self.do-form-defaults;
         self.do-form-attrs;
         self.do-form-tmpl;
     }
