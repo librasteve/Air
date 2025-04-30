@@ -14,21 +14,21 @@ Air::Base uses Air::Functional for standard HTML tags expressed as raku subs. Ai
 Here's a diagram of the various Air parts. (Air::Play is a separate raku module with several examples of Air websites.)
 
 =begin code
-            +----------------+
-            |    Air::Play   |    <-- Web App
-            +----------------+
-                    |
-          +--------------------+
-          |  Air::Play::Site   |  <-- Site Lib
-          +------------------ -+
-                    |
-            +----------------+
-            |    Air::Base   |    <-- Base Lib
-            +----------------+
-               /           \
-  +----------------+  +----------------+
-  | Air::Functional|  | Air::Component |  <-- Services
-  +----------------+  +----------------+
+                         +----------------+
+                         |    Air::Play   |    <-- Web App
+                         +----------------+
+                                 |
+                    +--------------------------+
+                    |     Air::Play::Site      |  <-- Site Lib
+                    +--------------------------+
+                       /                    \
+              +----------------+   +-----------------+
+              |    Air::Base   |   |    Air::Form    |  <-- Base Lib
+              +----------------+   +----------------+
+                      |          \          |
+              +----------------+   +-----------------+
+              | Air::Component |   | Air::Functional | <-- Services
+              +----------------+   +-----------------+
 =end code
 
 =para The general idea is that there will a small number of Base libraries, typically provided by raku module authors that package code that implements a specific CSS package and/or site theme. Then, each user of Air - be they an individual or team - can create and selectively load their own Site library modules that extend and use the lower modules. All library Tags and Components can then be composed by the Web App.
@@ -811,7 +811,7 @@ class Site {
     #| index Page ( otherwise $!index = @!pages[0] )
     has Page $.index;
     #| Components for route setup; default = [Nav.new]
-    has      @.components = [Nav.new];
+    has      @.components;
     #| Tools for sitewide behaviours
     has Tool @.tools      = [];
 
@@ -836,6 +836,8 @@ class Site {
         elsif $!index    { @!pages[0] = $!index }
         else  { note "No pages or index found!" }
 
+        @!components.push: Nav.new;
+
         for @!tools -> $tool {
             for @!pages -> $page {
                 $tool.defaults($page)
@@ -849,7 +851,6 @@ class Site {
         self.scss with $!scss;
 
         route {
-#            { .^add-routes } for @!components.unique( as => *.^name );
             for @!components.unique( as => *.^name ) {
                 when Component { .^add-routes }
                 when Form      { .form-routes }

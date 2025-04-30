@@ -231,11 +231,11 @@ When writing components:
 role Component
 --------------
 
-### has UInt $.serial
+### has UInt $!serial
 
 assigns and tracks instance serials
 
-### has Str $.base
+### has Str $!base
 
 optional attr to specify url base
 
@@ -255,10 +255,10 @@ method all() returns Mu
 
 get all instances in holder
 
-### method name
+### method myname
 
 ```raku
-method name() returns Mu
+method myname() returns Mu
 ```
 
 get url safe name of class doing Component role
@@ -287,43 +287,43 @@ method id() returns Str
 
 get html friendly id (ie name-serial), eg for html id attr
 
-### method LOAD
+### method MYLOAD
 
 ```raku
-method LOAD(
+method MYLOAD(
     $serial
 ) returns Mu
 ```
 
 Default load action (called on GET) - may be overridden
 
-### method CREATE
+### method MYCREATE
 
 ```raku
-method CREATE(
+method MYCREATE(
     *%data
 ) returns Mu
 ```
 
-Default create action (called on POST) - may be overrserialden
+Default create action (called on POST) - may be overridden
 
-### method DELETE
+### method MYDELETE
 
 ```raku
-method DELETE() returns Mu
+method MYDELETE() returns Mu
 ```
 
-Default delete action (called on DELETE) - may be overrserialden
+Default delete action (called on DELETE) - may be overridden
 
-### method UPDATE
+### method MYUPDATE
 
 ```raku
-method UPDATE(
+method MYUPDATE(
     *%data
 ) returns Mu
 ```
 
-Default update action (called on PUT) - may be overrserialden
+Default update action (called on PUT) - may be overridden
 
 ### method add-routes
 

@@ -1,50 +1,12 @@
 =begin pod
 
-=head1 Air::Base
+=head1 Air::Form
 
 This raku module is one of the core libraries of the raku B<Air> distribution.
 
-It provides a Base library of functional Tags and Components that can be composed into web applications.
+It provides a Form class that integrates Air with the Cro::WebApp::Form module to provide a simple,yet rich declarative abstraction for web forms.
 
-Air::Base uses Air::Functional for standard HTML tags expressed as raku subs. Air::Base uses Air::Component for scaffolding for library Components.
-
-
-=head2 Architecture
-
-Here's a diagram of the various Air parts. (Air::Play is a separate raku module with several examples of Air websites.)
-
-=begin code
-            +----------------+
-            |    Air::Play   |    <-- Web App
-            +----------------+
-                    |
-          +--------------------+
-          |  Air::Play::Site   |  <-- Site Lib
-          +------------------ -+
-                    |
-            +----------------+
-            |    Air::Base   |    <-- Base Lib
-            +----------------+
-               /           \
-  +----------------+  +----------------+
-  | Air::Functional|  | Air::Component |  <-- Services
-  +----------------+  +----------------+
-=end code
-
-=para The general idea is that there will a small number of Base libraries, typically provided by raku module authors that package code that implements a specific CSS package and/or site theme. Then, each user of Air - be they an individual or team - can create and selectively load their own Site library modules that extend and use the lower modules. All library Tags and Components can then be composed by the Web App.
-
-=para This facilitates an approach where Air users can curate and share back their own Tag and Component libraries. Therefore it is common to find a Base Lib and a Site Lib used together in the same Web App.
-
-=para In many cases Air::Base will consume a standard HTML tag (eg. C<table>), customize and then re-export it with the same sub name. Therefore two export packages C<:CRO> and C<:BASE> are included to prevent namespace conflict.
-
-=para The current Air::Base package is unashamedly opionated about CSS and is based on L<Pico CSS|https://picocss.org>. Pico was selected for its semantic tags and very low level of HTML attribute noise. Pico SASS is used to control high level theme variables at the Site level.
-
-=head4 Notes
-
-=item Higher layers also use Air::Functional and Air::Component services directly
-=item Externally loadable packages such as Air::Theme are on the development backlog
-=item Other CSS modules - Air::Base::TailWind? | Air::Base::Bootstrap? - are anticipated
-
+Air::Form uses Air::Functional for the FormTag role so that Forms can be employed within Air code. Air::Form is an alternative to Air::Component.
 
 =head1 SYNOPSIS
 
@@ -155,8 +117,10 @@ use Cro::HTTP::Router;
 our %va = (
     text     => ( /^ <[A..Za..z0..9\s.,_#-]>+ $/,
                 'In text, only ".,_-#" punctuation characters are allowed' ),
-    name     => ( /^ <[A..Za..z]> $/,
-                'In a name, only only "-\'" punctuation characters are allowed' ),
+    name     => ( /^ <[A..Za..z.'-]>+ $/,
+                'In a name, only only ".-\'" punctuation characters are allowed' ),
+    names     => ( /^ <[A..Za..z\s.'-]>+ $/,
+                'In names, only only ".-\'" punctuation characters are allowed' ),
     words    => ( /^ <[A..Za..z\s]>+ $/,
                 'In words, only text characters are allowed' ),
     notes    => ( /^ <[A..Za..z0..9\s.,:;_#!?()%$£-]>+ $/,
@@ -196,7 +160,7 @@ role Form does Cro::WebApp::Form does FormTag {
     method prep {
         self.do-form-styles;
         self.do-form-defaults;
-        self.do-form-attrs;
+        self.?do-form-attrs;
         self.do-form-tmpl;
     }
 

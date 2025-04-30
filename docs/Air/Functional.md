@@ -113,7 +113,7 @@ Tag Rendering
 
 ### role Attr is Str {} - type for Attribute values, use Attr() for coercion
 
-### subset Inner where Str | Tag | Markup - type union for Inner elements
+### subset Inner where Str | Tag | FormTag | Markup - type union for Inner elements
 
 role Tag [TagType Singular|Regular] {} - basis for Air functions
 ----------------------------------------------------------------

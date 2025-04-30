@@ -12,21 +12,21 @@ Architecture
 
 Here's a diagram of the various Air parts. (Air::Play is a separate raku module with several examples of Air websites.)
 
-                +----------------+
-                |    Air::Play   |    <-- Web App
-                +----------------+
-                        |
-              +--------------------+
-              |  Air::Play::Site   |  <-- Site Lib
-              +------------------ -+
-                        |
-                +----------------+
-                |    Air::Base   |    <-- Base Lib
-                +----------------+
-                   /           \
-      +----------------+  +----------------+
-      | Air::Functional|  | Air::Component |  <-- Services
-      +----------------+  +----------------+
+                             +----------------+
+                             |    Air::Play   |    <-- Web App
+                             +----------------+
+                                     |
+                        +--------------------------+
+                        |     Air::Play::Site      |  <-- Site Lib
+                        +--------------------------+
+                           /                    \
+                  +----------------+   +-----------------+
+                  |    Air::Base   |   |    Air::Form    |  <-- Base Lib
+                  +----------------+   +----------------+
+                          |          \          |
+                  +----------------+   +-----------------+
+                  | Air::Component |   | Air::Functional | <-- Services
+                  +----------------+   +-----------------+
 
 The general idea is that there will a small number of Base libraries, typically provided by raku module authors that package code that implements a specific CSS package and/or site theme. Then, each user of Air - be they an individual or team - can create and selectively load their own Site library modules that extend and use the lower modules. All library Tags and Components can then be composed by the Web App.
 
@@ -372,7 +372,7 @@ Widgets
 method make-routes() returns Mu
 ```
 
-makes routes for Content NavItems (SPA links that use HTMX), must be called from within a Cro route block
+makes routes for Content NavItems (eg. SPA links that use HTMX), must be called from within a Cro route block
 
 ### method nav-items
 
@@ -498,7 +498,7 @@ Page holder -or-
 
 index Page ( otherwise $!index = @!pages[0] )
 
-### has Positional[Component] @.components
+### has Positional @.components
 
 Components for route setup; default = [Nav.new]
 
