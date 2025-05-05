@@ -845,9 +845,9 @@ class Site {
         }
     }
 
-    use Cro::HTTP::Router;
-
     method routes {
+        use Cro::HTTP::Router;
+
         self.scss with $!scss;
 
         route {

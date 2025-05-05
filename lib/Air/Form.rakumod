@@ -12,33 +12,82 @@ Air::Form uses Air::Functional for the FormTag role so that Forms can be employe
 
 The synopsis is split so that each part can be annotated.
 
-=head3 Content
+=head3 Page
+
+=para The template of an Air website (header, nav, logo, footer) is applied by making a custom C<page> ... here C<index> is set up as the template page. [Check out the Base.md docs for more on this].
 
 =begin code :lang<raku>
 use Air::Functional :BASE;
 use Air::Base;
 
-my %data =
-    :thead[["Planet", "Diameter (km)", "Distance to Sun (AU)", "Orbit (days)"],],
-    :tbody[
-        ["Mercury",  "4,880", "0.39",  "88"],
-        ["Venus"  , "12,104", "0.72", "225"],
-        ["Earth"  , "12,742", "1.00", "365"],
-        ["Mars"   ,  "6,779", "1.52", "687"],
-    ],
-    :tfoot[["Average", "9,126", "0.91", "341"],];
+my &index = &page.assuming(
+    title       => 'hÅrc',
+    description => 'HTMX, Air, Red, Cro',
 
-my $Content1 = content [
-    h3 'Content 1';
-    table |%data, :class<striped>;
-];
+    nav => nav(
+        logo    => safe('<a href="/">h<b>&Aring;</b>rc</a>'),
+        widgets => [lightdark],
+    ),
 
-my $Content2 = content [
-    h3 'Content 2';
-    table |%data;
-];
+    footer      => footer p ['Aloft on ', b 'åir'],
+);
+=end code
 
-my $Google = external :href<https://google.com>;
+Key features shown are:
+=item the lightdark widget is applicable to Form styles
+
+=head3 Form
+
+=para An Air::Form is defined declaratively via the standard raku OO syntax, specifically form input fields are set by the public attributes of the class C<has Str $.email> and so on.
+
+=begin code :lang<raku>
+use Air::Form;
+use Cro::WebApp::Form;
+
+class Contact does Form {
+    has Str    $.first-names is validated(%va<names>)  is required;
+    has Str    $.last-name   is validated(%va<name>)   is required;
+    has Str    $.email       is validated(%va<email>)  is email;
+
+    method form-routes {
+        use Cro::HTTP::Router;
+
+        self.prep;
+
+        post -> Str $ where self.form-url, {
+            form-data -> Contact $form {
+                if $form.is-valid {
+                    note "Got form data: $form.form-data()";
+                    content 'text/plain', 'Contact info received!'
+                }
+                else {
+                    self.retry: $form
+                }
+            }
+        }
+    }
+}
+
+my $contact-form = Contact.empty;
+=end code
+
+Key features shown are:
+=item Form input properties are set by traits on the public attrs - for example C<is email> specifies that this input field wants an email address, C<is required> specifies that this field requires a value and so on.
+=item We C<use Air::Form;> to load the C<role Form {...}> and then apply it to our new form class with C<does Form>
+=item The class name is used as the name of the form
+=item Each input field name is converted to a label for the form by splitting on a C<-> and then applying to the words C<tclc> (title case, lower case)
+=item Input field traits are imported directly from the C<Cro::WebApp::Form> module and follow the relevant Cro documentation page L<Air::Play|https://raku.land/zef:librasteve/Air::Play> iamerejh
+
+=begin code :lang<raku>
+sub SITE is export {
+    site :components[$contact-form], :theme-color<blue>, :bold-color<green>,
+        index
+            main
+                content [
+                    h2 'Contact Form';
+                    $contact-form;
+                ];
+}
 =end code
 
 Key features shown are:
@@ -129,7 +178,7 @@ our %va = (
                 'In postcode, only alphanumeric characters are allowed' ),
     url      => ( /^ <[a..z0..9:/.-]>+ $/,
                 'Only valid urls are allowed' ),
-    tel      => ( /^ <[0..9+()\s-]>+ $/,
+    tel      => ( /^ <[0..9+()\s#-]>+ $/,
                 'Only valid tels are allowed' ),
     email    => ( /^ <[a..zA..Z0..9._%+-]>+ '@' <[a..zA..Z0..9.-]>+ '.' <[a..zA..Z]> ** 2..6 $/,
                 'Only valid email addresses are allowed' ),
@@ -157,7 +206,7 @@ role Form does Cro::WebApp::Form does FormTag {
     multi method form-attrs     { %!form-attrs }
     multi method form-attrs(%h) { %!form-attrs{.key} = .value for %h }
 
-    method prep {
+    method init {
         self.do-form-styles;
         self.do-form-defaults;
         self.?do-form-attrs;
@@ -199,8 +248,18 @@ role Form does Cro::WebApp::Form does FormTag {
             andthen .render( {:$form} ).&adjust(self.form-url)
     }
 
-    method retry(Form $form) is export {
+    method retry(Form $form) is export {   #!
         content 'text/plain', self.HTML($form)
+    }
+
+    method finish(Str $msg) {
+        content 'text/plain', $msg
+    }
+
+    method controller(&handler) {
+        post -> Str $ where self.form-url, {
+            form-data &handler;
+        }
     }
 
     method form-styles { q:to/END/

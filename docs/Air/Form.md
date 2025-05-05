@@ -12,33 +12,88 @@ SYNOPSIS
 
 The synopsis is split so that each part can be annotated.
 
-### Content
+### Page
+
+The template of an Air website (header, nav, logo, footer) is applied by making a custom `page` ... here `index` is set up as the template page. [Check out the Base.md docs for more on this].
 
 ```raku
 use Air::Functional :BASE;
 use Air::Base;
 
-my %data =
-    :thead[["Planet", "Diameter (km)", "Distance to Sun (AU)", "Orbit (days)"],],
-    :tbody[
-        ["Mercury",  "4,880", "0.39",  "88"],
-        ["Venus"  , "12,104", "0.72", "225"],
-        ["Earth"  , "12,742", "1.00", "365"],
-        ["Mars"   ,  "6,779", "1.52", "687"],
-    ],
-    :tfoot[["Average", "9,126", "0.91", "341"],];
+my &index = &page.assuming(
+    title       => 'hÅrc',
+    description => 'HTMX, Air, Red, Cro',
 
-my $Content1 = content [
-    h3 'Content 1';
-    table |%data, :class<striped>;
-];
+    nav => nav(
+        logo    => safe('<a href="/">h<b>&Aring;</b>rc</a>'),
+        widgets => [lightdark],
+    ),
 
-my $Content2 = content [
-    h3 'Content 2';
-    table |%data;
-];
+    footer      => footer p ['Aloft on ', b 'åir'],
+);
+```
 
-my $Google = external :href<https://google.com>;
+Key features shown are:
+
+  * the lightdark widget is applicable to Form styles
+
+### Form
+
+An Air::Form is defined declaratively via the standard raku OO syntax, specifically form input fields are set by the public attributes of the class `has Str $.email` and so on.
+
+```raku
+use Air::Form;
+use Cro::WebApp::Form;
+
+class Contact does Form {
+    has Str    $.first-names is validated(%va<names>)  is required;
+    has Str    $.last-name   is validated(%va<name>)   is required;
+    has Str    $.email       is validated(%va<email>)  is email;
+
+    method form-routes {
+        use Cro::HTTP::Router;
+
+        self.prep;
+
+        post -> Str $ where self.form-url, {
+            form-data -> Contact $form {
+                if $form.is-valid {
+                    note "Got form data: $form.form-data()";
+                    content 'text/plain', 'Contact info received!'
+                }
+                else {
+                    self.retry: $form
+                }
+            }
+        }
+    }
+}
+
+my $contact-form = Contact.empty;
+```
+
+Key features shown are:
+
+  * Form input properties are set by traits on the public attrs - for example `is email` specifies that this input field wants an email address, `is required` specifies that this field requires a value and so on.
+
+  * We `use Air::Form;` to load the `role Form {...}` and then apply it to our new form class with `does Form`
+
+  * The class name is used as the name of the form
+
+  * Each input field name is converted to a label for the form by splitting on a `-` and then applying to the words `tclc` (title case, lower case)
+
+  * Input field traits are imported directly from the `Cro::WebApp::Form` module and follow the relevant Cro documentation page [Air::Play](https://raku.land/zef:librasteve/Air::Play) iamerejh
+
+```raku
+sub SITE is export {
+    site :components[$contact-form], :theme-color<blue>, :bold-color<green>,
+        index
+            main
+                content [
+                    h2 'Contact Form';
+                    $contact-form;
+                ];
+}
 ```
 
 Key features shown are:
