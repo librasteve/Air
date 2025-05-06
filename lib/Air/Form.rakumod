@@ -14,11 +14,12 @@ The synopsis is split so that each part can be annotated.
 
 =head3 Page
 
-=para The template of an Air website (header, nav, logo, footer) is applied by making a custom C<page> ... here C<index> is set up as the template page. [Check out the Base.md docs for more on this].
+=para Here we start with a simple custom index page, same as a non-form app. [Check out the Base.md docs for more on this].
 
 =begin code :lang<raku>
 use Air::Functional :BASE;
 use Air::Base;
+use Air::Form;
 
 my &index = &page.assuming(
     title       => 'hÅrc',
@@ -34,35 +35,29 @@ my &index = &page.assuming(
 =end code
 
 Key features shown are:
-=item the lightdark widget is applicable to Form styles
+=item the use statements are similar to a non-form app, now also with C<use Air::Form>
+=item the lightdark widget is also applicable to Form styling
 
 =head3 Form
 
-=para An Air::Form is defined declaratively via the standard raku OO syntax, specifically form input fields are set by the public attributes of the class C<has Str $.email> and so on.
+=para An Air::Form is defined declaratively via the standard raku Object Oriented (OO) syntax. Specifically form input fields are set us as public attributes of the class ... C<has Str $.email> and so on.
 
 =begin code :lang<raku>
-use Air::Form;
-use Cro::WebApp::Form;
-
 class Contact does Form {
     has Str    $.first-names is validated(%va<names>)  is required;
     has Str    $.last-name   is validated(%va<name>)   is required;
     has Str    $.email       is validated(%va<email>)  is email;
 
     method form-routes {
-        use Cro::HTTP::Router;
+        self.init;
 
-        self.prep;
-
-        post -> Str $ where self.form-url, {
-            form-data -> Contact $form {
-                if $form.is-valid {
-                    note "Got form data: $form.form-data()";
-                    content 'text/plain', 'Contact info received!'
-                }
-                else {
-                    self.retry: $form
-                }
+        self.controller: -> Contact $form {
+            if $form.is-valid {
+                note "Got form data: $form.form-data()";
+                self.finish: 'Contact info received!'
+            }
+            else {
+                self.retry: $form
             }
         }
     }
@@ -72,11 +67,13 @@ my $contact-form = Contact.empty;
 =end code
 
 Key features shown are:
-=item Form input properties are set by traits on the public attrs - for example C<is email> specifies that this input field wants an email address, C<is required> specifies that this field requires a value and so on.
+=item Form input properties are set by traits on the public attrs - for example C<is email> specifies that this input field wants an email address, C<is required> specifies that this field must have a value and so on.
 =item We C<use Air::Form;> to load the C<role Form {...}> and then apply it to our new form class with C<does Form>
 =item The class name is used as the name of the form
 =item Each input field name is converted to a label for the form by splitting on a C<-> and then applying to the words C<tclc> (title case, lower case)
 =item Input field traits are imported directly from the C<Cro::WebApp::Form> module and follow the relevant Cro documentation page L<Air::Play|https://raku.land/zef:librasteve/Air::Play> iamerejh
+
+=head3 Site
 
 =begin code :lang<raku>
 sub SITE is export {
@@ -160,6 +157,8 @@ use Cro::HTTP::Router;
 
 =head2 Form is never functional (since this parent class never has fields)
 
+=head2 https://cro.raku.org/docs/reference/cro-webapp-form
+
 
 #| provides some standard validation checks
 #| checks can be overridden in user code
@@ -208,15 +207,20 @@ role Form does Cro::WebApp::Form does FormTag {
 
     method init {
         self.do-form-styles;
+        self.do-form-scripts;
         self.do-form-defaults;
         self.?do-form-attrs;
         self.do-form-tmpl;
     }
 
-    my $formtmp = Q|%FORM-STYLES%<&form( .form, %FORM-ATTRS% )>|;
+    my $formtmp = Q|%FORM-STYLES%<&form( .form, %FORM-ATTRS% )>%FORM-SCRIPTS%|;
 
     method do-form-styles {
         $formtmp .= subst: /'%FORM-STYLES%'/, self.form-styles
+    }
+
+    method do-form-scripts {
+        $formtmp .= subst: /'%FORM-SCRIPTS%'/, self.form-scripts
     }
 
     method do-form-defaults {
@@ -264,6 +268,9 @@ role Form does Cro::WebApp::Form does FormTag {
 
     method form-styles { q:to/END/
         <style>
+            input[required] {
+                border: calc(var(--pico-border-width) * 2) var(--pico-border-color) solid;
+            }
              .invalid-feedback-class {
                 margin-top: -10px;
                 margin-bottom: 10px;
@@ -273,7 +280,13 @@ role Form does Cro::WebApp::Form does FormTag {
                 color: var(--pico-del-color);
             }
         </style>
+        END
+    }
+
+    method form-scripts($suffix = '*') {
+        my $javascript = q:to/END/;
         <script>
+            // scroll form errors into view
             document.body.addEventListener('htmx:afterSwap', function(evt) {
                 if (evt.target.querySelector('form')) {
                     //console.log('htmx:afterSwap fired', evt);
@@ -284,9 +297,156 @@ role Form does Cro::WebApp::Form does FormTag {
                     }
                 }
             });
+
+            // mark labels of required inputs with *
+            document.addEventListener("DOMContentLoaded", () => {
+                const requiredInputs = document.querySelectorAll("input[required]");
+
+                requiredInputs.forEach(input => {
+                    const id = input.id;
+                    if (!id) return; // skip inputs without an ID
+
+                    const label = document.querySelector(`label[for="${id}"]`);
+                    if (label && !label.textContent.includes("(required)")) {
+                        label.textContent += "%SUFFIX%";
+                    }
+                });
+            });
         </script>
         END
+
+        $javascript.subst: /'%SUFFIX%'/, $suffix;
     }
+
+}
+
+=head2 re-export form class attribute `is` traits
+
+#| Customize the label for the form field (without this, the attribute name will be used
+#| to generate a label).
+multi trait_mod:<is>(Attribute:D $attr, :$label! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$label)
+}
+
+#| Provide placeholder text for a form field.
+multi trait_mod:<is>(Attribute:D $attr, :$placeholder! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$placeholder)
+}
+
+#| Provide help text for a form field.
+multi trait_mod:<is>(Attribute:D $attr, :$help! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$help)
+}
+
+#| Indicate that this is a hidden form field
+multi trait_mod:<is>(Attribute:D $attr, :$hidden! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$hidden)
+}
+
+#| Indicate that this is a file form field
+multi trait_mod:<is>(Attribute:D $attr, :$file! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$file)
+}
+
+#| Indicate that this is a password form field
+multi trait_mod:<is>(Attribute:D $attr, :$password! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$password)
+}
+
+#| Indicate that this is a number form field
+multi trait_mod:<is>(Attribute:D $attr, :$number! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$number)
+}
+
+#| Indicate that this is a color form field
+multi trait_mod:<is>(Attribute:D $attr, :$color! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$color)
+}
+
+#| Indicate that this is a date form field
+multi trait_mod:<is>(Attribute:D $attr, :$date! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$date)
+}
+
+#| Indicate that this is a local date/time form field
+multi trait_mod:<is>(Attribute:D $attr, :datetime(:$datetime-local)! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$datetime-local)
+}
+
+#| Indicate that this is an email form field
+multi trait_mod:<is>(Attribute:D $attr, :$email! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$email)
+}
+
+#| Indicate that this is a month form field
+multi trait_mod:<is>(Attribute:D $attr, :$month! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$month)
+}
+
+#| Indicate that this is a telephone form field
+multi trait_mod:<is>(Attribute:D $attr, :telephone(:$tel)! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$tel)
+}
+
+#| Indicate that this is a search form field
+multi trait_mod:<is>(Attribute:D $attr, :$search! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$search)
+}
+
+#| Indicate that this is a time form field
+multi trait_mod:<is>(Attribute:D $attr, :$time! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$time)
+}
+
+#| Indicate that this is a URL form field
+multi trait_mod:<is>(Attribute:D $attr, :$url! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$url)
+}
+
+#| Indicate that this is a week form field
+multi trait_mod:<is>(Attribute:D $attr, :$week! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$week)
+}
+
+#| Indicate that this is a multi-line form field. Optionally, the number of
+#| rows and cols can be provided.
+multi trait_mod:<is>(Attribute:D $attr, :$multiline! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$multiline)
+}
+
+#| Set the minimum length of an input field
+multi trait_mod:<is>(Attribute:D $attr,  Int :min-length(:$minlength)! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :min-length(:$minlength))
+}
+
+#| Set the maximum length of an input field
+multi trait_mod:<is>(Attribute:D $attr,  Int :max-length(:$maxlength)! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :max-length(:$maxlength))
+}
+
+#| Set the minimum numeric value of an input field
+multi trait_mod:<is>(Attribute:D $attr, Real :$min! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$min)
+}
+
+#| Set the maximum numeric value of an input field
+multi trait_mod:<is>(Attribute:D $attr, Real :$max! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<is>($attr, :$max)
+}
+
+#| Provide code that will be run in order to produce the values to select from. Should
+#| return a list of Pair objects, where the key is the selected value and the value is
+#| the text to display. If non-Pairs are in the list, a Pair with the same key and value
+#| will be formed from them.
+multi trait_mod:<will>(Attribute:D $attr, &block, :$select! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<will>($attr, :$select)
+}
+
+#| Describe how a field is validated. Two arguments are expected to the
+#| trait: something the value will be smart-matched against, and the
+#| error message for if the validation fails.
+multi trait_mod:<is>(Attribute:D $attr, :$validated! --> Nil) is export {
+    Cro::WebApp::Form::trait_mod:<will>($attr, :$validated)
 }
 
 
