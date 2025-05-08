@@ -151,7 +151,11 @@ Each feature of Air::Base is set out below:
 Basic Tags
 ----------
 
-A subset of Air::Functional basic HTML tags, provided as roles, that are slightly adjusted by Air::Base to provide a convenient set of elements for the Page Tags.
+Air::Functional converts all HTML tags into raku functions. Air::Base overrides a subset of these HTML tags, providing them both as raku roles and functions.
+
+The Air::Base tags each embed some code to provide behaviours. This can be simple - `role Script {}` just marks JavaScript as exempt from HTML Escape. Or complex - `role Body {}` has `Header`, `Main` and `Footer` attributes with certain defaults and constructors.
+
+Combine these tags in the same way as the overall layout of an HTML webpage. Note that they hide complexity to expose only relevant information to the fore. Override them with your own roles and classes to implement your specific needs.
 
 ### role Safe does Tag[Regular] {...}
 
