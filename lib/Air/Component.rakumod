@@ -229,6 +229,19 @@ multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name) is export {
 
 use Cro::HTTP::Router;
 
+#| calls Cro: content 'text/html', $comp.HTML
+multi sub respond(Any $comp) is export {
+	content 'text/html', $comp.HTML
+}
+#| calls Cro: content 'text/html', $html
+multi sub respond(Str $html) is export {
+	content 'text/html', $html
+}
+
+sub to-kebab(Str() $_) {
+	lc S:g/(\w)<?before <[A..Z]>>/$0-/
+}
+
 =head2 role Component
 
 role Component {
@@ -257,16 +270,16 @@ role Component {
 	}
 
 	#| get url safe name of class doing Component role
-	method myname { ::?CLASS.^name.subst('::','-').lc }
+	method url-name { ::?CLASS.^name.subst('::','-').lc }
 
 	#| get url (ie base/name)
-	method url(--> Str) { do with self.base { "$_/" } ~ self.myname}
+	method url(--> Str) { do with self.base { "$_/" } ~ self.url-name}
 
 	#| get url-id (ie base/name/serial)
 	method url-id(--> Str) { self.url ~ '/' ~ self.serial }
 
 	#| get html friendly id (ie name-serial), eg for html id attr
-	method id(--> Str) { self.myname ~ '-' ~ self.serial }
+	method id(--> Str) { self.url-name ~ '-' ~ self.serial }
 
 	#| Default load action (called on GET) - may be overridden
 	method MYLOAD($serial)    { self.holder{$serial} }
@@ -284,16 +297,18 @@ role Component {
 		#| Meta Method ^add-routes typically called from Air::Base::Site in a Cro route block
 		method add-routes(
 			$component is copy,
-			:$comp-name = $component.myname;
+			:$comp-name = $component.url-name;
 		) is export {
 
 			my $route-set := $*CRO-ROUTE-SET
 					or die "Components should be added from inside a `route {}` block";
 
-			my &load   = -> $serial         { $component.MYLOAD:   $serial    };
+			my &load   = -> $serial         { $component.MYLOAD: $serial };
 			my &create = -> *%pars      	{ $component.MYCREATE: |%pars };
-			my &del    = -> $serial         { load($serial).MYDELETE          };
-			my &update = -> $serial, *%pars { load($serial).MYUPDATE:  |%pars };
+			my &del    = -> $serial         { load($serial).MYDELETE};
+			my &update = -> $serial, *%pars { load($serial).MYUPDATE: |%pars };
+
+			#iamerejh
 
 			note "adding GET $comp-name/<#>";
 			get -> Str $ where $comp-name, $serial {
@@ -304,7 +319,7 @@ role Component {
 			note "adding POST $comp-name";
 			post -> Str $ where $comp-name {
 				request-body -> $data {
-					my $new = create |$data.pairs.Map;   #iamerejh
+					my $new = create |$data.pairs.Map;
 					redirect "$comp-name/{ $new.serial }", :see-other
 				}
 			}
@@ -345,14 +360,7 @@ role Component {
 	}
 }
 
-#| calls Cro: content 'text/html', $comp.HTML
-multi sub respond(Any $comp) is export {
-	content 'text/html', $comp.HTML
-}
-#| calls Cro: content 'text/html', $html
-multi sub respond(Str $html) is export {
-	content 'text/html', $html
-}
+
 
 =begin pod
 =head1 AUTHOR

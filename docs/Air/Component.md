@@ -255,10 +255,10 @@ method all() returns Mu
 
 get all instances in holder
 
-### method myname
+### method name
 
 ```raku
-method myname() returns Mu
+method name() returns Mu
 ```
 
 get url safe name of class doing Component role

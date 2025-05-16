@@ -381,7 +381,7 @@ role Time      does Tag[Regular] {
     multi method HTML {
         my $dt = DateTime.new(%.attrs<datetime>);
 
-        =para optionally specify mode => [time | datetime], mode => date is default
+        =para Optionally specify mode => [time | datetime], mode => date is default
 
         sub inner {
             given %.attrs<mode> {
@@ -603,7 +603,7 @@ class Nav      does Component does Tag {
                     li a(:hx-get("$.name/$.serial/" ~ $name), Safe.new: $name)
                 }
                 when * ~~ Page {
-                    li a(:href("/{.name}/{.serial}"), Safe.new: $name)
+                    li a(:href("/{.name}/{.serial}"), Safe.new: $name)  #iamerejh name!
                 }
             }
         }
@@ -703,7 +703,7 @@ class Nav      does Component does Tag {
 #| Page does Component in order to support
 #| multiple page instances with distinct content and attributes.
 class Page     does Component {
-    has $.loaded is rw = 0;
+    has $!loaded = 0;
 
     #| auto refresh browser every n secs in dev't
     has Int     $.REFRESH;
@@ -731,7 +731,7 @@ class Page     does Component {
 
     #| set all provided shortcuts on first use
     method defaults {
-        unless $.loaded++ {
+        unless $!loaded++ {
             self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
 
             self.html.head.title = Title.new: $.title                   with $.title;
@@ -764,7 +764,7 @@ class Page     does Component {
 
     #| issue page DOM
     multi method HTML {
-        self.defaults unless $.loaded;
+        self.defaults unless $!loaded;
         '<!doctype html>' ~ $!html.HTML
     }
 
@@ -840,7 +840,7 @@ class Site {
         elsif $!index    { @!pages[0] = $!index }
         else  { note "No pages or index found!" }
 
-        @!components.push: Nav.new;
+#        @!components.push: Nav.new;
 
         for @!tools -> $tool {
             for @!pages -> $page {
@@ -868,10 +868,10 @@ class Site {
             get ->        *@path { static 'static',     @path }
 
             for @!pages {
-                my ($name, $serial) = .myname, .serial;
+                my ($url-name, $serial) = .url-name, .serial;
 
-                note "adding GET {$name}/<#>";
-                get -> Str $ where $name, $serial {
+                note "adding GET {$url-name}/<#>";
+                get -> Str $ where $url-name, $serial {
                     content 'text/html', @!pages[$serial-1].HTML
                 }
             }
