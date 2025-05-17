@@ -115,7 +115,8 @@ role   Attr    is Str is export(:MANDATORY) {}
 
 role   FormTag is Str is export(:MANDATORY) {}
 role   Markup  is Str is export(:MANDATORY) {}
-subset Inner   where Str | Tag | FormTag | Markup;
+role   ScumTag is Str is export(:MANDATORY) {}
+subset Inner   where Str | Tag | FormTag | Markup | ScumTag;
 
 =head2 role Tag [TagType Singular|Regular] {} - basis for Air functions
 
@@ -180,6 +181,9 @@ multi sub render-tag(FormTag $inner) {
 }
 multi sub render-tag(Markup  $inner) {
     $inner
+}
+multi sub render-tag(ScumTag $inner) {
+    $inner.HTML
 }
 multi sub render-tag(Str()   $inner) {
     escape-html($inner)

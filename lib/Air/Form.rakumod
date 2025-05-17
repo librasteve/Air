@@ -308,7 +308,7 @@ role Form does Cro::WebApp::Form does FormTag {
         content 'text/plain', $msg
     }
 
-    method controller(&handler) {
+    method controller(&handler) {    #iamerejh mutually exclusive!
         post -> Str $ where self.form-url, {
             form-data &handler;
         }

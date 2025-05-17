@@ -138,7 +138,9 @@ Each feature of Air::Base is set out below:
 
 use Air::Functional;
 use Air::Component;
+use Air::Scumponent;
 use Air::Form;
+use Red;
 
 my @functions = <Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Safe>;
 
@@ -840,8 +842,6 @@ class Site {
         elsif $!index    { @!pages[0] = $!index }
         else  { note "No pages or index found!" }
 
-#        @!components.push: Nav.new;
-
         for @!tools -> $tool {
             for @!pages -> $page {
                 $tool.defaults($page)
@@ -855,8 +855,16 @@ class Site {
         self.scss with $!scss;
 
         route {
+            #| always route Nav
+            #@!components.push: Nav.new;    iamerejh
+
             for @!components.unique( as => *.^name ) {
                 when Component { .^add-routes }
+                when Scumponent {
+                    red-defaults "SQLite";
+                    .^create-table;
+                    .^add-cromponent-routes;
+                }
                 when Form      { .form-routes }
                 default { note "Only Component and Form types may be added" }
             }
@@ -1017,7 +1025,7 @@ role Table     does Tag {
     }
 }
 
-=head3 role Table does Tag
+=head3 role Grid does Tag
 
 role Grid      does Tag {
     #| list of items to populate grid, each item is wrapped in a span tag
