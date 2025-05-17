@@ -39,7 +39,7 @@ multi trait_mod:<is>(
     $m
 }
 
-role Scumponent does ScumTag {
+role Scumponent {
     ::?CLASS.HOW does Cromponent::MetaCromponentRole;
 }
 

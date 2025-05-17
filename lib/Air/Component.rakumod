@@ -212,6 +212,8 @@ When writing components:
 
 =end pod
 
+use Air::Functional :CRO;
+
 role IsController {
 	has Str $.is-controller-name;
 	method is-controller { True }
@@ -236,18 +238,13 @@ multi sub respond(Str $html) is export {
 	content 'text/html', $html
 }
 
-#sub to-kebab(Str() $_) {
-#	lc S:g/(\w)<?before <[A..Z]>>/$0-/
-#}
-
-#use Cromponent;
-use Cromponent::MetaCromponentRole;
+sub to-kebab(Str() $_) {
+	lc S:g/(\w)<?before <[A..Z]>>/$0-/
+}
 
 =head2 role Component
 
 role Component {
-	::?CLASS.HOW does Cromponent::MetaCromponentRole;
-
 	my  UInt $next = 1;
 
 	#| assigns and tracks instance serials
@@ -301,63 +298,64 @@ role Component {
 		method add-routes(
 			$component is copy,
 			:$comp-name = $component.url-name;
-		) is export {
+						  ) is export {
 
 			my $route-set := $*CRO-ROUTE-SET
-					or die "Components should be added from inside a `route {}` block";
+				or die "Components should be added from inside a `route {}` block";
 
 			my &load   = -> $serial         { $component.MYLOAD: $serial };
 			my &create = -> *%pars      	{ $component.MYCREATE: |%pars };
 			my &del    = -> $serial         { load($serial).MYDELETE};
 			my &update = -> $serial, *%pars { load($serial).MYUPDATE: |%pars };
 
-			::?CLASS.^add-cromponent-routes;
-#			note "adding GET $comp-name/<#>";
-#			get -> Str $ where $comp-name, $serial {
-#				my $comp = load $serial;
-#				respond $comp
-#			}
-#
-#			note "adding POST $comp-name";
-#			post -> Str $ where $comp-name {
-#				request-body -> $data {
-#					my $new = create |$data.pairs.Map;
-#					redirect "$comp-name/{ $new.serial }", :see-other
-#				}
-#			}
-#
-#			note "adding DELETE $comp-name/<#>";
-#			delete -> Str $ where $comp-name, $serial {
-#				del $serial;
-#				content 'text/html', ""
-#			}
-#
-#			note "adding PUT $comp-name/<#>";
-#			put -> Str $ where $comp-name, $serial {
-#				request-body -> $data {
-#					update $serial, |$data.pairs.Map;
-#					redirect "{ $serial }", :see-other   #hmm - this works, not sure why
-##					redirect "$comp-name/{ $serial }", :see-other
-#				}
-#			}
-#
-#			for $component.^methods.grep(*.?is-controller) -> $meth {
-#				my $meth-name = $meth.is-controller-name;
-#
-#				if $meth.signature.params > 2 {
-#					note "adding PUT $comp-name/<#>/$meth-name";
-#					put -> Str $ where $comp-name, $serial, Str $method {
-#						request-body -> $data {
-#							load($serial).?"$method"(|$data.pairs.Map)
-#						}
-#					}
-#				} else {
-#					note "adding GET $comp-name/<#>/$meth-name";
-#					get -> Str $ where $comp-name, $serial, Str $method {
-#						load($serial).?"$method"()
-#					}
-#				}
-#			}
+			#iamerejh
+
+			note "adding GET $comp-name/<#>";
+			get -> Str $ where $comp-name, $serial {
+				my $comp = load $serial;
+				respond $comp
+			}
+
+			note "adding POST $comp-name";
+			post -> Str $ where $comp-name {
+				request-body -> $data {
+					my $new = create |$data.pairs.Map;
+					redirect "$comp-name/{ $new.serial }", :see-other
+				}
+			}
+
+			note "adding DELETE $comp-name/<#>";
+			delete -> Str $ where $comp-name, $serial {
+				del $serial;
+				content 'text/html', ""
+			}
+
+			note "adding PUT $comp-name/<#>";
+			put -> Str $ where $comp-name, $serial {
+				request-body -> $data {
+					update $serial, |$data.pairs.Map;
+					redirect "{ $serial }", :see-other   #hmm - this works, not sure why
+					#					redirect "$comp-name/{ $serial }", :see-other
+				}
+			}
+
+			for $component.^methods.grep(*.?is-controller) -> $meth {
+				my $meth-name = $meth.is-controller-name;
+
+				if $meth.signature.params > 2 {
+					note "adding PUT $comp-name/<#>/$meth-name";
+					put -> Str $ where $comp-name, $serial, Str $method {
+						request-body -> $data {
+							load($serial).?"$method"(|$data.pairs.Map)
+						}
+					}
+				} else {
+					note "adding GET $comp-name/<#>/$meth-name";
+					get -> Str $ where $comp-name, $serial, Str $method {
+						load($serial).?"$method"()
+					}
+				}
+			}
 		}
 	}
 }

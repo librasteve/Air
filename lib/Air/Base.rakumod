@@ -861,8 +861,6 @@ class Site {
             for @!components.unique( as => *.^name ) {
                 when Component { .^add-routes }
                 when Scumponent {
-                    red-defaults "SQLite";
-                    .^create-table;
                     .^add-cromponent-routes;
                 }
                 when Form      { .form-routes }
@@ -1001,7 +999,7 @@ role Table     does Tag {
     }
 
     multi sub do-part($part, :$head) { '' }
-    multi sub do-part(@part where .all ~~ Tag|Component) {
+    multi sub do-part(@part where .all ~~ Tag|Component|Scumponent) {
         tbody @part.map(*.HTML)
     }
     multi sub do-part(@part where .all ~~ Array, :$head) {
@@ -1019,7 +1017,7 @@ role Table     does Tag {
     multi method HTML {
         table |%(:$!class if $!class), [
             thead do-part($!thead, :head);
-            tbody do-part($!tbody),  :attrs(|%!tbody-attrs);
+            tbody do-part($!tbody), :attrs(|%!tbody-attrs);
             tfoot do-part($!tfoot);
         ]
     }
