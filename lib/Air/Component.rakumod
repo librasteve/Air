@@ -214,18 +214,18 @@ When writing components:
 
 use Air::Functional :CRO;
 
-role IsController {
-	has Str $.is-controller-name;
-	method is-controller { True }
-}
-
-multi trait_mod:<is>(Method $m, Bool :$controller!) is export {
-	trait_mod:<is>($m, :controller{})
-}
-
-multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name) is export {
-	$m does IsController($name)
-}
+#role IsController {
+#	has Str $.is-controller-name;
+#	method is-controller { True }
+#}
+#
+#multi trait_mod:<is>(Method $m, Bool :$controller!) is export {
+#	trait_mod:<is>($m, :controller{})
+#}
+#
+#multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name) is export {
+#	$m does IsController($name)
+#}
 
 use Cro::HTTP::Router;
 

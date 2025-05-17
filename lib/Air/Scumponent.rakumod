@@ -1,6 +1,25 @@
-#use Cromponent::CroTemplateOverrides;
 use Cromponent::MetaCromponentRole;
 use Air::Functional :CRO;
+
+role IsController {
+    has Str $.is-controller-name;
+    method is-controller { True }
+}
+
+multi trait_mod:<is>(Method $m, Bool :$controller!) is export {
+    trait_mod:<is>($m, :controller{})
+}
+
+multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name, :$http-method = "GET",) is export {
+    my role HTTPMethod {
+        has Str $.http-method;
+    }
+    $m does IsController($name);
+    $m does HTTPMethod($http-method);
+    $m
+}
+
+
 
 multi trait_mod:<is>(Mu:U $comp, Bool :$macro!) is export {
     my role CromponentMacroHOW {
@@ -47,10 +66,13 @@ use Cro::HTTP::Router;
 
 #| calls Cro: content 'text/html', $comp.HTML
 multi sub respond(Any $comp) is export {
-    content 'text/html', $comp.HTML
+    note 41;
+    note $comp.HTML;
+    content 'text/html', ($comp.HTML)
 }
 #| calls Cro: content 'text/html', $html
 multi sub respond(Str $html) is export {
+    note 42;
     content 'text/html', $html
 }
 
