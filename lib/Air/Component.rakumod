@@ -308,8 +308,6 @@ role Component {
 			my &del    = -> $serial         { load($serial).MYDELETE};
 			my &update = -> $serial, *%pars { load($serial).MYUPDATE: |%pars };
 
-			#iamerejh
-
 			note "adding GET $comp-name/<#>";
 			get -> Str $ where $comp-name, $serial {
 				my $comp = load $serial;

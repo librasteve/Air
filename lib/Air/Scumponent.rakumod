@@ -19,60 +19,25 @@ multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name, :$http-method =
     $m
 }
 
-
-
-multi trait_mod:<is>(Mu:U $comp, Bool :$macro!) is export {
-    my role CromponentMacroHOW {
-        method is-macro(|) { True }
-    }
-    $comp.HOW does CromponentMacroHOW
-}
-
-multi trait_mod:<is>(Method $m, Bool :$accessible!) is export {
-    trait_mod:<is>($m, :accessible{})
-}
-
-multi trait_mod:<is>(
-    Method $m, :%accessible! (
-        :$name = $m.name,
-        :$returns-cromponent = False,
-        :$http-method = "GET",
-        )
-    ) is export {
-    my role IsAccessible {
-        has Str  $.is-accessible-name is rw;
-        method is-accessible { True }
-    }
-
-    my role ReturnsCromponent {
-        method returns-cromponent { True }
-    }
-
-    my role HTTPMethod {
-        has Str $.http-method;
-    }
-
-    $m does IsAccessible($name);
-    $m does ReturnsCromponent if $returns-cromponent;
-    $m does HTTPMethod($http-method);
-    $m
-}
-
 role Scumponent {
     ::?CLASS.HOW does Cromponent::MetaCromponentRole;
+
+    method LOAD(Str() $id)  { ::?CLASS.^load: $id }
+    method CREATE(*%data)   { ::?CLASS.^create: |%data }
+    method DELETE           { $.^delete }
+#    method UPDATE(*%data)   { $.data = |$.data, |%data; $.^save }  #iamerejh
+
+    method Str { self.HTML }
 }
 
 use Cro::HTTP::Router;
 
 #| calls Cro: content 'text/html', $comp.HTML
 multi sub respond(Any $comp) is export {
-    note 41;
-    note $comp.HTML;
     content 'text/html', ($comp.HTML)
 }
 #| calls Cro: content 'text/html', $html
 multi sub respond(Str $html) is export {
-    note 42;
     content 'text/html', $html
 }
 
