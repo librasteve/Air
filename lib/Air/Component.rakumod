@@ -229,14 +229,14 @@ use Air::Functional :CRO;
 
 use Cro::HTTP::Router;
 
-#| calls Cro: content 'text/html', $comp.HTML
-multi sub respond(Any $comp) is export {
-	content 'text/html', $comp.HTML
-}
-#| calls Cro: content 'text/html', $html
-multi sub respond(Str $html) is export {
-	content 'text/html', $html
-}
+##| calls Cro: content 'text/html', $comp.HTML
+#multi sub respond(Any $comp) is export {
+#	content 'text/html', $comp.HTML
+#}
+##| calls Cro: content 'text/html', $html
+#multi sub respond(Str $html) is export {
+#	content 'text/html', $html
+#}
 
 sub to-kebab(Str() $_) {
 	lc S:g/(\w)<?before <[A..Z]>>/$0-/
@@ -311,7 +311,7 @@ role Component {
 			note "adding GET $comp-name/<#>";
 			get -> Str $ where $comp-name, $serial {
 				my $comp = load $serial;
-				respond $comp
+#				respond $comp
 			}
 
 			note "adding POST $comp-name";

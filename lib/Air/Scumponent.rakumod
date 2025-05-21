@@ -1,16 +1,15 @@
 use Cromponent::MetaCromponentRole;
 use Air::Functional :CRO;
 
-role IsController {
-    has Str $.is-controller-name;
-    method is-controller { True }
-}
-
 multi trait_mod:<is>(Method $m, Bool :$controller!) is export {
     trait_mod:<is>($m, :controller{})
 }
 
 multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name, :$http-method = "GET",) is export {
+    role IsController {
+        has Str $.is-controller-name;
+        method is-controller { True }
+    }
     my role HTTPMethod {
         has Str $.http-method;
     }
@@ -19,27 +18,96 @@ multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name, :$http-method =
     $m
 }
 
-role Scumponent {
+#| attributes and methods shared between Scumponent and Filament roles
+role AllMent {
+    #| optional attr to specify url base
+    has Str  $!base is built = '';
+    method base {$!base}
+
+    #| get url safe name of class doing Component role
+    method url-name { ::?CLASS.^name.subst('::','-').lc }
+
+    #| get url (ie base/name)
+    method url(--> Str) { do with self.base { "$_/" } ~ self.url-name}
+
+    #| get url-id (ie base/name/id)
+    method url-path(--> Str) { self.url ~ '/' ~ self.id }
+
+    #| get html-id (ie url-name-id), eg for html id attr
+    method html-id(--> Str) { self.url-name ~ '-' ~ self.id }
+}
+
+
+#| all full Components must be Red with an $.id attribute
+
+role CRUD {
+    method CREATE(*%data)   { ::?CLASS.^create: |%data }
+    method DELETE           { $.^delete }
+    method UPDATE(*%data)   { $.data = |$.data, |%data; $.^save }  #untested
+}
+
+#role Component {
+role Scumponent does AllMent {
     ::?CLASS.HOW does Cromponent::MetaCromponentRole;
 
     method LOAD(Str() $id)  { ::?CLASS.^load: $id }
-    method CREATE(*%data)   { ::?CLASS.^create: |%data }
-    method DELETE           { $.^delete }
-#    method UPDATE(*%data)   { $.data = |$.data, |%data; $.^save }  #iamerejh
+
+    method Str { self.HTML }
+}
+
+# iamerejh
+
+#| Filament is a gossamer Component for non-Red needs
+#| such as Air::Base Nav and Page
+
+# gonna need a new spelling for FormTag
+role Filament does AllMent {
+    ::?CLASS.HOW does Cromponent::MetaCromponentRole;
+
+    my  UInt $next = 1;
+
+    #| assigns and tracks instance ids
+    has UInt $!id is built;
+    method id {
+        $!id
+    }
+
+    my %holder;
+    #| populates an instance holder [class method],
+    #| may be overridden for external instance holder
+    method holder(--> Hash) { %holder }
+
+    #| get all instances in holder
+    method all { self.holder.keys.sort.map: { $.holder{$_} } }
+
+    submethod TWEAK {
+        $!id //= $next++;
+        %holder{$!id} = self;
+        self.?make-routes;
+    }
+
+    method LOAD($id) { self.holder{$id} }
 
     method Str { self.HTML }
 }
 
 use Cro::HTTP::Router;
 
-#| calls Cro: content 'text/html', $comp.HTML
-multi sub respond(Any $comp) is export {
-    content 'text/html', ($comp.HTML)
-}
 #| calls Cro: content 'text/html', $html
-multi sub respond(Str $html) is export {
+sub respond(Str() $html) is export {
     content 'text/html', $html
 }
+
+##| calls Cro: content 'text/html', $comp.HTML
+#multi sub respond(AllMent $comp) is export {
+#    note 41;
+#	content 'text/html', $comp.HTML
+#}
+##| calls Cro: content 'text/html', $html
+#multi sub respond(Any $html) is export {
+#    note 42;
+#	content 'text/html', $html
+#}
 
 =begin pod
 

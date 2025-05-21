@@ -565,7 +565,7 @@ subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 #| Nav does Component in order to support multiple nav instances
 #| with distinct NavItem and Widget attributes.
 #| Also does Tag so that nav tags can be placed anywhere on a page.
-class Nav      does Component does Tag {
+class Nav      does Filament {
     has Str     $.hx-target = '#content';
     #| logo
     has Safe    $.logo;
@@ -602,18 +602,19 @@ class Nav      does Component does Tag {
                   li $target.HTML
                 }
                 when * ~~ Content {
-                    li a(:hx-get("$.name/$.serial/" ~ $name), Safe.new: $name)
+#                    li a(:hx-get("$.name/$.serial/" ~ $name), Safe.new: $name)
+                    li a(:hx-get("$.url-path" ~ $name), Safe.new: $name)
                 }
                 when * ~~ Page {
-                    li a(:href("/{.name}/{.serial}"), Safe.new: $name)  #iamerejh name!
+                    li a(:href("/{.name}/{.serial}"), Safe.new: $name)
                 }
             }
         }
     }
 
     #| applies Style and Script for Hamburger reactive menu
-    multi method HTML {
-        self.style.HTML ~ (
+    method HTML {   #iamerejh
+        self.style ~ (
 
         nav [
             { ul li :class<logo>, :href</>, $.logo } with $.logo;
@@ -622,7 +623,7 @@ class Nav      does Component does Tag {
 
             ul( :$!hx-target, :class<nav-links>,
                 self.nav-items,
-                do for @.widgets { li .HTML },
+                do for @.widgets { li .Str },
             );
 
             ul( :$!hx-target, :class<menu>, :id<menu>,
@@ -630,7 +631,7 @@ class Nav      does Component does Tag {
             );
         ]
 
-        ) ~ self.script.HTML
+        ) ~ self.script
     }
 
     method style { Style.new: q:to/END/
@@ -859,11 +860,10 @@ class Site {
             #@!components.push: Nav.new;    iamerejh
 
             for @!components.unique( as => *.^name ) {
-                when Component { .^add-routes }
-                when Scumponent {
-                    .^add-cromponent-routes;
-                }
-                when Form      { .form-routes }
+                when Component     { .^add-routes }
+                when Scumponent    { .^add-cromponent-routes }
+                when Filament      { .^add-cromponent-routes }
+                when Form          { .form-routes }
                 default { note "Only Component and Form types may be added" }
             }
 
