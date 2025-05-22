@@ -562,9 +562,8 @@ role Internal  does Tag {
 }
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-#| Nav does Component in order to support multiple nav instances
-#| with distinct NavItem and Widget attributes.
-#| Also does Tag so that nav tags can be placed anywhere on a page.
+#| Nav does Filament in order to support multiple nav instances
+#| with distinct NavItem and Widget attributes
 class Nav      does Filament {
     has Str     $.hx-target = '#content';
     #| logo
@@ -598,23 +597,21 @@ class Nav      does Filament {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
                 when * ~~ External | Internal {
-                  $target.label = $name;
-                  li $target.HTML
+                  $target.label = $name; li $target.HTML
                 }
                 when * ~~ Content {
-#                    li a(:hx-get("$.name/$.serial/" ~ $name), Safe.new: $name)
-                    li a(:hx-get("$.url-path" ~ $name), Safe.new: $name)
+                    li a(:hx-get("$.url-path/$name"), Safe.new: $name)
                 }
                 when * ~~ Page {
-                    li a(:href("/{.name}/{.serial}"), Safe.new: $name)
+                    li a(:href("/{.url-name}/{.id}"), Safe.new: $name);
                 }
             }
         }
     }
 
     #| applies Style and Script for Hamburger reactive menu
-    method HTML {   #iamerejh
-        self.style ~ (
+    method HTML {
+        self.style.HTML ~ (
 
         nav [
             { ul li :class<logo>, :href</>, $.logo } with $.logo;
@@ -623,7 +620,7 @@ class Nav      does Filament {
 
             ul( :$!hx-target, :class<nav-links>,
                 self.nav-items,
-                do for @.widgets { li .Str },
+                do for @.widgets { li .HTML },
             );
 
             ul( :$!hx-target, :class<menu>, :id<menu>,
@@ -631,7 +628,7 @@ class Nav      does Filament {
             );
         ]
 
-        ) ~ self.script
+        ) ~ self.script.HTML
     }
 
     method style { Style.new: q:to/END/
@@ -705,7 +702,7 @@ class Nav      does Filament {
 
 #| Page does Component in order to support
 #| multiple page instances with distinct content and attributes.
-class Page     does Component {
+class Page     does Filament {
     has $!loaded = 0;
 
     #| auto refresh browser every n secs in dev't
@@ -766,7 +763,7 @@ class Page     does Component {
     }
 
     #| issue page DOM
-    multi method HTML {
+    method HTML {
         self.defaults unless $!loaded;
         '<!doctype html>' ~ $!html.HTML
     }
@@ -819,8 +816,6 @@ class Site {
     has Page $.index;
     #| Components for route setup; default = [Nav.new]
     has      @.components;
-    #| Tools for sitewide behaviours
-    has Tool @.tools      = [];
 
     #| use :!scss to disable SASS compiler run
     has Bool $.scss = True;
@@ -839,15 +834,9 @@ class Site {
     }
 
     submethod TWEAK {
-        if    @!pages[0] { $!index = @!pages[0] }
-        elsif $!index    { @!pages[0] = $!index }
-        else  { note "No pages or index found!" }
-
-        for @!tools -> $tool {
-            for @!pages -> $page {
-                $tool.defaults($page)
-            }
-        }
+        with    @!pages[0] { $!index = @!pages[0] }
+        orwith  $!index    { @!pages[0] = $!index }
+        else    { note "No pages or index found!" }
     }
 
     method routes {
@@ -857,7 +846,7 @@ class Site {
 
         route {
             #| always route Nav
-            #@!components.push: Nav.new;    iamerejh
+            @!components.push: Nav.new;
 
             for @!components.unique( as => *.^name ) {
                 when Component     { .^add-routes }
@@ -874,11 +863,11 @@ class Site {
             get ->        *@path { static 'static',     @path }
 
             for @!pages {
-                my ($url-name, $serial) = .url-name, .serial;
+                my ($url-name, $id) = .url-name, .id;
 
                 note "adding GET {$url-name}/<#>";
-                get -> Str $ where $url-name, $serial {
-                    content 'text/html', @!pages[$serial-1].HTML
+                get -> Str $ where $url-name, $id {
+                    content 'text/html', @!pages[$id-1].HTML
                 }
             }
         }

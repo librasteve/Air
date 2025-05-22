@@ -6,7 +6,7 @@ This raku module is one of the core libraries of the raku B<Air> distribution.
 
 It provides a Form class that integrates Air with the Cro::WebApp::Form module to provide a simple,yet rich declarative abstraction for web forms.
 
-Air::Form uses Air::Functional for the FormTag role so that Forms can be employed within Air code. Air::Form is an alternative to Air::Component.
+Air::Form uses Air::Functional for the Taggable role so that Forms can be employed within Air code. Air::Form is an alternative to Air::Component.
 
 =head1 SYNOPSIS
 
@@ -102,7 +102,7 @@ sub SITE is export {
 
 Note:
 =item C<:components[$contact-form]> tells the site to make the form route
-=item C<$contact-form> does the role C<FormTag> so it can be used within Air::Functional code
+=item C<$contact-form> does the role C<Taggable> so it can be used within Air::Functional code
 
 
 =head1 DESCRIPTION
@@ -177,7 +177,7 @@ password => ( ( /^ <[A..Za..z0..9!@#$%^&*()\-_=+{}\[\]|:;"'<>,.?/]> ** 8..* $/ &
 );
 =end code
 
-=head3 role Form does Cro::WebApp::Form does FormTag {}
+=head3 role Form does Cro::WebApp::Form does Taggable {}
 
 =para This role has only private attrs to avoid creating form fields, get/set methods are provided instead.
 
@@ -230,7 +230,7 @@ password => ( ( /^ <[A..Za..z0..9!@#$%^&*()\-_=+{}\[\]|:;"'<>,.?/]> ** 8..* $/ &
               'Passwords must have minimum 8 characters with at least one letter and one number.' ),
 );
 
-role Form does Cro::WebApp::Form does FormTag {
+role Form does Cro::WebApp::Form does Taggable {
     #| optionally specify form url base (with get/set methods)
     has Str  $!form-base = '';
     multi method form-base         {$!form-base}
@@ -286,7 +286,7 @@ role Form does Cro::WebApp::Form does FormTag {
         )
     }
 
-    #| called when used as a FormTag, returns self.empty
+    #| called when used as a Taggable, returns self.empty
     multi method HTML(--> Markup()) {
         parse-template($formtmp)
             andthen .render( {form => self.empty} ).&adjust(self.form-url)

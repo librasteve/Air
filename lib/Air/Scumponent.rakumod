@@ -19,7 +19,7 @@ multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name, :$http-method =
 }
 
 #| attributes and methods shared between Scumponent and Filament roles
-role AllMent {
+role AllMent does Taggable {
     #| optional attr to specify url base
     has Str  $!base is built = '';
     method base {$!base}
@@ -33,7 +33,7 @@ role AllMent {
     #| get url-id (ie base/name/id)
     method url-path(--> Str) { self.url ~ '/' ~ self.id }
 
-    #| get html-id (ie url-name-id), eg for html id attr
+    #| get html-id (ie url-name-id), intended for HTML id attr
     method html-id(--> Str) { self.url-name ~ '-' ~ self.id }
 }
 
@@ -55,12 +55,8 @@ role Scumponent does AllMent {
     method Str { self.HTML }
 }
 
-# iamerejh
-
-#| Filament is a gossamer Component for non-Red needs
+#| Filament is a lightweight non-Red Component for Air::Base items
 #| such as Air::Base Nav and Page
-
-# gonna need a new spelling for FormTag
 role Filament does AllMent {
     ::?CLASS.HOW does Cromponent::MetaCromponentRole;
 
@@ -88,6 +84,8 @@ role Filament does AllMent {
 
     method LOAD($id) { self.holder{$id} }
 
+    #| In general Cromponent::MetaCromponentRole call .Str on a Cromponent when returning it
+    #| this method substitutes .HTML for .Str
     method Str { self.HTML }
 }
 
