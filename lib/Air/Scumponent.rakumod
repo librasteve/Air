@@ -1,19 +1,37 @@
 use Cromponent::MetaCromponentRole;
 use Air::Functional :CRO;
 
+sub to-kebab(Str() $_) {
+    lc S:g/(\w)<?before <[A..Z]>>/$0-/
+}
+
 multi trait_mod:<is>(Method $m, Bool :$controller!) is export {
     trait_mod:<is>($m, :controller{})
 }
 
-multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name, :$http-method = "GET",) is export {
+multi trait_mod:<is>(
+    Method $m,
+    :%controller! (
+        :$name = $m.name,
+        :$returns-cromponent = False,
+        :$http-method = "GET",
+    )
+ ) is export {
     role IsController {
         has Str $.is-controller-name;
         method is-controller { True }
     }
-    my role HTTPMethod {
+
+    my role ReturnsCromponent {
+        method returns-cromponent { True }
+    }
+
+    role HTTPMethod {
         has Str $.http-method;
     }
+
     $m does IsController($name);
+    $m does ReturnsCromponent if $returns-cromponent;
     $m does HTTPMethod($http-method);
     $m
 }
@@ -25,7 +43,7 @@ role AllMent does Taggable {
     method base {$!base}
 
     #| get url safe name of class doing Component role
-    method url-name { ::?CLASS.^name.subst('::','-').lc }
+    method url-name { self.^shortname.&to-kebab, }
 
     #| get url (ie base/name)
     method url(--> Str) { do with self.base { "$_/" } ~ self.url-name}
@@ -35,13 +53,16 @@ role AllMent does Taggable {
 
     #| get html-id (ie url-name-id), intended for HTML id attr
     method html-id(--> Str) { self.url-name ~ '-' ~ self.id }
-}
 
+    #| In general Cromponent::MetaCromponentRole calls .Str on a Cromponent when returning it
+    #| this method substitutes .HTML for .Str
+    method Str { self.HTML }
+}
 
 #| all full Components must be Red with an $.id attribute
 
 role CRUD {
-    method CREATE(*%data)   { ::?CLASS.^create: |%data }
+    method ADD(*%data)   { ::?CLASS.^create: |%data }
     method DELETE           { $.^delete }
     method UPDATE(*%data)   { $.data = |$.data, |%data; $.^save }  #untested
 }
@@ -51,13 +72,11 @@ role Scumponent does AllMent {
     ::?CLASS.HOW does Cromponent::MetaCromponentRole;
 
     method LOAD(Str() $id)  { ::?CLASS.^load: $id }
-
-    method Str { self.HTML }
 }
 
 #| Filament is a lightweight non-Red Component for Air::Base items
 #| such as Air::Base Nav and Page
-role Filament does AllMent {
+role Filament[:C(:A(:$ADD)), :R(:L(:$LOAD)) = True, :U(:$UPDATE), :D(:$DELETE), ] does AllMent {
     ::?CLASS.HOW does Cromponent::MetaCromponentRole;
 
     my  UInt $next = 1;
@@ -76,36 +95,57 @@ role Filament does AllMent {
     #| get all instances in holder
     method all { self.holder.keys.sort.map: { $.holder{$_} } }
 
+    #| adapt component to perform LOAD, UPDATE, DELETE, ADD action(s)
+    my $methods-made;
+
+    method make-methods {
+        return if $methods-made++;
+
+        if $ADD {
+            self.^add_method(
+                'ADD', my method ADD(*%data) { ::?CLASS.new: |%data }
+                );
+        }
+        if $LOAD {
+            self.^add_method(
+                'LOAD', my method LOAD($id) { self.holder{$id} }
+            );
+        }
+        if $UPDATE {
+            self.^add_method(
+                'UPDATE', my method UPDATE(*%data) { self.data = |self.data, |%data }
+            );
+        }
+        if $DELETE {
+            self.^add_method(
+                'DELETE', my method DELETE { self.holder{self.id}:delete }
+            );
+        }
+    }
+
     submethod TWEAK {
         $!id //= $next++;
         %holder{$!id} = self;
+        self.make-methods;
         self.?make-routes;
     }
-
-    method LOAD($id) { self.holder{$id} }
-
-    #| In general Cromponent::MetaCromponentRole call .Str on a Cromponent when returning it
-    #| this method substitutes .HTML for .Str
-    method Str { self.HTML }
 }
 
 use Cro::HTTP::Router;
 
 #| calls Cro: content 'text/html', $html
-sub respond(Str() $html) is export {
-    content 'text/html', $html
-}
+#sub respond(Str() $html) is export {
+#    content 'text/html', $html
+#}
 
 ##| calls Cro: content 'text/html', $comp.HTML
-#multi sub respond(AllMent $comp) is export {
-#    note 41;
-#	content 'text/html', $comp.HTML
-#}
-##| calls Cro: content 'text/html', $html
-#multi sub respond(Any $html) is export {
-#    note 42;
-#	content 'text/html', $html
-#}
+multi sub respond(AllMent $comp) is export {
+	content 'text/html', $comp.HTML
+}
+#| calls Cro: content 'text/html', $html
+multi sub respond(Any $html) is export {
+	content 'text/html', $html
+}
 
 =begin pod
 
@@ -290,7 +330,7 @@ The call to the .^add-cromponent-routes method will create (on this case) 2 endp
 
 =item C</text/<id>/toggle> -- that will load the object using the method C<LOAD> and call C<toggle> on it
 
-You can also define the method C<CREATE>, C<DELETE>, and C<UPDATE> to allow it to create other endpoints.
+You can also define the method C<ADD>, C<DELETE>, and C<UPDATE> to allow it to create other endpoints.
 
 =end item
 

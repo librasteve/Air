@@ -137,7 +137,7 @@ Each feature of Air::Base is set out below:
 #role Theme {...}
 
 use Air::Functional;
-use Air::Component;
+#use Air::Component;
 use Air::Scumponent;
 use Air::Form;
 use Red;
@@ -584,7 +584,7 @@ class Nav      does Filament {
                 given $target {
                     when * ~~ Content {
                         my &new-method = method {respond $target.?HTML};
-                        trait_mod:<is>(&new-method, :controller, :$name);
+                        trait_mod:<is>(&new-method, :controller{:$name});
                         self.^add_method($name, &new-method);
                     }
                 }
@@ -849,11 +849,9 @@ class Site {
             @!components.push: Nav.new;
 
             for @!components.unique( as => *.^name ) {
-                when Component     { .^add-routes }
-                when Scumponent    { .^add-cromponent-routes }
-                when Filament      { .^add-cromponent-routes }
-                when Form          { .form-routes }
-                default { note "Only Component and Form types may be added" }
+                when AllMent { .^add-cromponent-routes }
+                when Form    { .form-routes }
+                default { note "Only AllMent and Form types may be added" }
             }
 
             get ->               { content 'text/html', $.index.HTML }
@@ -866,7 +864,7 @@ class Site {
                 my ($url-name, $id) = .url-name, .id;
 
                 note "adding GET {$url-name}/<#>";
-                get -> Str $ where $url-name, $id {
+                get -> Str $url-name, Int $id {
                     content 'text/html', @!pages[$id-1].HTML
                 }
             }
@@ -988,7 +986,7 @@ role Table     does Tag {
     }
 
     multi sub do-part($part, :$head) { '' }
-    multi sub do-part(@part where .all ~~ Tag|Component|Scumponent) {
+    multi sub do-part(@part where .all ~~ Tag|Taggable) {
         tbody @part.map(*.HTML)
     }
     multi sub do-part(@part where .all ~~ Array, :$head) {
