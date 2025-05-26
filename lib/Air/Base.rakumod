@@ -562,9 +562,9 @@ role Internal  does Tag {
 }
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-#| Nav does Filament in order to support multiple nav instances
+#| Nav does Component in order to support multiple nav instances
 #| with distinct NavItem and Widget attributes
-class Nav      does Filament {
+class Nav      does Component {
     #| HTMX attributes
     has Str     $.hx-target = '#content';
     has Str     $.hx-swap   = 'outerHTML';
@@ -707,7 +707,7 @@ class Nav      does Filament {
 
 #| Page does Component in order to support
 #| multiple page instances with distinct content and attributes.
-class Page     does Filament {
+class Page     does Component {
     has $!loaded = 0;
 
     #| auto refresh browser every n secs in dev't

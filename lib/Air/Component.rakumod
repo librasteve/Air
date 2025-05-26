@@ -273,55 +273,8 @@ role Component::Common does Taggable {
     method Str { self.HTML }
 }
 
-
-
-role Component::Red[
-    :C(:A(:$ADD)),
-    :R(:L(:$LOAD)) = True,
-    :U(:$UPDATE),
-    :D(:$DELETE),
-] does Component::Common {
-    ::?CLASS.HOW does Cromponent::MetaCromponentRole;
-
-    #| adapt component to perform LOAD, UPDATE, DELETE, ADD action(s)
-    my $methods-made;
-
-    #| called by role Site
-    method make-methods {
-        return if $methods-made++;
-
-        #| Default ADD action (called on POST) - may be overridden
-        if $ADD {
-            self.^add_method(
-                'ADD', my method ADD(*%data) { ::?CLASS.^create: |%data }
-                );
-        }
-        #| Default LOAD action (called on GET) - may be overridden
-        if $LOAD {
-            self.^add_method(
-                'LOAD', my method LOAD(Str() $id) { ::?CLASS.^load: $id }
-                );
-        }
-        #| Default UPDATE action (called on PUT) - may be overridden
-        if $UPDATE {
-            self.^add_method(
-                'UPDATE', my method UPDATE(*%data) { $.data = |$.data, |%data; $.^save }  #untested
-                );
-        }
-        #| Default DELETE action (called on DELETE) - may be overridden
-        if $DELETE {
-            self.^add_method(
-                'DELETE', my method DELETE { $.^delete }
-                );
-        }
-    }
-
-#    method LOAD(Str() $id)  { ::?CLASS.^load: $id }
-}
-
-#| Filament is a lightweight non-Red Component for Air::Base items
-#| such as Air::Base Nav and Page
-role Filament[
+#| Component is for non-Red classes
+role Component[
     :C(:A(:$ADD)),
     :R(:L(:$LOAD)) = True,
     :U(:$UPDATE),
@@ -382,6 +335,49 @@ role Filament[
         $!id //= $next++;
         %holder{$!id} = self;
         self.?make-routes;
+    }
+}
+
+#| Component::Red is for Red models
+role Component::Red[
+:C(:A(:$ADD)),
+:R(:L(:$LOAD)) = True,
+:U(:$UPDATE),
+:D(:$DELETE),
+] does Component::Common {
+    ::?CLASS.HOW does Cromponent::MetaCromponentRole;
+
+    #| adapt component to perform LOAD, UPDATE, DELETE, ADD action(s)
+    my $methods-made;
+
+    #| called by role Site
+    method make-methods {
+        return if $methods-made++;
+
+        #| Default ADD action (called on POST) - may be overridden
+        if $ADD {
+            self.^add_method(
+                'ADD', my method ADD(*%data) { ::?CLASS.^create: |%data }
+                );
+        }
+        #| Default LOAD action (called on GET) - may be overridden
+        if $LOAD {
+            self.^add_method(
+                'LOAD', my method LOAD(Str() $id) { ::?CLASS.^load: $id }
+                );
+        }
+        #| Default UPDATE action (called on PUT) - may be overridden
+        if $UPDATE {
+            self.^add_method(
+                'UPDATE', my method UPDATE(*%data) { $.data = |$.data, |%data; $.^save }  #untested
+                );
+        }
+        #| Default DELETE action (called on DELETE) - may be overridden
+        if $DELETE {
+            self.^add_method(
+                'DELETE', my method DELETE { $.^delete }
+                );
+        }
     }
 }
 

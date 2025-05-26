@@ -228,6 +228,27 @@ method do-form-attrs{
 
 Air::Form code should avoid direct manipulation of the method and class styles detailed at [Cro docs](https://cro.raku.org/docs/reference/cro-webapp-form#Rendering) - instead override the `method styles {}`.
 
+Development Roadmap
+-------------------
+
+The Air::Form module will be extended to perform full CRUD operations on a Red table by the selective grafting of Air::Component features over to Air::Form, for example:
+
+  * `LOAD` method to load a form with values from a specific table row
+
+  * `ADD` method to add a new table row with form values provided
+
+  * `UPDATE` method to update table row with form value modifications
+
+  * `DELETE` method to delete table row
+
+Other potential features include:
+
+  * a table list view [with row/col filters]
+
+  * an item list view [with edit/save loop]
+
+Technically it is envisaged that ::?CLASS.HOW does Cromponent::MetaCromponentRole; will be brought over from Cromponent with suitable controller methods. If you want to go model XXX does Form does Component, then there is a Taggable use conflict.
+
 ### has Str $!form-base
 
 optionally specify form url base (with get/set methods)
@@ -289,6 +310,16 @@ method finish(
 ```
 
 return message (typically used when self.is-valis
+
+### method submit
+
+```raku
+method submit(
+    &handler
+) returns Mu
+```
+
+make a route to handle form submit
 
 ### method form-styles
 
