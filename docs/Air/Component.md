@@ -11,9 +11,11 @@ SYNOPSIS
 The synopsis is split so that each part can be annotated. First, we import the Air core libraries.
 
 ```raku
-use Air::Functional :BASE;      # import all HTML tags as raku subs
-use Air::Base;					# import Base components (site, page, nav...)
-use Air::Component;
+use Air::Functional :BASE;
+# import all HTML tags as raku subs
+use Air::Base;
+# import Base components (site, page, nav...)
+use Air::ComponentOLD;
 ```
 
 ### HTMX functions

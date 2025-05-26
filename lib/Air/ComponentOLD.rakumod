@@ -212,196 +212,160 @@ When writing components:
 
 =end pod
 
-use Cromponent::MetaCromponentRole;
 use Air::Functional :CRO;
 
-sub to-kebab(Str() $_) {
-    lc S:g/(\w)<?before <[A..Z]>>/$0-/
-}
-
-multi trait_mod:<is>(Method $m, Bool :$controller!) is export {
-    trait_mod:<is>($m, :controller{})
-}
-
-multi trait_mod:<is>(
-    Method $m,
-    :%controller! (
-        :$name = $m.name,
-        :$returns-cromponent = False,
-        :$http-method = "GET",
-    )
- ) is export {
-    role IsController {
-        has Str $.is-controller-name;
-        method is-controller { True }
-    }
-
-    my role ReturnsCromponent {
-        method returns-cromponent { True }
-    }
-
-    role HTTPMethod {
-        has Str $.http-method;
-    }
-
-    $m does IsController($name);
-    $m does ReturnsCromponent if $returns-cromponent;
-    $m does HTTPMethod($http-method);
-    $m
-}
-
-#| attributes and methods shared between Component and Component::Red roles
-role Component::Common does Taggable {
-    #| optional attr to specify url base
-    has Str  $!base is built = '';
-    method base {$!base}
-
-    #| get url safe name of class doing Component role
-    method url-name { self.^shortname.&to-kebab, }
-
-    #| get url (ie base/name)
-    method url(--> Str) { do with self.base { "$_/" } ~ self.url-name}
-
-    #| get url-id (ie base/name/id)
-    method url-path(--> Str) { self.url ~ '/' ~ self.id }
-
-    #| get html-id (ie url-name-id), intended for HTML id attr
-    method html-id(--> Str) { self.url-name ~ '-' ~ self.id }
-
-    #| In general Cromponent::MetaCromponentRole calls .Str on a Cromponent when returning it
-    #| this method substitutes .HTML for .Str
-    method Str { self.HTML }
-}
-
-
-
-role Component::Red[
-    :C(:A(:$ADD)),
-    :R(:L(:$LOAD)) = True,
-    :U(:$UPDATE),
-    :D(:$DELETE),
-] does Component::Common {
-    ::?CLASS.HOW does Cromponent::MetaCromponentRole;
-
-    #| adapt component to perform LOAD, UPDATE, DELETE, ADD action(s)
-    my $methods-made;
-
-    #| called by role Site
-    method make-methods {
-        return if $methods-made++;
-
-        #| Default ADD action (called on POST) - may be overridden
-        if $ADD {
-            self.^add_method(
-                'ADD', my method ADD(*%data) { ::?CLASS.^create: |%data }
-                );
-        }
-        #| Default LOAD action (called on GET) - may be overridden
-        if $LOAD {
-            self.^add_method(
-                'LOAD', my method LOAD(Str() $id) { ::?CLASS.^load: $id }
-                );
-        }
-        #| Default UPDATE action (called on PUT) - may be overridden
-        if $UPDATE {
-            self.^add_method(
-                'UPDATE', my method UPDATE(*%data) { $.data = |$.data, |%data; $.^save }  #untested
-                );
-        }
-        #| Default DELETE action (called on DELETE) - may be overridden
-        if $DELETE {
-            self.^add_method(
-                'DELETE', my method DELETE { $.^delete }
-                );
-        }
-    }
-
-#    method LOAD(Str() $id)  { ::?CLASS.^load: $id }
-}
-
-#| Filament is a lightweight non-Red Component for Air::Base items
-#| such as Air::Base Nav and Page
-role Filament[
-    :C(:A(:$ADD)),
-    :R(:L(:$LOAD)) = True,
-    :U(:$UPDATE),
-    :D(:$DELETE),
-] does Component::Common {
-    ::?CLASS.HOW does Cromponent::MetaCromponentRole;
-
-    my  UInt $next = 1;
-
-    #| assigns and tracks instance ids
-    has UInt $!id is built;
-    method id {
-        $!id
-    }
-
-    my %holder;
-    #| populates an instance holder [class method],
-    #| may be overridden for external instance holder
-    method holder(--> Hash) { %holder }
-
-    #| get all instances in holder
-    method all { self.holder.keys.sort.map: { $.holder{$_} } }
-
-    #| adapt component to perform LOAD, UPDATE, DELETE, ADD action(s)
-    my $methods-made;
-
-    #| called by role Site
-    method make-methods {
-        return if $methods-made++;
-
-        #| Default ADD action (called on POST) - may be overridden
-        if $ADD {
-            self.^add_method(
-                'ADD', my method ADD(*%data) { ::?CLASS.new: |%data }
-                );
-        }
-        #| Default LOAD action (called on GET) - may be overridden
-        if $LOAD {
-            self.^add_method(
-                'LOAD', my method LOAD($id) { self.holder{$id} }
-            );
-        }
-        #| Default UPDATE action (called on PUT) - may be overridden
-        if $UPDATE {
-            self.^add_method(
-                'UPDATE', my method UPDATE(*%data) { self.data = |self.data, |%data }
-            );
-        }
-        #| Default DELETE action (called on DELETE) - may be overridden
-        if $DELETE {
-            self.^add_method(
-                'DELETE', my method DELETE { self.holder{self.id}:delete }
-            );
-        }
-    }
-
-    submethod TWEAK {
-        $!id //= $next++;
-        %holder{$!id} = self;
-        self.?make-routes;
-    }
-}
-
+#role IsController {
+#	has Str $.is-controller-name;
+#	method is-controller { True }
+#}
+#
+#multi trait_mod:<is>(Method $m, Bool :$controller!) is export {
+#	trait_mod:<is>($m, :controller{})
+#}
+#
+#multi trait_mod:<is>(Method $m, :$controller!, :$name = $m.name) is export {
+#	$m does IsController($name)
+#}
+#
 use Cro::HTTP::Router;
 
 ##| calls Cro: content 'text/html', $comp.HTML
-multi sub respond(Component::Common $comp) is export {
-	content 'text/html', $comp.HTML
+#multi sub respond(Any $comp) is export {
+#	content 'text/html', $comp.HTML
+#}
+##| calls Cro: content 'text/html', $html
+#multi sub respond(Str $html) is export {
+#	content 'text/html', $html
+#}
+
+sub to-kebab(Str() $_) {
+	lc S:g/(\w)<?before <[A..Z]>>/$0-/
 }
-#| calls Cro: content 'text/html', $html
-multi sub respond(Any $html) is export {
-	content 'text/html', $html
+
+=head2 role Component
+
+role Component {
+	my  UInt $next = 1;
+
+	#| assigns and tracks instance serials
+	has UInt $!serial is built;
+	method serial {$!serial}
+
+	#| optional attr to specify url base
+	has Str  $!base is built = '';
+	method base {$!base}
+
+	my %holder;
+	#| populates an instance holder [class method],
+	#| may be overridden for external instance holder
+	method holder(--> Hash) { %holder }
+
+	#| get all instances in holder
+	method all { self.holder.keys.sort.map: { $.holder{$_} } }
+
+	submethod TWEAK {
+		$!serial //= $next++;
+		%holder{$!serial} = self;
+		self.?make-routes;
+	}
+
+	#| get url safe name of class doing Component role
+	method url-name { ::?CLASS.^name.subst('::','-').lc }
+
+	#| get url (ie base/name)
+	method url(--> Str) { do with self.base { "$_/" } ~ self.url-name}
+
+	#| get url-id (ie base/name/serial)
+	method url-id(--> Str) { self.url ~ '/' ~ self.serial }
+
+	#| get html friendly id (ie name-serial), eg for html id attr
+	method id(--> Str) { self.url-name ~ '-' ~ self.serial }
+
+	#| Default load action (called on GET) - may be overridden
+	method MYLOAD($serial)    { self.holder{$serial} }
+
+	#| Default create action (called on POST) - may be overridden
+	method MYCREATE(*%data)   { ::?CLASS.new: |%data }
+
+	#| Default delete action (called on DELETE) - may be overridden
+	method MYDELETE           { self.holder{$!serial}:delete }
+
+	#| Default update action (called on PUT) - may be overridden
+	method MYUPDATE(*%data)   { self.data = |self.data, |%data }
+
+	::?CLASS.HOW does my role ExportMethod {
+		#| Meta Method ^add-routes typically called from Air::Base::Site in a Cro route block
+		method add-routes(
+			$component is copy,
+			:$comp-name = $component.url-name;
+						  ) is export {
+
+			my $route-set := $*CRO-ROUTE-SET
+				or die "Components should be added from inside a `route {}` block";
+
+			my &load   = -> $serial         { $component.MYLOAD: $serial };
+			my &create = -> *%pars      	{ $component.MYCREATE: |%pars };
+			my &del    = -> $serial         { load($serial).MYDELETE};
+			my &update = -> $serial, *%pars { load($serial).MYUPDATE: |%pars };
+
+			note "adding GET $comp-name/<#>";
+			get -> Str $ where $comp-name, $serial {
+				my $comp = load $serial;
+#				respond $comp
+			}
+
+			note "adding POST $comp-name";
+			post -> Str $ where $comp-name {
+				request-body -> $data {
+					my $new = create |$data.pairs.Map;
+					redirect "$comp-name/{ $new.serial }", :see-other
+				}
+			}
+
+			note "adding DELETE $comp-name/<#>";
+			delete -> Str $ where $comp-name, $serial {
+				del $serial;
+				content 'text/html', ""
+			}
+
+			note "adding PUT $comp-name/<#>";
+			put -> Str $ where $comp-name, $serial {
+				request-body -> $data {
+					update $serial, |$data.pairs.Map;
+					redirect "{ $serial }", :see-other   #hmm - this works, not sure why
+					#					redirect "$comp-name/{ $serial }", :see-other
+				}
+			}
+
+			for $component.^methods.grep(*.?is-controller) -> $meth {
+				my $meth-name = $meth.is-controller-name;
+
+				if $meth.signature.params > 2 {
+					note "adding PUT $comp-name/<#>/$meth-name";
+					put -> Str $ where $comp-name, $serial, Str $method {
+						request-body -> $data {
+							load($serial).?"$method"(|$data.pairs.Map)
+						}
+					}
+				} else {
+					note "adding GET $comp-name/<#>/$meth-name";
+					get -> Str $ where $comp-name, $serial, Str $method {
+						load($serial).?"$method"()
+					}
+				}
+			}
+		}
+	}
 }
+
+
 
 =begin pod
 =head1 AUTHOR
 
 Steve Roe <librasteve@furnival.net>
 
-The `Air::Component` module integrates with the Cromponent module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
+The `Air::Component` module provided is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
 
 
 =head1 COPYRIGHT AND LICENSE
@@ -410,4 +374,3 @@ Copyright(c) 2025 Henley Cloud Consulting Ltd.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 =end pod
-

@@ -198,6 +198,22 @@ method do-form-attrs{
 
 =para Air::Form code should avoid direct manipulation of the method and class styles detailed at L<Cro docs|https://cro.raku.org/docs/reference/cro-webapp-form#Rendering> - instead override the C<method styles {}>.
 
+=head2 Development Roadmap
+
+=para The Air::Form module will be extended to perform full CRUD operations on a Red table by the selective grafting of Air::Component features over to Air::Form, for example:
+
+=item C<LOAD> method to load a form with values from a specific table row
+=item C<ADD> method to add a new table row with form values provided
+=item C<UPDATE> method to update table row with form value modifications
+=item C<DELETE> method to delete table row
+
+=para Other potential features include:
+
+=item a table list view [with row/col filters]
+=item an item list view [with edit/save loop]
+
+=para Technically it is envisaged that ::?CLASS.HOW does Cromponent::MetaCromponentRole; will be brought over from Cromponent with suitable controller methods. If you want to go model XXX does Form does Component, then there is a Taggable use conflict.
+
 =end pod
 
 use Air::Functional :CRO;
@@ -308,7 +324,8 @@ role Form does Cro::WebApp::Form does Taggable {
         content 'text/plain', $msg
     }
 
-    method controller(&handler) {    #iamerejh mutually exclusive!
+    #| make a route to handle form submit
+    method submit(&handler) {
         post -> Str $ where self.form-url, {
             form-data &handler;
         }

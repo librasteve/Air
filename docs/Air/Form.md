@@ -5,7 +5,7 @@ This raku module is one of the core libraries of the raku **Air** distribution.
 
 It provides a Form class that integrates Air with the Cro::WebApp::Form module to provide a simple,yet rich declarative abstraction for web forms.
 
-Air::Form uses Air::Functional for the FormTag role so that Forms can be employed within Air code. Air::Form is an alternative to Air::Component.
+Air::Form uses Air::Functional for the Taggable role so that Forms can be employed within Air code. Air::Form is an alternative to Air::Component.
 
 SYNOPSIS
 ========
@@ -120,7 +120,7 @@ Note:
 
   * `:components[$contact-form]` tells the site to make the form route
 
-  * `$contact-form` does the role `FormTag` so it can be used within Air::Functional code
+  * `$contact-form` does the role `Taggable` so it can be used within Air::Functional code
 
 DESCRIPTION
 ===========
@@ -206,7 +206,7 @@ password => ( ( /^ <[A..Za..z0..9!@#$%^&*()\-_=+{}\[\]|:;"'<>,.?/]> ** 8..* $/ &
 );
 ```
 
-### role Form does Cro::WebApp::Form does FormTag {}
+### role Form does Cro::WebApp::Form does Taggable {}
 
 This role has only private attrs to avoid creating form fields, get/set methods are provided instead.
 
@@ -258,7 +258,7 @@ optional form attrs (with get/set methods)
 method HTML() returns Air::Functional::Markup(Any)
 ```
 
-called when used as a FormTag, returns self.empty
+called when used as a Taggable, returns self.empty
 
 ### method HTML
 

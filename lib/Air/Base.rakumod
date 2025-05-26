@@ -138,7 +138,7 @@ Each feature of Air::Base is set out below:
 
 use Air::Functional;
 #use Air::Component;
-use Air::Scumponent;
+use Air::Component;
 use Air::Form;
 use Red;
 
@@ -565,7 +565,9 @@ subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 #| Nav does Filament in order to support multiple nav instances
 #| with distinct NavItem and Widget attributes
 class Nav      does Filament {
+    #| HTMX attributes
     has Str     $.hx-target = '#content';
+    has Str     $.hx-swap   = 'outerHTML';
     #| logo
     has Safe    $.logo;
     #| NavItems
@@ -580,7 +582,7 @@ class Nav      does Filament {
     #| makes routes for Content NavItems (eg. SPA links that use HTMX), must be called from within a Cro route block
     method make-routes() {
         unless self.^methods.grep: * ~~ IsController {
-            for self.items.map: *.kv -> ($name, $target) {
+            do for self.items.map: *.kv -> ($name, $target) {
                 given $target {
                     when * ~~ Content {
                         my &new-method = method {respond $target.?HTML};
@@ -596,14 +598,15 @@ class Nav      does Filament {
     method nav-items {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
-                when * ~~ External | Internal {
-                  $target.label = $name; li $target.HTML
+                when External | Internal {
+                    $target.label = $name;
+                    li $target.HTML
                 }
-                when * ~~ Content {
+                when Content {
                     li a(:hx-get("$.url-path/$name"), Safe.new: $name)
                 }
-                when * ~~ Page {
-                    li a(:href("/{.url-name}/{.id}"), Safe.new: $name);
+                when Page {
+                    li a(:href("/{.url-name}/{.id}"), Safe.new: $name)
                 }
             }
         }
@@ -618,12 +621,14 @@ class Nav      does Filament {
 
             button( :class<hamburger>, :id<hamburger>, Safe.new: '&#9776;' );
 
-            ul( :$!hx-target, :class<nav-links>,
+            #regular menu
+            ul( :$!hx-target, :$!hx-swap, :class<nav-links>,
                 self.nav-items,
                 do for @.widgets { li .HTML },
             );
 
-            ul( :$!hx-target, :class<menu>, :id<menu>,
+            #hamburger menu
+            ul( :$!hx-target, $!hx-swap, :class<menu>, :id<menu>,
                 self.nav-items,
             );
         ]
@@ -849,7 +854,7 @@ class Site {
             @!components.push: Nav.new;
 
             for @!components.unique( as => *.^name ) {
-                when AllMent { .^add-cromponent-routes }
+                when Component::Common { .make-methods; .^add-cromponent-routes }
                 when Form    { .form-routes }
                 default { note "Only AllMent and Form types may be added" }
             }

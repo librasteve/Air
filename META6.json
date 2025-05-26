@@ -18,7 +18,6 @@
         "Air": "lib/Air.rakumod",
         "Air::Base": "lib/Air/Base.rakumod",
         "Air::Component": "lib/Air/Component.rakumod",
-        "Air::Scumponent": "lib/Air/Scumponent.rakumod",
         "Air::Form": "lib/Air/Form.rakumod",
         "Air::Functional": "lib/Air/Functional.rakumod"
     },
