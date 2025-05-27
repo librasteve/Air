@@ -212,6 +212,7 @@ When writing components:
 
 =end pod
 
+use Cromponent;
 use Cromponent::MetaCromponentRole;
 use Air::Functional :CRO;
 
@@ -222,32 +223,10 @@ sub to-kebab(Str() $_) {
 multi trait_mod:<is>(Method $m, Bool :$controller!) is export {
     trait_mod:<is>($m, :controller{})
 }
-
-multi trait_mod:<is>(
-    Method $m,
-    :%controller! (
-        :$name = $m.name,
-        :$returns-cromponent = False,
-        :$http-method = "GET",
-    )
- ) is export {
-    role IsController {
-        has Str $.is-controller-name;
-        method is-controller { True }
-    }
-
-    my role ReturnsCromponent {
-        method returns-cromponent { True }
-    }
-
-    role HTTPMethod {
-        has Str $.http-method;
-    }
-
-    $m does IsController($name);
-    $m does ReturnsCromponent if $returns-cromponent;
-    $m does HTTPMethod($http-method);
-    $m
+multi trait_mod:<is>(Method $m, :%controller!) is export {
+    my %accessible = %controller;
+    %accessible<returns-cromponent> = True unless %controller<returns-html>;   #make default
+    trait_mod:<is>($m, :%accessible)
 }
 
 #| attributes and methods shared between Component and Component::Red roles
@@ -379,17 +358,6 @@ role Component::Red[
                 );
         }
     }
-}
-
-use Cro::HTTP::Router;
-
-##| calls Cro: content 'text/html', $comp.HTML
-multi sub respond(Component::Common $comp) is export {
-	content 'text/html', $comp.HTML
-}
-#| calls Cro: content 'text/html', $html
-multi sub respond(Any $html) is export {
-	content 'text/html', $html
 }
 
 =begin pod

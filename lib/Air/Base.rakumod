@@ -581,14 +581,12 @@ class Nav      does Component {
 
     #| makes routes for Content NavItems (eg. SPA links that use HTMX), must be called from within a Cro route block
     method make-routes() {
-        unless self.^methods.grep: * ~~ IsController {
-            do for self.items.map: *.kv -> ($name, $target) {
-                given $target {
-                    when * ~~ Content {
-                        my &new-method = method {respond $target.?HTML};
-                        trait_mod:<is>(&new-method, :controller{:$name});
-                        self.^add_method($name, &new-method);
-                    }
+        do for self.items.map: *.kv -> ($name, $target) {
+            given $target {
+                when * ~~ Content {
+                    my &new-method = method {$target.?HTML};
+                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                    self.^add_method($name, &new-method);
                 }
             }
         }

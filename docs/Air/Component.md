@@ -320,16 +320,6 @@ method make-methods() returns Mu
 
 adapt component to perform LOAD, UPDATE, DELETE, ADD action(s) called by role Site
 
-### multi sub respond
-
-```raku
-multi sub respond(
-    $html
-) returns Mu
-```
-
-calls Cro: content 'text/html', $html
-
 AUTHOR
 ======
 
