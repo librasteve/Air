@@ -310,7 +310,7 @@ These are re-published with minor adjustments and align with Pico CSS semantic t
 
 In HTML the time tag is typically of the form < time datetime="2025-03-13" > 13 March, 2025 < /time > . In Air you can just go time(:datetime < 2025-02-27 > ); and raku will auto format and fill out the inner human readable text.
 
-optionally specify mode => [time | datetime], mode => date is default
+Optionally specify mode => [time | datetime], mode => date is default
 
 Widgets
 -------
@@ -356,7 +356,11 @@ First we set up the NavItems = Internal | External | Content | Page
 class Nav
 ---------
 
-Nav does Component in order to support multiple nav instances with distinct NavItem and Widget attributes. Also does Tag so that nav tags can be placed anywhere on a page.
+Nav does Component in order to support multiple nav instances with distinct NavItem and Widget attributes
+
+### has Str $.hx-target
+
+HTMX attributes
 
 ### has Safe $.logo
 
@@ -386,10 +390,10 @@ method nav-items() returns Mu
 
 renders NavItems [subset NavItem of Pair where .value ~~ Internal | External | Content | Page;]
 
-### multi method HTML
+### method HTML
 
 ```raku
-multi method HTML() returns Mu
+method HTML() returns Mu
 ```
 
 applies Style and Script for Hamburger reactive menu
@@ -481,10 +485,10 @@ multi method new(
 
 .new positional with header, main & footer only
 
-### multi method HTML
+### method HTML
 
 ```raku
-multi method HTML() returns Mu
+method HTML() returns Mu
 ```
 
 issue page DOM
@@ -505,10 +509,6 @@ index Page ( otherwise $!index = @!pages[0] )
 ### has Positional @.components
 
 Components for route setup; default = [Nav.new]
-
-### has Positional[Tool] @.tools
-
-Tools for sitewide behaviours
 
 ### has Bool $.scss
 
@@ -573,7 +573,7 @@ method new(
 
 .new positional takes tbody [[]]
 
-### role Table does Tag
+### role Grid does Tag
 
 ### has Positional @.items
 

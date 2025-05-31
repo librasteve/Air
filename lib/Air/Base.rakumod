@@ -137,8 +137,10 @@ Each feature of Air::Base is set out below:
 #role Theme {...}
 
 use Air::Functional;
+#use Air::Component;
 use Air::Component;
 use Air::Form;
+use Red;
 
 my @functions = <Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Safe>;
 
@@ -561,10 +563,11 @@ role Internal  does Tag {
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
 #| Nav does Component in order to support multiple nav instances
-#| with distinct NavItem and Widget attributes.
-#| Also does Tag so that nav tags can be placed anywhere on a page.
-class Nav      does Component does Tag {
+#| with distinct NavItem and Widget attributes
+class Nav      does Component {
+    #| HTMX attributes
     has Str     $.hx-target = '#content';
+    has Str     $.hx-swap   = 'outerHTML';
     #| logo
     has Safe    $.logo;
     #| NavItems
@@ -578,14 +581,12 @@ class Nav      does Component does Tag {
 
     #| makes routes for Content NavItems (eg. SPA links that use HTMX), must be called from within a Cro route block
     method make-routes() {
-        unless self.^methods.grep: * ~~ IsController {
-            for self.items.map: *.kv -> ($name, $target) {
-                given $target {
-                    when * ~~ Content {
-                        my &new-method = method {respond $target.?HTML};
-                        trait_mod:<is>(&new-method, :controller, :$name);
-                        self.^add_method($name, &new-method);
-                    }
+        do for self.items.map: *.kv -> ($name, $target) {
+            given $target {
+                when * ~~ Content {
+                    my &new-method = method {$target.?HTML};
+                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                    self.^add_method($name, &new-method);
                 }
             }
         }
@@ -595,22 +596,22 @@ class Nav      does Component does Tag {
     method nav-items {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
-                when * ~~ External | Internal {
-                  $target.label = $name;
-                  li $target.HTML
+                when External | Internal {
+                    $target.label = $name;
+                    li $target.HTML
                 }
-                when * ~~ Content {
-                    li a(:hx-get("$.name/$.serial/" ~ $name), Safe.new: $name)
+                when Content {
+                    li a(:hx-get("$.url-path/$name"), Safe.new: $name)
                 }
-                when * ~~ Page {
-                    li a(:href("/{.name}/{.serial}"), Safe.new: $name)  #iamerejh name!
+                when Page {
+                    li a(:href("/{.url-name}/{.id}"), Safe.new: $name)
                 }
             }
         }
     }
 
     #| applies Style and Script for Hamburger reactive menu
-    multi method HTML {
+    method HTML {
         self.style.HTML ~ (
 
         nav [
@@ -618,12 +619,14 @@ class Nav      does Component does Tag {
 
             button( :class<hamburger>, :id<hamburger>, Safe.new: '&#9776;' );
 
-            ul( :$!hx-target, :class<nav-links>,
+            #regular menu
+            ul( :$!hx-target, :$!hx-swap, :class<nav-links>,
                 self.nav-items,
                 do for @.widgets { li .HTML },
             );
 
-            ul( :$!hx-target, :class<menu>, :id<menu>,
+            #hamburger menu
+            ul( :$!hx-target, $!hx-swap, :class<menu>, :id<menu>,
                 self.nav-items,
             );
         ]
@@ -763,7 +766,7 @@ class Page     does Component {
     }
 
     #| issue page DOM
-    multi method HTML {
+    method HTML {
         self.defaults unless $!loaded;
         '<!doctype html>' ~ $!html.HTML
     }
@@ -816,8 +819,6 @@ class Site {
     has Page $.index;
     #| Components for route setup; default = [Nav.new]
     has      @.components;
-    #| Tools for sitewide behaviours
-    has Tool @.tools      = [];
 
     #| use :!scss to disable SASS compiler run
     has Bool $.scss = True;
@@ -836,17 +837,9 @@ class Site {
     }
 
     submethod TWEAK {
-        if    @!pages[0] { $!index = @!pages[0] }
-        elsif $!index    { @!pages[0] = $!index }
-        else  { note "No pages or index found!" }
-
-#        @!components.push: Nav.new;
-
-        for @!tools -> $tool {
-            for @!pages -> $page {
-                $tool.defaults($page)
-            }
-        }
+        with    @!pages[0] { $!index = @!pages[0] }
+        orwith  $!index    { @!pages[0] = $!index }
+        else    { note "No pages or index found!" }
     }
 
     method routes {
@@ -855,10 +848,13 @@ class Site {
         self.scss with $!scss;
 
         route {
+            #| always route Nav
+            @!components.push: Nav.new;
+
             for @!components.unique( as => *.^name ) {
-                when Component { .^add-routes }
-                when Form      { .form-routes }
-                default { note "Only Component and Form types may be added" }
+                when Component::Common { .make-methods; .^add-cromponent-routes }
+                when Form    { .form-routes }
+                default { note "Only AllMent and Form types may be added" }
             }
 
             get ->               { content 'text/html', $.index.HTML }
@@ -868,11 +864,11 @@ class Site {
             get ->        *@path { static 'static',     @path }
 
             for @!pages {
-                my ($url-name, $serial) = .url-name, .serial;
+                my ($url-name, $id) = .url-name, .id;
 
                 note "adding GET {$url-name}/<#>";
-                get -> Str $ where $url-name, $serial {
-                    content 'text/html', @!pages[$serial-1].HTML
+                get -> Str $url-name, Int $id {
+                    content 'text/html', @!pages[$id-1].HTML
                 }
             }
         }
@@ -993,7 +989,7 @@ role Table     does Tag {
     }
 
     multi sub do-part($part, :$head) { '' }
-    multi sub do-part(@part where .all ~~ Tag|Component) {
+    multi sub do-part(@part where .all ~~ Tag|Taggable) {
         tbody @part.map(*.HTML)
     }
     multi sub do-part(@part where .all ~~ Array, :$head) {
@@ -1011,13 +1007,13 @@ role Table     does Tag {
     multi method HTML {
         table |%(:$!class if $!class), [
             thead do-part($!thead, :head);
-            tbody do-part($!tbody),  :attrs(|%!tbody-attrs);
+            tbody do-part($!tbody), :attrs(|%!tbody-attrs);
             tfoot do-part($!tfoot);
         ]
     }
 }
 
-=head3 role Table does Tag
+=head3 role Grid does Tag
 
 role Grid      does Tag {
     #| list of items to populate grid, each item is wrapped in a span tag

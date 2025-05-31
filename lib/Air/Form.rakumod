@@ -6,7 +6,7 @@ This raku module is one of the core libraries of the raku B<Air> distribution.
 
 It provides a Form class that integrates Air with the Cro::WebApp::Form module to provide a simple,yet rich declarative abstraction for web forms.
 
-Air::Form uses Air::Functional for the FormTag role so that Forms can be employed within Air code. Air::Form is an alternative to Air::Component.
+Air::Form uses Air::Functional for the Taggable role so that Forms can be employed within Air code. Air::Form is an alternative to Air::Component.
 
 =head1 SYNOPSIS
 
@@ -102,7 +102,7 @@ sub SITE is export {
 
 Note:
 =item C<:components[$contact-form]> tells the site to make the form route
-=item C<$contact-form> does the role C<FormTag> so it can be used within Air::Functional code
+=item C<$contact-form> does the role C<Taggable> so it can be used within Air::Functional code
 
 
 =head1 DESCRIPTION
@@ -177,7 +177,7 @@ password => ( ( /^ <[A..Za..z0..9!@#$%^&*()\-_=+{}\[\]|:;"'<>,.?/]> ** 8..* $/ &
 );
 =end code
 
-=head3 role Form does Cro::WebApp::Form does FormTag {}
+=head3 role Form does Cro::WebApp::Form does Taggable {}
 
 =para This role has only private attrs to avoid creating form fields, get/set methods are provided instead.
 
@@ -197,6 +197,22 @@ method do-form-attrs{
 =end code
 
 =para Air::Form code should avoid direct manipulation of the method and class styles detailed at L<Cro docs|https://cro.raku.org/docs/reference/cro-webapp-form#Rendering> - instead override the C<method styles {}>.
+
+=head2 Development Roadmap
+
+=para The Air::Form module will be extended to perform full CRUD operations on a Red table by the selective grafting of Air::Component features over to Air::Form, for example:
+
+=item C<LOAD> method to load a form with values from a specific table row
+=item C<ADD> method to add a new table row with form values provided
+=item C<UPDATE> method to update table row with form value modifications
+=item C<DELETE> method to delete table row
+
+=para Other potential features include:
+
+=item a table list view [with row/col filters]
+=item an item list view [with edit/save loop]
+
+=para Technically it is envisaged that ::?CLASS.HOW does Cromponent::MetaCromponentRole; will be brought over from Cromponent with suitable controller methods. If you want to go model XXX does Form does Component, then there is a Taggable use conflict.
 
 =end pod
 
@@ -230,7 +246,7 @@ password => ( ( /^ <[A..Za..z0..9!@#$%^&*()\-_=+{}\[\]|:;"'<>,.?/]> ** 8..* $/ &
               'Passwords must have minimum 8 characters with at least one letter and one number.' ),
 );
 
-role Form does Cro::WebApp::Form does FormTag {
+role Form does Cro::WebApp::Form does Taggable {
     #| optionally specify form url base (with get/set methods)
     has Str  $!form-base = '';
     multi method form-base         {$!form-base}
@@ -286,7 +302,7 @@ role Form does Cro::WebApp::Form does FormTag {
         )
     }
 
-    #| called when used as a FormTag, returns self.empty
+    #| called when used as a Taggable, returns self.empty
     multi method HTML(--> Markup()) {
         parse-template($formtmp)
             andthen .render( {form => self.empty} ).&adjust(self.form-url)
@@ -308,7 +324,8 @@ role Form does Cro::WebApp::Form does FormTag {
         content 'text/plain', $msg
     }
 
-    method controller(&handler) {
+    #| make a route to handle form submit
+    method submit(&handler) {
         post -> Str $ where self.form-url, {
             form-data &handler;
         }

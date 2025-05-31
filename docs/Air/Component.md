@@ -228,16 +228,61 @@ When writing components:
 
   * custom `multi method HTML` inners must be explicitly rendered with .HTML or wrapped in a tag eg. `div` since being passed as AN inner will call `render-tag` which will, in turn, call `.HTML`
 
-role Component
---------------
 
-### has UInt $!serial
 
-assigns and tracks instance serials
+attributes and methods shared between Component and Component::Red roles
 
 ### has Str $!base
 
 optional attr to specify url base
+
+### method url-name
+
+```raku
+method url-name() returns Mu
+```
+
+get url safe name of class doing Component role
+
+### method url
+
+```raku
+method url() returns Str
+```
+
+get url (ie base/name)
+
+### method url-path
+
+```raku
+method url-path() returns Str
+```
+
+get url-id (ie base/name/id)
+
+### method html-id
+
+```raku
+method html-id() returns Str
+```
+
+get html-id (ie url-name-id), intended for HTML id attr
+
+### method Str
+
+```raku
+method Str() returns Mu
+```
+
+In general Cromponent::MetaCromponentRole calls .Str on a Cromponent when returning it this method substitutes .HTML for .Str
+
+
+
+Component is for non-Red classes
+
+### has UInt $!id
+
+assigns and tracks instance ids
 
 ### method holder
 
@@ -255,113 +300,32 @@ method all() returns Mu
 
 get all instances in holder
 
-### method name
+### method make-methods
 
 ```raku
-method name() returns Mu
+method make-methods() returns Mu
 ```
 
-get url safe name of class doing Component role
+adapt component to perform LOAD, UPDATE, DELETE, ADD action(s) called by role Site
 
-### method url
+
+
+Component::Red is for Red models
+
+### method make-methods
 
 ```raku
-method url() returns Str
+method make-methods() returns Mu
 ```
 
-get url (ie base/name)
-
-### method url-id
-
-```raku
-method url-id() returns Str
-```
-
-get url-id (ie base/name/serial)
-
-### method id
-
-```raku
-method id() returns Str
-```
-
-get html friendly id (ie name-serial), eg for html id attr
-
-### method MYLOAD
-
-```raku
-method MYLOAD(
-    $serial
-) returns Mu
-```
-
-Default load action (called on GET) - may be overridden
-
-### method MYCREATE
-
-```raku
-method MYCREATE(
-    *%data
-) returns Mu
-```
-
-Default create action (called on POST) - may be overridden
-
-### method MYDELETE
-
-```raku
-method MYDELETE() returns Mu
-```
-
-Default delete action (called on DELETE) - may be overridden
-
-### method MYUPDATE
-
-```raku
-method MYUPDATE(
-    *%data
-) returns Mu
-```
-
-Default update action (called on PUT) - may be overridden
-
-### method add-routes
-
-```raku
-method add-routes(
-    $component is copy,
-    :$comp-name = Code.new
-) returns Mu
-```
-
-Meta Method ^add-routes typically called from Air::Base::Site in a Cro route block
-
-### multi sub respond
-
-```raku
-multi sub respond(
-    $comp
-) returns Mu
-```
-
-calls Cro: content 'text/html', $comp.HTML
-
-### multi sub respond
-
-```raku
-multi sub respond(
-    Str $html
-) returns Mu
-```
-
-calls Cro: content 'text/html', $html
+adapt component to perform LOAD, UPDATE, DELETE, ADD action(s) called by role Site
 
 AUTHOR
 ======
 
 Steve Roe <librasteve@furnival.net>
 
-The `Air::Component` module provided is based on an early version of the raku `Cromponent` module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
+The `Air::Component` module integrates with the Cromponent module, author Fernando Corrêa de Oliveira <fco@cpan.com>, however unlike Cromponent this module does not use Cro Templates.
 
 COPYRIGHT AND LICENSE
 =====================

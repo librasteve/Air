@@ -5,7 +5,7 @@ This raku module is one of the core libraries of the raku **Air** distribution.
 
 It provides a Form class that integrates Air with the Cro::WebApp::Form module to provide a simple,yet rich declarative abstraction for web forms.
 
-Air::Form uses Air::Functional for the FormTag role so that Forms can be employed within Air code. Air::Form is an alternative to Air::Component.
+Air::Form uses Air::Functional for the Taggable role so that Forms can be employed within Air code. Air::Form is an alternative to Air::Component.
 
 SYNOPSIS
 ========
@@ -120,7 +120,7 @@ Note:
 
   * `:components[$contact-form]` tells the site to make the form route
 
-  * `$contact-form` does the role `FormTag` so it can be used within Air::Functional code
+  * `$contact-form` does the role `Taggable` so it can be used within Air::Functional code
 
 DESCRIPTION
 ===========
@@ -206,7 +206,7 @@ password => ( ( /^ <[A..Za..z0..9!@#$%^&*()\-_=+{}\[\]|:;"'<>,.?/]> ** 8..* $/ &
 );
 ```
 
-### role Form does Cro::WebApp::Form does FormTag {}
+### role Form does Cro::WebApp::Form does Taggable {}
 
 This role has only private attrs to avoid creating form fields, get/set methods are provided instead.
 
@@ -227,6 +227,27 @@ method do-form-attrs{
 ```
 
 Air::Form code should avoid direct manipulation of the method and class styles detailed at [Cro docs](https://cro.raku.org/docs/reference/cro-webapp-form#Rendering) - instead override the `method styles {}`.
+
+Development Roadmap
+-------------------
+
+The Air::Form module will be extended to perform full CRUD operations on a Red table by the selective grafting of Air::Component features over to Air::Form, for example:
+
+  * `LOAD` method to load a form with values from a specific table row
+
+  * `ADD` method to add a new table row with form values provided
+
+  * `UPDATE` method to update table row with form value modifications
+
+  * `DELETE` method to delete table row
+
+Other potential features include:
+
+  * a table list view [with row/col filters]
+
+  * an item list view [with edit/save loop]
+
+Technically it is envisaged that ::?CLASS.HOW does Cromponent::MetaCromponentRole; will be brought over from Cromponent with suitable controller methods. If you want to go model XXX does Form does Component, then there is a Taggable use conflict.
 
 ### has Str $!form-base
 
@@ -258,7 +279,7 @@ optional form attrs (with get/set methods)
 method HTML() returns Air::Functional::Markup(Any)
 ```
 
-called when used as a FormTag, returns self.empty
+called when used as a Taggable, returns self.empty
 
 ### method HTML
 
@@ -289,6 +310,16 @@ method finish(
 ```
 
 return message (typically used when self.is-valis
+
+### method submit
+
+```raku
+method submit(
+    &handler
+) returns Mu
+```
+
+make a route to handle form submit
 
 ### method form-styles
 

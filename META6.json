@@ -10,7 +10,8 @@
         "DateTime::Format",
         "HTML::Escape",
         "Cro::HTTP::Router",
-        "Cro::WebApp::Form"
+        "Cro::WebApp::Form",
+        "Cromponent"
     ],
     "build-depends": [],
     "provides": {
