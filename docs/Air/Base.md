@@ -275,6 +275,10 @@ main
 
 footer
 
+### has Positional[Script] @.scripts
+
+scripts
+
 ### role Html does Tag[Regular] {...}
 
 ### has Head $.head
@@ -432,6 +436,10 @@ shortcut self.html.body.main
 ### has Footer $.footer
 
 shortcut self.html.body.footer
+
+### has Positional[Script] @.enqueue
+
+enqueue SCRIPTS [appends scripts at the end of the body tag]
 
 ### has Bool $.styled-aside-on
 

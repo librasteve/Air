@@ -260,28 +260,28 @@ role Form does Cro::WebApp::Form does Taggable {
         do with self.form-base { "$_/" } ~ self.form-name
     }
 
-    #| optional form attrs  (with get/set methods)
+    #| optional form attrs (with get/set methods)
     has %!form-attrs;
     multi method form-attrs     { %!form-attrs }
     multi method form-attrs(%h) { %!form-attrs{.key} = .value for %h }
 
     method init {
         self.do-form-styles;
-        self.do-form-scripts;
+#        self.do-form-scripts;
         self.do-form-defaults;
         self.?do-form-attrs;
         self.do-form-tmpl;
     }
 
-    my $formtmp = Q|%FORM-STYLES%<&form( .form, %FORM-ATTRS% )>%FORM-SCRIPTS%|;
+    my $formtmp //= Q|%FORM-STYLES%<&form( .form, %FORM-ATTRS% )>|;
 
     method do-form-styles {
         $formtmp .= subst: /'%FORM-STYLES%'/, self.form-styles
     }
 
-    method do-form-scripts {
-        $formtmp .= subst: /'%FORM-SCRIPTS%'/, self.form-scripts
-    }
+#    method do-form-scripts {
+#        $formtmp .= subst: /'%FORM-SCRIPTS%'/, self.form-scripts
+#    }
 
     method do-form-defaults {
         %!form-attrs = (
@@ -337,12 +337,12 @@ role Form does Cro::WebApp::Form does Taggable {
             input[required] {
                 border: calc(var(--pico-border-width) * 2) var(--pico-border-color) solid;
             }
-             .invalid-feedback-class {
+            .invalid-feedback-class {
                 margin-top: -10px;
                 margin-bottom: 10px;
                 color: var(--pico-del-color);
             }
-             .form-errors-class > * > li {
+            .form-errors-class > * > li {
                 color: var(--pico-del-color);
             }
         </style>
@@ -350,23 +350,10 @@ role Form does Cro::WebApp::Form does Taggable {
     }
 
     #| get form-scripts, pass in a custom $suffix for required labels (may be overridden)
-    method form-scripts($suffix = '*') {
+    method SCRIPT($suffix = '*') {
         my $javascript = q:to/END/;
-        <script>
-            // scroll form errors into view
-            document.body.addEventListener('htmx:afterSwap', function(evt) {
-                if (evt.target.querySelector('form')) {
-                    //console.log('htmx:afterSwap fired', evt);
-                    const errorDiv = evt.target.querySelector('.form-errors-class');
-                    if (errorDiv && errorDiv.innerText.trim() !== '') {
-                        errorDiv.focus();
-                        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }
-            });
 
-            // mark labels of required inputs with *
-            document.addEventListener("DOMContentLoaded", () => {
+            function appendRequiredSuffixToLabels() {
                 const requiredInputs = document.querySelectorAll("input[required]");
 
                 requiredInputs.forEach(input => {
@@ -378,11 +365,29 @@ role Form does Cro::WebApp::Form does Taggable {
                         label.textContent += "%SUFFIX%";
                     }
                 });
-            });
-        </script>
-        END
+            }
 
-        $javascript.subst: /'%SUFFIX%'/, $suffix;
+            function scrollFormErrorsIntoView(evt) {
+                //console.log('htmx:afterSwap fired', evt);
+                const errorDiv = evt.target.querySelector('.form-errors-class');
+                if (errorDiv && errorDiv.innerText.trim() !== '') {
+                    errorDiv.focus();
+                    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            document.addEventListener('htmx:afterSwap', function(evt) {
+                scrollFormErrorsIntoView(evt);
+                appendRequiredSuffixToLabels();
+            });
+
+            document.addEventListener("DOMContentLoaded", function() {
+                appendRequiredSuffixToLabels();
+            });
+            END
+
+        $javascript ~~ s:g/'%SUFFIX%'/$suffix/;
+        $javascript;
     }
 
 }

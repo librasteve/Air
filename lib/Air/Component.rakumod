@@ -212,9 +212,10 @@ When writing components:
 
 =end pod
 
+use Air::Functional :CRO;
+
 use Cromponent;
 use Cromponent::MetaCromponentRole;
-use Air::Functional :CRO;
 
 sub to-kebab(Str() $_) {
     lc S:g/(\w)<?before <[A..Z]>>/$0-/
@@ -319,10 +320,10 @@ role Component[
 
 #| Component::Red is for Red models
 role Component::Red[
-:C(:A(:$ADD)),
-:R(:L(:$LOAD)) = True,
-:U(:$UPDATE),
-:D(:$DELETE),
+	:C(:A(:$ADD)),
+	:R(:L(:$LOAD)) = True,
+	:U(:$UPDATE),
+	:D(:$DELETE),
 ] does Component::Common {
     ::?CLASS.HOW does Cromponent::MetaCromponentRole;
 

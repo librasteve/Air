@@ -329,10 +329,10 @@ method form-styles() returns Mu
 
 get form-styles (may be overridden)
 
-### method form-scripts
+### method SCRIPT
 
 ```raku
-method form-scripts(
+method SCRIPT(
     $suffix = "*"
 ) returns Mu
 ```

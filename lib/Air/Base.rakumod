@@ -137,7 +137,6 @@ Each feature of Air::Base is set out below:
 #role Theme {...}
 
 use Air::Functional;
-#use Air::Component;
 use Air::Component;
 use Air::Form;
 use Red;
@@ -306,13 +305,16 @@ role Body   does Tag[Regular]  {
     has Main   $.main   is rw .= new;
     #| footer
     has Footer $.footer is rw .= new;
+    #| scripts
+    has Script @.scripts;
 
     multi method HTML {
-        opener($.name, |%.attrs) ~
-        $!header.HTML            ~
-        $!main.HTML              ~
-        $!footer.HTML            ~
-        closer($.name)           ~ "\n"
+        opener($.name, |%.attrs)   ~
+        $!header.HTML              ~
+        $!main.HTML                ~
+        $!footer.HTML              ~
+        @!scripts.map(*.HTML).join ~
+        closer($.name)             ~ "\n"
     }
 }
 
@@ -725,6 +727,10 @@ class Page     does Component {
     has Main    $.main is rw;
     #| shortcut self.html.body.footer
     has Footer  $.footer;
+    #| enqueue SCRIPTS [appends scripts at the end of the body tag]
+    has Script  @.enqueue;
+
+    has $.thing;
 
     #| set to True with :styled-aside-on to apply self.html.head.style with right hand aside block
     has Bool    $.styled-aside-on = False;
@@ -736,6 +742,7 @@ class Page     does Component {
     method defaults {
         unless $!loaded++ {
             self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
+            self.html.body.scripts.append: @.enqueue;
 
             self.html.head.title = Title.new: $.title                   with $.title;
 
@@ -853,7 +860,7 @@ class Site {
 
             for @!components.unique( as => *.^name ) {
                 when Component::Common { .make-methods; .^add-cromponent-routes }
-                when Form    { .form-routes }
+                when Form { .form-routes }
                 default { note "Only AllMent and Form types may be added" }
             }
 
