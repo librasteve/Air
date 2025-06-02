@@ -439,7 +439,7 @@ shortcut self.html.body.footer
 
 ### has Positional[Script] @.enqueue
 
-enqueue SCRIPTS [appends scripts at the end of the body tag]
+enqueue SCRIPT [creates Script tags from registrant .SCRIPT methods to be appended at the end of the body tag]
 
 ### has Bool $.styled-aside-on
 
@@ -514,9 +514,9 @@ Page holder -or-
 
 index Page ( otherwise $!index = @!pages[0] )
 
-### has Positional @.components
+### has Positional @.register
 
-Components for route setup; default = [Nav.new]
+Register for route setup; default = [Nav.new]
 
 ### has Bool $.scss
 

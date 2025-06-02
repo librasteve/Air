@@ -90,7 +90,7 @@ my &index = &page.assuming(
 
 # use the $contact-form in an Air website
 sub SITE is export {
-    site :components[$contact-form],
+    site :register[$contact-form],
         index
             main
                 content [
@@ -101,7 +101,7 @@ sub SITE is export {
 =end code
 
 Note:
-=item C<:components[$contact-form]> tells the site to make the form route
+=item C<:register[$contact-form]> tells the site to make the form route
 =item C<$contact-form> does the role C<Taggable> so it can be used within Air::Functional code
 
 

@@ -727,7 +727,7 @@ class Page     does Component {
     has Main    $.main is rw;
     #| shortcut self.html.body.footer
     has Footer  $.footer;
-    #| enqueue SCRIPTS [appends scripts at the end of the body tag]
+    #| enqueue SCRIPT [creates Script tags from registrant .SCRIPT methods to be appended at the end of the body tag]
     has Script  @.enqueue;
 
     has $.thing;
@@ -824,8 +824,8 @@ class Site {
     has Page @.pages;
     #| index Page ( otherwise $!index = @!pages[0] )
     has Page $.index;
-    #| Components for route setup; default = [Nav.new]
-    has      @.components;
+    #| Register for route setup; default = [Nav.new]
+    has      @.register;
 
     #| use :!scss to disable SASS compiler run
     has Bool $.scss = True;
@@ -847,6 +847,16 @@ class Site {
         with    @!pages[0] { $!index = @!pages[0] }
         orwith  $!index    { @!pages[0] = $!index }
         else    { note "No pages or index found!" }
+
+        self.enqueue-all;
+    }
+
+    method enqueue-all {
+        for @!register.unique( as => *.^name ) -> $registrant {
+            for @!pages -> $page {
+                $page.html.body.scripts.append: Script.new($registrant.?SCRIPT)
+            }
+        }
     }
 
     method routes {
@@ -856,20 +866,28 @@ class Site {
 
         route {
             #| always route Nav
-            @!components.push: Nav.new;
+            @!register.push: Nav.new;
 
-            for @!components.unique( as => *.^name ) {
-                when Component::Common { .make-methods; .^add-cromponent-routes }
-                when Form { .form-routes }
-                default { note "Only AllMent and Form types may be added" }
+            #| setup Cro routes
+            for @!register.unique( as => *.^name ) {
+                when Component::Common {
+                    .make-methods;
+                    .^add-cromponent-routes;
+                }
+                when Form {
+                    .form-routes
+                }
+                default { note "Only Component::Common and Form types may be added" }
             }
 
+            #| setup static Cro routes
             get ->               { content 'text/html', $.index.HTML }
             get -> 'css', *@path { static 'static/css', @path }
             get -> 'img', *@path { static 'static/img', @path }
             get -> 'js',  *@path { static 'static/js',  @path }
             get ->        *@path { static 'static',     @path }
 
+            #| setup external navigation Cro routes
             for @!pages {
                 my ($url-name, $id) = .url-name, .id;
 

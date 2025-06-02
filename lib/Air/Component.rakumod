@@ -99,7 +99,7 @@ my &index = &page.assuming(
 my @todos = do for <one two> -> $text { Todo.new: :$text };
 
 sub SITE is export {
-    site :components(@todos),
+    site :register(@todos),
         index
             main [
                 h3 'Todos';
@@ -119,7 +119,7 @@ Key features of C<sub SITE> are:
 =item1 we set up our list of Todo components calling C<Todo.new>
 =item1 we use the Air::Base C<site> function to make our website
 =item1 the call chain C<site(index(main(...))> then makes our website
-=item1 C<site> is passed C<:components(@todos)> to make the component Cro routes
+=item1 C<site> is passed C<:register(@todos)> to make the component Cro routes
 
 
 =head2 Run Cro service.raku

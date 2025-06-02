@@ -108,7 +108,7 @@ my &index = &page.assuming(
 my @todos = do for <one two> -> $text { Todo.new: :$text };
 
 sub SITE is export {
-    site :components(@todos),
+    site :register(@todos),
         index
             main [
                 h3 'Todos';
@@ -135,7 +135,7 @@ Key features of `sub SITE` are:
 
   * the call chain `site(index(main(...))` then makes our website
 
-  * `site` is passed `:components(@todos)` to make the component Cro routes
+  * `site` is passed `:register(@todos)` to make the component Cro routes
 
 Run Cro service.raku
 --------------------
