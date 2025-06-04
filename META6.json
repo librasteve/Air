@@ -13,7 +13,8 @@
         "Cro::HTTP::Router",
         "Cro::WebApp::Template",
         "Cro::WebApp::Form",
-        "Cromponent"
+        "Cromponent",
+        "Red"
     ],
     "build-depends": [],
     "provides": {
