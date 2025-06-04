@@ -84,11 +84,12 @@ Air does not provide an HTML templating language, instead each HTML tag is writt
 
 Reusability is promoted by the structure of the libraries - individuals and teams can create and install your own libraries to encapsulate design themes, re-usable web components and best practice.
 
-Air is comprised of three core libraries:
+Air is comprised of four core libraries:
 
 =item Air::Functional - wraps HTML tags as functions
 =item Air::Base - a set of handy prebuilt components
 =item Air::Component - make your own components
+=item Air::Form - declarative forms
 
 B<L<Air::Play|https://raku.land/zef:librasteve/Air::Play>> is a companion raku module with various B<Air> website examples.
 
