@@ -10,6 +10,7 @@
         "DateTime::Format",
         "HTML::Escape",
         "Cro::HTTP::Router",
+        "Cro::WebApp::Template",
         "Cro::WebApp::Form",
         "Cromponent"
     ],
