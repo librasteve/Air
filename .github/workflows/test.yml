@@ -15,7 +15,6 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - macos-latest
         raku-version:
           - 'latest'
     runs-on: ${{ matrix.os }}
