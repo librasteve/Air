@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.16  2025-06-05T09:02:27+01:00
+    - fix test, Red is optional
+
 0.0.14  2025-05-08T22:32:41+01:00
     - Air::Form
 
