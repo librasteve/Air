@@ -1039,9 +1039,16 @@ role Table     does Tag {
 
 =head3 role Grid does Tag
 
-role Grid      does Tag {
-    #| list of items to populate grid, each item is wrapped in a span tag
+role Grid      does Component {
+    #| list of items to populate grid,
     has @.items;
+    #| col count (default 5)
+    has $.cols = 5;
+    #| row count (default 5)
+    has $.rows = 5;
+    #| row / col gap in em (default 0)
+    has $.gap = 0;
+
 
     #| .new positional takes @items
     multi method new(*@items, *%h) {
@@ -1051,24 +1058,29 @@ role Grid      does Tag {
     # optional grid style from https://cssgrid-generator.netlify.app/
     # todo .... expose some of this as attrs
     method style {
-        q:to/END/
+        my $str = q:to/END/;
 		<style>
-			.grid {
+			#%HTML-ID% {
 				display: grid;
-				grid-template-columns: repeat(5, 1fr);
-				grid-template-rows: repeat(5, 1fr);
-				grid-column-gap: 0px;
-				grid-row-gap: 0px;
+				grid-template-columns: repeat(%COLS%, 1fr);
+				grid-template-rows: repeat(%ROWS%, 1fr);
+				grid-column-gap: %GAP%em;
+				grid-row-gap: %GAP%em;
 			}
 		</style>
 		END
+
+        $str ~~ s:g/'%HTML-ID%'/$.html-id/;
+        $str ~~ s:g/'%COLS%'/$!cols/;
+        $str ~~ s:g/'%ROWS%'/$!rows/;
+        $str ~~ s:g/'%GAP%'/$!gap/;
+        $str
 	}
 
     multi method HTML {
         $.style ~
 
-        div :class<grid>,
-            do for @!items { span $_ };
+        div :class<grid>, :id($.html-id), @!items;
     }
 }
 

@@ -279,10 +279,6 @@ role Form does Cro::WebApp::Form does Taggable {
         $formtmp .= subst: /'%FORM-STYLES%'/, self.form-styles
     }
 
-#    method do-form-scripts {
-#        $formtmp .= subst: /'%FORM-SCRIPTS%'/, self.form-scripts
-#    }
-
     method do-form-defaults {
         %!form-attrs = (
             submit-button-text     => 'Submit ' ~ ::?CLASS.^name,
