@@ -570,7 +570,7 @@ class Nav      does Component {
     has Str     $.hx-target = '#content';
     has Str     $.hx-swap   = 'outerHTML';
     #| logo
-    has Safe    $.logo;
+    has Markup  $.logo;
     #| NavItems
     has NavItem @.items;
     #| Widgets
