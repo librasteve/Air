@@ -139,7 +139,6 @@ Each feature of Air::Base is set out below:
 use Air::Functional;
 use Air::Component;
 use Air::Form;
-use Red;
 
 my @functions = <Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Safe>;
 
