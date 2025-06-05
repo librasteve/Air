@@ -94,6 +94,8 @@ Air is comprised of three core libraries:
 * Air::Base - a set of handy prebuilt components
 
 * Air::Component - make your own components
+  
+* Air::Form - declarative forms
 
 **[Air::Play](https://raku.land/zef:librasteve/Air::Play)** is a companion raku module with various **Air** website examples.
 
