@@ -2,7 +2,7 @@
 [![Actions Status](https://github.com/librasteve/Air/actions/workflows/test.yml/badge.svg)](https://github.com/librasteve/Air/actions)
 
 
-Please raise an Issue if you would like to feedback or assist.
+Please raise an Issue if you would like to feedback or contribute.
 
 Air docs are at https://librasteve.github.io/Air/
 
