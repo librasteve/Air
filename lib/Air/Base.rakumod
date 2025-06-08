@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Safe>;
+my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox>;
 
 =head2 Basic Tags
 
@@ -627,7 +627,7 @@ class Nav      does Component {
             );
 
             #hamburger menu
-            ul( :$!hx-target, $!hx-swap, :class<menu>, :id<menu>,
+            ul( :$!hx-target, :$!hx-swap, :class<menu>, :id<menu>,
                 self.nav-items,
             );
         ]
@@ -921,18 +921,12 @@ class Site {
         //some root overrides for scale https://github.com/picocss/pico/discussions/482
 
         :root {
-          --pico-font-family-sans-serif: Inter, system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial,
-              "Helvetica Neue", sans-serif, var(--pico-font-family-emoji);
-          --pico-font-size: 106.25%;
-          /* Original: 100% */
-          --pico-line-height: 1.25;
-          /* Original: 1.5 */
-          --pico-form-element-spacing-vertical: 0.5rem;
-          /* Original: 1rem */
-          --pico-form-element-spacing-horizontal: 1.0rem;
-          /* Original: 1.25rem */
-          --pico-border-radius: 0.375rem;
-          /* Original: 0.25rem */
+          --pico-font-family-sans-serif: Inter, system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif, var(--pico-font-family-emoji);
+          --pico-font-size: 106.25%;                        /* Original: 100% */
+          --pico-line-height: 1.25;                         /* Original: 1.5 */
+          --pico-form-element-spacing-vertical: 0.5rem;     /* Original: 1rem */
+          --pico-form-element-spacing-horizontal: 1.0rem;   /* Original: 1.25rem */
+          --pico-border-radius: 0.375rem;                   /* Original: 0.25rem */
         }
 
         h1,
@@ -941,20 +935,16 @@ class Site {
         h4,
         h5,
         h6 {
-          --pico-font-weight: 600;
-          /* Original: 700 */
+          --pico-font-weight: 600;                          /* Original: 700 */
         }
 
         article {
-          border: 1px solid var(--pico-muted-border-color);
-          /* Original doesn't have a border */
-          border-radius: calc(var(--pico-border-radius) * 2);
-          /* Original: var(--pico-border-radius) */
+          border: 1px solid var(--pico-muted-border-color); /* Original doesn't have a border */
+          border-radius: calc(var(--pico-border-radius) * 2); /* Original: var(--pico-border-radius) */
         }
 
         article>footer {
-          border-radius: calc(var(--pico-border-radius) * 2);
-          /* Original: var(--pico-border-radius) */
+          border-radius: calc(var(--pico-border-radius) * 2); /* Original: var(--pico-border-radius) */
         }
 
         b {
@@ -1056,7 +1046,6 @@ role Grid      does Component {
     }
 
     # optional grid style from https://cssgrid-generator.netlify.app/
-    # todo .... expose some of this as attrs
     method style {
         my $str = q:to/END/;
 		<style>
@@ -1079,8 +1068,54 @@ role Grid      does Component {
 
     multi method HTML {
         $.style ~
+        div :id($.html-id), @!items;
+    }
+}
 
-        div :class<grid>, :id($.html-id), @!items;
+=head3 role Grid does Tag
+
+role Flexbox   does Component {
+    #| list of items to populate grid,
+    has @.items;
+    #| flex-direction (default row)
+    has $.direction = 'row';
+    #| gap bewteen items in em (default 1)
+    has $.gap = 1;
+
+    #| .new positional takes @items
+    multi method new(*@items, *%h) {
+        self.bless:  :@items, |%h;
+    }
+
+    # optional grid style from https://cssgrid-generator.netlify.app/
+    method style {
+        my $str = q:to/END/;
+        <style>
+            #%HTML-ID% {
+                display: flex;
+                flex-direction: %DIRECTION%; /* column row */
+                justify-content: center;  /* centers horizontally */
+                gap: %GAP%em;
+            }
+
+            /* Responsive layout - makes a one column layout instead of a two-column layout */
+            @media (max-width: 768px) {
+                #%HTML-ID% {
+                    flex-direction: column;
+                }
+            }
+        </style>
+        END
+
+        $str ~~ s:g/'%HTML-ID%'/$.html-id/;
+        $str ~~ s:g/'%DIRECTION%'/$!direction/;
+        $str ~~ s:g/'%GAP%'/$!gap/;
+        $str
+    }
+
+    multi method HTML {
+        $.style ~
+        div :id($.html-id), @!items;
     }
 }
 
