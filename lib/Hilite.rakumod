@@ -3,6 +3,34 @@ use RakuAST::Deparse::Highlight;
 use Rainbow;
 #use RakuDoc::Render;
 
+#`[
+Proposed changes
+- do not use Rakudoc::Render
+  - drop $rdp param type check from method enable
+- multi sub/method templates in the absence of real $tmpl, in the non tmpl case
+  - change $tmpl.globals.escape.($_) to HTML::Escape
+  - sub escape depends on multi branch
+  - since Hilite is HTML only should be OK
+- set default-engine is TWEAK (no $rdp available)
+- continue to use config (ie for :js-link)
+- continue to support attrs (allow, !syntax-highlighting)
+- think about
+   - $tmpl.globals.helper<add-to-warnings>
+   - sub add-to-warnings depends on multi branch
+
+   or maybe I do pass in a faux tmpl that has
+   - escape
+   - helper<add-to-warnings>
+
+   and maybe I can make a faux rdp the call enable
+   - add-templates
+   - add-data
+
+   need to check fontawesome
+   keep bulma, add picocss
+   - new attr :css-lib = bulma | pico
+]
+
 unit class Hilite;
 has $!default-engine;
 has %.config = %(
@@ -65,11 +93,12 @@ has %!hilight-langs = %(
     '.NET' => 'vbnet',
     'HASKELL' => 'haskell',
 );
-#method enable( RakuDoc::Processor:D $rdp ) {
-#    $!default-engine = (%*ENV<HIGHLIGHTER> // 'rainbow').lc;
-#    $rdp.add-templates( $.templates, :source<Hilite plugin> );
-#    $rdp.add-data( %!config<name-space>, %!config );
-#}
+method enable( $rdp ) {
+#    method enable( RakuDoc::Processor:D $rdp ) {  #lenny
+    $!default-engine = (%*ENV<HIGHLIGHTER> // 'rainbow').lc;
+    $rdp.add-templates( $.templates, :source<Hilite plugin> );
+    $rdp.add-data( %!config<name-space>, %!config );
+}
 method TWEAK {
     $!default-engine = (%*ENV<HIGHLIGHTER> // 'rainbow').lc;
 }

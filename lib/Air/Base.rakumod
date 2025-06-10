@@ -1154,30 +1154,7 @@ role RakuCode   does Tag {
 #        $str
 #    }
 
-    method rainbow {
-        use Rainbow;
-
-        my %mapping =
-            TEXT     => '#ffffff',
-            KEYWORD  => "#e04c86",
-            OPERATOR => "#e04c86",
-            TYPE     => "#00ffff",
-            ROUTINE  => "#978deb",
-            STRING   => "#68f3ca",
-            # ...
-            ;
-
-        my $code = 'my $greet = "hello"; say "Oh $greet there!";';
-
-        my @tokens = Rainbow::tokenize($code);
-
-        my @fragments = @tokens.map: -> $t {
-            my $color = %mapping{$t.type.key} // %mapping<TEXT>;
-            note "$color: {$t.text}";
-        }
-    }
-
-    method hilite {
+    multi method HTML {
         use Hilite;
 
         my $tmpl;
@@ -1186,11 +1163,6 @@ role RakuCode   does Tag {
         $hltr.templates<code>(%prm, $tmpl);
 
 
-    }
-
-    multi method HTML {
-        #$.style ~
-            self.hilite;
     }
 }
 
