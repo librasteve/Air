@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox>;
+my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox RakuCode>;
 
 =head2 Basic Tags
 
@@ -1079,7 +1079,7 @@ role Flexbox   does Component {
     has @.items;
     #| flex-direction (default row)
     has $.direction = 'row';
-    #| gap bewteen items in em (default 1)
+    #| gap between items in em (default 1)
     has $.gap = 1;
 
     #| .new positional takes @items
@@ -1087,7 +1087,6 @@ role Flexbox   does Component {
         self.bless:  :@items, |%h;
     }
 
-    # optional grid style from https://cssgrid-generator.netlify.app/
     method style {
         my $str = q:to/END/;
         <style>
@@ -1116,6 +1115,82 @@ role Flexbox   does Component {
     multi method HTML {
         $.style ~
         div :id($.html-id), @!items;
+    }
+}
+
+=head2 Other Tags
+
+role RakuCode   does Tag {
+    #| raku code to be highlit
+    has Str $.code;
+
+    #| .new positional takes Str $code
+    multi method new(Str $code, *%h) {
+        self.bless:  :$code, |%h;
+    }
+
+#    method style {
+#        my $str = q:to/END/;
+#        <style>
+#            #%HTML-ID% {
+#                display: flex;
+#                flex-direction: %DIRECTION%; /* column row */
+#                justify-content: center;  /* centers horizontally */
+#                gap: %GAP%em;
+#            }
+#
+#            /* Responsive layout - makes a one column layout instead of a two-column layout */
+#            @media (max-width: 768px) {
+#                #%HTML-ID% {
+#                    flex-direction: column;
+#                }
+#            }
+#        </style>
+#        END
+#
+#        $str ~~ s:g/'%HTML-ID%'/$.html-id/;
+#        $str ~~ s:g/'%DIRECTION%'/$!direction/;
+#        $str ~~ s:g/'%GAP%'/$!gap/;
+#        $str
+#    }
+
+    method rainbow {
+        use Rainbow;
+
+        my %mapping =
+            TEXT     => '#ffffff',
+            KEYWORD  => "#e04c86",
+            OPERATOR => "#e04c86",
+            TYPE     => "#00ffff",
+            ROUTINE  => "#978deb",
+            STRING   => "#68f3ca",
+            # ...
+            ;
+
+        my $code = 'my $greet = "hello"; say "Oh $greet there!";';
+
+        my @tokens = Rainbow::tokenize($code);
+
+        my @fragments = @tokens.map: -> $t {
+            my $color = %mapping{$t.type.key} // %mapping<TEXT>;
+            note "$color: {$t.text}";
+        }
+    }
+
+    method hilite {
+        use Hilite;
+
+        my $tmpl;
+        my %prm = :contents<hi there>; #, :lang<javascript>;
+        my $hltr = Hilite.new;
+        $hltr.templates<code>(%prm, $tmpl);
+
+
+    }
+
+    multi method HTML {
+        #$.style ~
+            self.hilite;
     }
 }
 

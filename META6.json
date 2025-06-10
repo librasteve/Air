@@ -21,7 +21,8 @@
         "Air::Base": "lib/Air/Base.rakumod",
         "Air::Component": "lib/Air/Component.rakumod",
         "Air::Form": "lib/Air/Form.rakumod",
-        "Air::Functional": "lib/Air/Functional.rakumod"
+        "Air::Functional": "lib/Air/Functional.rakumod",
+        "Hilite": "lib/Hilite.rakumod"
     },
     "license": "Artistic-2.0",
     "source-url": "https://github.com/librasteve/Air.git"
