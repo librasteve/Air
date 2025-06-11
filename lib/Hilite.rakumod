@@ -6,15 +6,14 @@ use Rainbow;
 #`[
 Proposed changes
 - do not use Rakudoc::Render
-  - drop $rdp param type check from method enable
+  - ie. drop $rdp param type check from method enable
 
    need to check fontawesome
    keep bulma, add picocss
    - new attr :css-lib = bulma | pico
 
-   and
-   - SCRIPT
-   - STYLES
+   # if :css-lib is set, then use to select css response & sub wrapper
+
 #]
 
 unit class Hilite;
@@ -108,6 +107,7 @@ method templates {
             # if :lang is set to a lang in list, then enable highlightjs
             # if :lang is set to lang not in list, not raku or RakuDoc, then no highlighting
             # if :lang is not set, then highlight as Raku
+            # if :css-lib is set, then use to select css response & sub wrapper
 
             # select hilite engine
             my $engine = $!default-engine;
@@ -270,7 +270,7 @@ method js-text {
         });
     JSCOPY
 }
-method scss-str {
+method scss-strOLD {
     q:to/SCSS/
     /* Raku code highlighting */
     .raku-code {
@@ -387,3 +387,146 @@ method scss-str {
     }
     SCSS
 }
+
+method scss-str {
+    q:to/SCSS/
+    /* Raku code highlighting */
+    .raku-code {
+        position: relative;
+        margin: 1rem 0;
+        button.copy-code {
+            cursor: pointer;
+            opacity: 0;
+            padding: 0 0.25rem 0.25rem 0.25rem;
+            position: absolute;
+        }
+        &:hover button.copy-code {
+            opacity: 0.5;
+        }
+        label {
+            float: right;
+            font-size: xx-small;
+            font-style: italic;
+            height: auto;
+            padding-right: 0;
+        }
+        /* required to match highlights-js css with raku highlighter css */
+        pre.browser-hl { padding: 7px; }
+
+        .code-name {
+            padding-top: 0.75rem;
+            padding-left: 1.25rem;
+            font-weight: 500;
+        }
+        pre {
+            display: inline-block;
+            overflow: scroll;
+            width: 100%;
+        }
+        .rakudoc-in-code {
+            padding: 1.25rem 1.5rem;
+        }
+        .section {
+            /* https://github.com/Raku/doc-website/issues/144 */
+            padding: 0rem;
+        }
+
+        :root {
+          --color-scalar: #3273dc;       /* Similar to Bulma link-40 */
+          --color-array: #485fc7;        /* Bulma link */
+          --color-hash: #00d1b2;         /* Bulma link-60 or similar */
+          --color-code: #209cee;         /* Bulma info */
+          --color-keyword: #00d1b2;      /* Bulma primary */
+          --color-operator: #23d160;     /* Bulma success */
+          --color-type: #ff3860;         /* Bulma danger-60 */
+          --color-routine: #b2dfff;      /* Info-30 like */
+          --color-string: #8cd2f0;       /* Info-40 like */
+          --color-string-delimiter: #7dd3fc; /* Primary-40 like */
+          --color-escape: #4a4a4a;       /* Black-60 like */
+          --color-text: #363636;         /* Black */
+          --color-comment: #a6f6c2;      /* Success-30 like */
+          --color-regex-special: #00c48c; /* Success-60 like */
+          --color-regex-literal: #4a4a4a;
+          --color-regex-delimiter: #485fc7;
+          --color-doc-text: #48c78e;
+          --color-doc-markup: #ff3860;
+        }
+
+        .rainbow-name_scalar {
+          color: var(--color-scalar);
+          font-weight: 500;
+        }
+        .rainbow-name_array {
+          color: var(--color-array);
+          font-weight: 500;
+        }
+        .rainbow-name_hash {
+          color: var(--color-hash);
+          font-weight: 500;
+        }
+        .rainbow-name_code {
+          color: var(--color-code);
+          font-weight: 500;
+        }
+        .rainbow-keyword {
+          color: var(--color-keyword);
+          font-weight: 500;
+        }
+        .rainbow-operator {
+          color: var(--color-operator);
+          font-weight: 500;
+        }
+        .rainbow-type {
+          color: var(--color-type);
+          font-weight: 500;
+        }
+        .rainbow-routine {
+          color: var(--color-routine);
+          font-weight: 500;
+        }
+        .rainbow-string {
+          color: var(--color-string);
+          font-weight: 500;
+        }
+        .rainbow-string_delimiter {
+          color: var(--color-string-delimiter);
+          font-weight: 500;
+        }
+        .rainbow-escape {
+          color: var(--color-escape);
+          font-weight: 500;
+        }
+        .rainbow-text {
+          color: var(--color-text);
+          font-weight: 500;
+        }
+        .rainbow-comment {
+          color: var(--color-comment);
+          font-weight: 500;
+        }
+        .rainbow-regex_special {
+          color: var(--color-regex-special);
+          font-weight: 500;
+        }
+        .rainbow-regex_literal {
+          color: var(--color-regex-literal);
+          font-weight: 500;
+        }
+        .rainbow-regex_delimiter {
+          color: var(--color-regex-delimiter);
+          font-weight: 500;
+        }
+        .rainbow-rakudoc_text {
+          color: var(--color-doc-text);
+          font-weight: 500;
+        }
+        .rainbow-rakudoc_markup {
+          color: var(--color-doc-markup);
+          font-weight: 500;
+        }
+    }
+    SCSS
+}
+
+
+

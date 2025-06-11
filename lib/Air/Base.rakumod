@@ -1154,6 +1154,7 @@ role RakuCode   does Tag {
 #        $str
 #    }
 
+    #! make a stub to consume Rakudoc Plugin
     my class Template {
         my class Globals {
             has %.helper;
@@ -1170,7 +1171,6 @@ role RakuCode   does Tag {
             $!globals.helper<add-to-warnings>;
         }
     }
-
     my class Receptacle {
         has %.data;
 
@@ -1192,7 +1192,8 @@ role RakuCode   does Tag {
         my %prm = :contents<hi there>, :lang<javascript>;
         my $hltr = Hilite.new;
         $hltr.enable: $rctl;
-#        note $rctl.data<hilite>;
+        note $rctl.data<hilite><js>;   #iamerejh
+        note $rctl.data<hilite><scss>;
         $hltr.templates<code>(%prm, $tmpl);
 
 
