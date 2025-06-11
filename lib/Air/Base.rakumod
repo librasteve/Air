@@ -1154,12 +1154,45 @@ role RakuCode   does Tag {
 #        $str
 #    }
 
+    my class Template {
+        my class Globals {
+            has %.helper;
+
+            method escape {
+                use HTML::Escape;
+                &escape-html;
+            }
+        }
+
+        has $.globals = Globals.new;
+
+        method warnings {
+            $!globals.helper<add-to-warnings>;
+        }
+    }
+
+    my class Receptacle {
+        has %.data;
+
+        method add-templates(*@a, *%h) {}
+        method add-data($ns, %config) {
+            %!data{$ns} = %config;
+        }
+    }
+
     multi method HTML {
         use Hilite;
 
-        my $tmpl;
-        my %prm = :contents<hi there>; #, :lang<javascript>;
+        my $tmpl = Template.new;
+        my $rctl = Receptacle.new;
+
+#        note $tmpl.globals.escape.(':contents<hi there>');
+#        note $tmpl.warnings;
+
+        my %prm = :contents<hi there>, :lang<javascript>;
         my $hltr = Hilite.new;
+        $hltr.enable: $rctl;
+#        note $rctl.data<hilite>;
         $hltr.templates<code>(%prm, $tmpl);
 
 

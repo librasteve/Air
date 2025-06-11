@@ -7,29 +7,15 @@ use Rainbow;
 Proposed changes
 - do not use Rakudoc::Render
   - drop $rdp param type check from method enable
-- multi sub/method templates in the absence of real $tmpl, in the non tmpl case
-  - change $tmpl.globals.escape.($_) to HTML::Escape
-  - sub escape depends on multi branch
-  - since Hilite is HTML only should be OK
-- set default-engine is TWEAK (no $rdp available)
-- continue to use config (ie for :js-link)
-- continue to support attrs (allow, !syntax-highlighting)
-- think about
-   - $tmpl.globals.helper<add-to-warnings>
-   - sub add-to-warnings depends on multi branch
-
-   or maybe I do pass in a faux tmpl that has
-   - escape
-   - helper<add-to-warnings>
-
-   and maybe I can make a faux rdp the call enable
-   - add-templates
-   - add-data
 
    need to check fontawesome
    keep bulma, add picocss
    - new attr :css-lib = bulma | pico
-]
+
+   and
+   - SCRIPT
+   - STYLES
+#]
 
 unit class Hilite;
 has $!default-engine;
@@ -94,13 +80,9 @@ has %!hilight-langs = %(
     'HASKELL' => 'haskell',
 );
 method enable( $rdp ) {
-#    method enable( RakuDoc::Processor:D $rdp ) {  #lenny
     $!default-engine = (%*ENV<HIGHLIGHTER> // 'rainbow').lc;
     $rdp.add-templates( $.templates, :source<Hilite plugin> );
     $rdp.add-data( %!config<name-space>, %!config );
-}
-method TWEAK {
-    $!default-engine = (%*ENV<HIGHLIGHTER> // 'rainbow').lc;
 }
 sub wrapper(str $color, str $c) {
     $c.trim ?? "<span style=\"color:var(--bulma-$color);font-weight:500;\">$c\</span>" !! $c
@@ -121,15 +103,6 @@ method templates {
     constant CUT-LENG = 500; # crop length in error message
     %(
         code => sub (%prm, $tmpl) {
-
-            sub source {   #lenny
-                given %prm<contents>.Str.trim-trailing {
-#                    $tmpl.globals.escape.($_) //
-                    $_
-                }
-            }
-
-            note 42;
             # if :allow is set, then no highlighting as allow creates alternative styling
             # if :!syntax-highlighting, then no highlighting
             # if :lang is set to a lang in list, then enable highlightjs
@@ -160,19 +133,10 @@ method templates {
                         $code = qq:to/HILIGHT/;
                             <pre class="browser-hl">
                             <code class="language-{ %!hilight-langs{ $_ } }">
-                            { source }
+                            { $tmpl.globals.escape.($source) }
                             </code></pre>
                             HILIGHT
                     }
-#                    when any( %!hilight-langs.keys ) {
-#                        $syntax-label = $lang ~  ' highlighting by highlight-js';
-#                        $code = qq:to/HILIGHT/;
-#                            <pre class="browser-hl">
-#                            <code class="language-{ %!hilight-langs{ $_ } }">
-#                            { $tmpl.globals.escape.($source) }
-#                            </code></pre>
-#                            HILIGHT
-#                    }
                     when 'RAKUDOC' {
                         $syntax-label = 'RakuDoc';
                     }
@@ -180,70 +144,52 @@ method templates {
                         $syntax-label = $lang;
                         $code = qq:to/NOHIGHS/;
                             <pre class="nohighlights">
-                            { source }
+                            $tmpl.globals.escape.($source)
                             </pre>
                             NOHIGHS
                     }
-#                    when ! /^ 'RAKU' » / {
-#                        $syntax-label = $lang;
-#                        $code = qq:to/NOHIGHS/;
-#                            <pre class="nohighlights">
-#                            $tmpl.globals.escape.($source)
-#                            </pre>
-#                            NOHIGHS
-#                    }
                     default {
                         $syntax-label = 'Raku highlighting';
                     }
                 }
             }
-#            else { # no :allow and :!syntax-highlighting
-#                $syntax-label = %prm<lang> // 'Text';
-#                $code = qq:to/NOHIGHS/;
-#                    <pre class="nohighlights">
-#                    { $tmpl.globals.escape.($source) }
-#                    </pre>
-#                    NOHIGHS
-#            }
             else { # no :allow and :!syntax-highlighting
                 $syntax-label = %prm<lang> // 'Text';
                 $code = qq:to/NOHIGHS/;
                     <pre class="nohighlights">
-                    { source }
+                    { $tmpl.globals.escape.($source) }
                     </pre>
                     NOHIGHS
             }
-
             without $code { # so need Raku highlighting
                 if $engine eq 'deparse' {
                     # for RakuDoc, deparse needs an explicit =rakudoc block
                     if $syntax-label eq 'RakuDoc' {
-#                        $code = $source;
                         $source = "=begin rakudoc\n$source\n=end rakudoc";
                     }
                     my $c = highlight( $source, :unsafe, %mapping);
                     if $c {
                         $code = $c.trim
                     }
-#                    else {
-#                        my $m = $c.exception.message;
-#                        $tmpl.globals.helper<add-to-warnings>( 'Error when highlighting ｢' ~
-#                            ( $source.chars > CUT-LENG
-#                                ?? ($source.substr(0,CUT-LENG) ~ ' ... ')
-#                                !! $source.trim ) ~
-#                            '｣' ~ "\nbecause\n$m" );
-#                        $code = $source;
-#                    }
-#                    CATCH {
-#                        default {
-#                            $tmpl.globals.helper<add-to-warnings>( 'Error in code block with ｢' ~
-#                                ( $source.chars > CUT-LENG
-#                                    ?? ($source.substr(0,CUT-LENG) ~ ' ... ')
-#                                    !! $source.trim ) ~
-#                                '｣' ~ "\nbecause\n" ~ .message );
-#                            $code = $tmpl.globals.escape.($source);
-#                        }
-#                    }
+                    else {
+                        my $m = $c.exception.message;
+                        $tmpl.globals.helper<add-to-warnings>( 'Error when highlighting ｢' ~
+                            ( $source.chars > CUT-LENG
+                                ?? ($source.substr(0,CUT-LENG) ~ ' ... ')
+                                !! $source.trim ) ~
+                            '｣' ~ "\nbecause\n$m" );
+                        $code = $source;
+                    }
+                    CATCH {
+                        default {
+                            $tmpl.globals.helper<add-to-warnings>( 'Error in code block with ｢' ~
+                                ( $source.chars > CUT-LENG
+                                    ?? ($source.substr(0,CUT-LENG) ~ ' ... ')
+                                    !! $source.trim ) ~
+                                '｣' ~ "\nbecause\n" ~ .message );
+                            $code = $tmpl.globals.escape.($source);
+                        }
+                    }
                     if $syntax-label eq 'RakuDoc' {
                         $code .= subst(/ '<span' <-[ > ]>+ '>=begin</span> <span' <-[ > ]>+  '>rakudoc</span>' \s*/,'');
                         $code .= subst(/ \s* '<span' <-[ > ]>+ '>=end</span> <span' <-[ > ]>+  '>rakudoc</span>' \s* /,'')
@@ -252,8 +198,7 @@ method templates {
                 else {
                     if $syntax-label eq 'RakuDoc' {
                         $code = Rainbow::tokenize-rakudoc($source).map( -> $t {
-                            my $cont = $t.text;
-#                            my $cont = $tmpl.globals.escape.($t.text);  #lenny
+                            my $cont = $tmpl.globals.escape.($t.text);
                             if $t.type.key ne 'TEXT' {
                                 qq[<span class="rainbow-{$t.type.key.lc}">$cont\</span>]
                             }
@@ -264,8 +209,7 @@ method templates {
                     }
                     else {
                         $code = Rainbow::tokenize($source).map( -> $t {
-                            my $cont = $t.text;
-#                            my $cont = $tmpl.globals.escape.($t.text);  #lenny
+                            my $cont = $tmpl.globals.escape.($t.text);
                             if $t.type.key ne 'TEXT' {
                                 qq[<span class="rainbow-{$t.type.key.lc}">$cont\</span>]
                             }
@@ -292,7 +236,7 @@ method templates {
                     <div>$code\</div>
                 </div>
             ]
-        },
+        }
     )
 }
 method js-text {
