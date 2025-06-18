@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox RakuCode>;
+my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox Tabs Hilite>;
 
 =head2 Basic Tags
 
@@ -236,27 +236,27 @@ role Head   does Tag[Regular]  {
     #| links
     has Link   @.links;
     #| style
-    has Style  $.style is rw;
+    has Style  @.styles;
 
     #| set up common defaults (called on instantiation)
     method defaults {
         self.metas.append: Meta.new: :charset<utf-8>;
         self.metas.append: Meta.new: :name<viewport>, :content('width=device-width, initial-scale=1');
-        self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
         self.links.append: Link.new: :rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>;
+        self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
         self.scripts.append: Script.new: :src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
                 :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>;
     }
 
-    #| .HTML method calls .HTML on all attrs
+    #| .HTML method calls .HTML on all inners
     multi method HTML {
-        opener($.name, |%.attrs)                    ~
+        opener($.name, |%.attrs)          ~
         "{ .HTML with $!title          }" ~
         "{ .HTML with $!description    }" ~
         "{(.HTML for  @!metas   ).join }" ~
         "{(.HTML for  @!scripts ).join }" ~
         "{(.HTML for  @!links   ).join }" ~
-        "{ .HTML with $!style          }" ~
+        "{(.HTML for  @!styles  ).join }" ~
         closer($.name)                    ~ "\n"
     }
 }
@@ -368,11 +368,26 @@ role Section   does Tag[Regular] {}
 
 role Article   does Tag[Regular] {}
 
-=head3 role Article   does Tag[Regular] {}
+=head3 role Aside     does Tag[Regular] {}
 
-# TODO load aside style via HTMX OOB
-
-role Aside     does Tag[Regular] {}
+role Aside     does Tag[Regular] {
+    method STYLE {
+        q:to/END/
+        /* Custom styles for aside layout */
+        main {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 20px;
+        }
+        aside {
+            background-color: aliceblue;
+            opacity: 0.9;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        END
+    }
+}
 
 =head3 role Time      does Tag[Regular] {...}
 
@@ -726,10 +741,6 @@ class Page     does Component {
     has Main    $.main is rw;
     #| shortcut self.html.body.footer
     has Footer  $.footer;
-    #| enqueue SCRIPT [creates Script tags from registrant .SCRIPT methods to be appended at the end of the body tag]
-    has Script  @.enqueue;
-
-    has $.thing;
 
     #| set to True with :styled-aside-on to apply self.html.head.style with right hand aside block
     has Bool    $.styled-aside-on = False;
@@ -741,8 +752,6 @@ class Page     does Component {
     method defaults {
         unless $!loaded++ {
             self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
-            self.html.body.scripts.append: @.enqueue;
-
             self.html.head.title = Title.new: $.title                   with $.title;
 
             self.html.head.description = Meta.new:
@@ -753,8 +762,6 @@ class Page     does Component {
 
             self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
-
-            self.html.head.style  = $.styled-aside                      if $.styled-aside-on;
         }
     }
 
@@ -775,22 +782,6 @@ class Page     does Component {
     method HTML {
         self.defaults unless $!loaded;
         '<!doctype html>' ~ $!html.HTML
-    }
-
-    method styled-aside { Style.new: q:to/END/
-        /* Custom styles for aside layout */
-        main {
-            display: grid;
-            grid-template-columns: 3fr 1fr;
-            gap: 20px;
-        }
-        aside {
-            background-color: aliceblue;
-            opacity: 0.9;
-            padding: 20px;
-            border-radius: 5px;
-        }
-        END
     }
 
     method scripted-refresh { Script.new: qq:to/END/
@@ -842,20 +833,28 @@ class Site {
         self.bless: :$index, |%h;
     }
 
+    method enqueue-all {
+        for @!register.unique( as => *.^name ) -> $registrant {
+            for @!pages -> $page {
+                for $registrant.?JS-LINKS -> $src {
+                    $page.html.head.scripts.append: Script.new( :$src );
+                }
+                $page.html.body.scripts.append: Script.new($registrant.?SCRIPT);
+
+                for $registrant.?CSS-LINKS -> $href {
+                    $page.html.head.links.append: Link.new( :$href );
+                }
+                $page.html.head.styles.append: Style.new($registrant.?STYLE);
+            }
+        }
+    }
+
     submethod TWEAK {
         with    @!pages[0] { $!index = @!pages[0] }
         orwith  $!index    { @!pages[0] = $!index }
         else    { note "No pages or index found!" }
 
         self.enqueue-all;
-    }
-
-    method enqueue-all {
-        for @!register.unique( as => *.^name ) -> $registrant {
-            for @!pages -> $page {
-                $page.html.body.scripts.append: Script.new($registrant.?SCRIPT)
-            }
-        }
     }
 
     method routes {
@@ -876,7 +875,6 @@ class Site {
                 when Form {
                     .form-routes
                 }
-                default { note "Only Component::Common and Form types may be added" }
             }
 
             #| setup static Cro routes
@@ -962,6 +960,40 @@ class Site {
           font-size:66%;
           font-style:italic;
         }
+
+        //hardwire hilite style
+        :root {
+          --base-color-scalar:           #3b82f6; /* Constant - soft blue */
+          --base-color-array:            #3b82f6; /* Array - same as scalar */
+          --base-color-hash:             #3b82f6; /* Hash - same as scalar */
+          --base-color-code:             #1e1e1e; /* Generic code text */
+          --base-color-keyword:          #0d9488; /* Statement - teal */
+          --base-color-operator:         #0d9488; /* Matches keyword */
+          --base-color-type:             #22c55e; /* Type - green */
+          --base-color-routine:          #b45309; /* Identifier - orange-brown */
+          --base-color-string:           #3b82f6; /* Reuses scalar */
+          --base-color-string-delimiter: #3b82f6; /* Reuses scalar */
+          --base-color-escape:           #6b7280; /* Escape / neutral gray */
+          --base-color-text:             #1e1e1e; /* Main text */
+          --base-color-comment:          #6b7280; /* Comment - soft gray */
+          --base-color-regex-special:    #0d9488; /* Regex special - teal */
+          --base-color-regex-literal:    #475569; /* Regex content - slate */
+          --base-color-regex-delimiter:  #d946ef; /* Regex delimiters - magenta */
+          --base-color-doc-text:         #10b981; /* Doc text - emerald */
+          --base-color-doc-markup:       #d946ef; /* Doc markup - magenta */
+        }
+
+        // Exception: If inside .nohighlights, reset styles
+        .nohighlights {
+            background: none;
+            color: inherit;
+        }
+
+        // Exception: keep text ltr even when grid direction rtl
+        article {
+            direction: ltr;
+        }
+
         END
     }
 }
@@ -1020,6 +1052,7 @@ role Table     does Tag {
 
     multi method HTML {
         table |%(:$!class if $!class), [
+#            note $!thead;
             thead do-part($!thead, :head);
             tbody do-part($!tbody), :attrs(|%!tbody-attrs);
             tfoot do-part($!tfoot);
@@ -1027,17 +1060,18 @@ role Table     does Tag {
     }
 }
 
-=head3 role Grid does Tag
+=head3 role Grid does Component
 
 role Grid      does Component {
-    #| list of items to populate grid,
+    #| list of items to populate grid
     has @.items;
-    #| col count (default 5)
-    has $.cols = 5;
-    #| row count (default 5)
-    has $.rows = 5;
-    #| row / col gap in em (default 0)
+
+    has $.cols = 4;
+    has $.grid-template-columns = "repeat($!cols, 1fr)";
+    has $.rows = 3;
+    has $.grid-template-rows    = "repeat($!rows, 1fr)";
     has $.gap = 0;
+    has $.direction = 'ltr';
 
 
     #| .new positional takes @items
@@ -1048,21 +1082,29 @@ role Grid      does Component {
     # optional grid style from https://cssgrid-generator.netlify.app/
     method style {
         my $str = q:to/END/;
-		<style>
-			#%HTML-ID% {
-				display: grid;
-				grid-template-columns: repeat(%COLS%, 1fr);
-				grid-template-rows: repeat(%ROWS%, 1fr);
-				grid-column-gap: %GAP%em;
-				grid-row-gap: %GAP%em;
-			}
-		</style>
-		END
+        <style>
+            #%HTML-ID% {
+                display: grid;
+                grid-template-columns: %GTC%;
+                grid-template-rows: %GTR%;
+                gap: %GAP%em;
+                direction: %DIR%;
+            }
+
+            @media (max-width: 1024px) {
+                #%HTML-ID% {
+                    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                    gap: 1px;
+                }
+            }
+        </style>
+        END
 
         $str ~~ s:g/'%HTML-ID%'/$.html-id/;
-        $str ~~ s:g/'%COLS%'/$!cols/;
-        $str ~~ s:g/'%ROWS%'/$!rows/;
+        $str ~~ s:g/'%GTC%'/$!grid-template-columns/;
+        $str ~~ s:g/'%GTR%'/$!grid-template-rows/;
         $str ~~ s:g/'%GAP%'/$!gap/;
+        $str ~~ s:g/'%DIR%'/$!direction/;
         $str
 	}
 
@@ -1072,7 +1114,7 @@ role Grid      does Component {
     }
 }
 
-=head3 role Grid does Tag
+=head3 role Flexbox does Component
 
 role Flexbox   does Component {
     #| list of items to populate grid,
@@ -1101,6 +1143,7 @@ role Flexbox   does Component {
             @media (max-width: 768px) {
                 #%HTML-ID% {
                     flex-direction: column;
+                    gap: 0;
                 }
             }
         </style>
@@ -1118,44 +1161,66 @@ role Flexbox   does Component {
     }
 }
 
-=head2 Other Tags
+=head3 role Tabs does Component
 
-role RakuCode   does Tag {
-    #| raku code to be highlit
-    has Str $.code;
+role Tabs       does Component {
+    #| tab navigation
+    has $.nav;
+    #| list of tab sections
+    has @.tabs;
 
-    #| .new positional takes Str $code
-    multi method new(Str $code, *%h) {
-        self.bless:  :$code, |%h;
+
+    #| .new positional takes @items
+    multi method new(*@tabs, *%h) {
+        self.bless:  :@tabs, |%h;
     }
 
-#    method style {
-#        my $str = q:to/END/;
-#        <style>
-#            #%HTML-ID% {
-#                display: flex;
-#                flex-direction: %DIRECTION%; /* column row */
-#                justify-content: center;  /* centers horizontally */
-#                gap: %GAP%em;
-#            }
-#
-#            /* Responsive layout - makes a one column layout instead of a two-column layout */
-#            @media (max-width: 768px) {
-#                #%HTML-ID% {
-#                    flex-direction: column;
-#                }
-#            }
-#        </style>
-#        END
-#
-#        $str ~~ s:g/'%HTML-ID%'/$.html-id/;
-#        $str ~~ s:g/'%DIRECTION%'/$!direction/;
-#        $str ~~ s:g/'%GAP%'/$!gap/;
-#        $str
-#    }
+    # optional grid style from https://cssgrid-generator.netlify.app/
+    method style {
+        my $str = q:to/END/;
+        <style>
+            #%HTML-ID% {
+                display: grid;
+                grid-template-columns: %GTC%;
+                grid-template-rows: %GTR%;
+                gap: %GAP%em;
+                direction: %DIR%;
+            }
+
+            @media (max-width: 1024px) {
+                #%HTML-ID% {
+                    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                    gap: 1px;
+                }
+            }
+        </style>
+        END
+
+        $str ~~ s:g/'%HTML-ID%'/$.html-id/;
+        $str
+    }
+
+    multi method HTML {
+#        $.style ~
+        div :id($.html-id), [
+            $!nav;
+            @!tabs[0];
+        ];
+    }
+}
+
+=head2 Other Tags
+
+role Hilite     does Tag {
+    use Hilite;   #ie Hilite.rakumod
+
+    #| code to be highlited
+    has Str $.code;
+    #| language (from highlight.js + haskell + raku + rakudoc)
+    has $.lang = 'raku';
 
     #! make a stub to consume Rakudoc Plugin
-    my class Template {
+    my class Template {  # fixme => role
         my class Globals {
             has %.helper;
 
@@ -1180,24 +1245,47 @@ role RakuCode   does Tag {
         }
     }
 
-    multi method HTML {
-        use Hilite;
+    has $!tmpl = Template.new;
+    has $!rctl = Receptacle.new;
+    has $!hltr = Hilite.new;
 
-        my $tmpl = Template.new;
-        my $rctl = Receptacle.new;
+    #| script, styles from Hilite.rakumod
+    has @!js-links;     #list of script src urls
+    has $!script;
+    has @!css-links;    #list of link href urls
+    has $.style;
 
-#        note $tmpl.globals.escape.(':contents<hi there>');
-#        note $tmpl.warnings;
+    submethod TWEAK {
+        $!hltr.enable: $!rctl;
 
-        my %prm = :contents<hi there>, :lang<javascript>;
-        my $hltr = Hilite.new;
-        $hltr.enable: $rctl;
-        note $rctl.data<hilite><js>;   #iamerejh
-        note $rctl.data<hilite><scss>;
-        $hltr.templates<code>(%prm, $tmpl);
+        @!js-links   = $!rctl.data<hilite><js-link>.map: *[0];
+        @!js-links  .= map: *.split('=')[1];     #pick the url
+        @!js-links  .= map: *.substr(1,*-1);     #rm quote marks
+        $!script     = $!rctl.data<hilite><js>[0][0];
 
-
+        @!css-links  = $!rctl.data<hilite><css-link>.map: *[0];
+        @!css-links .= map: *.split('=')[1];     #pick the url
+        @!css-links .= map: *.substr(1,*-1);     #rm quote marks
+        $!style      = $!rctl.data<hilite><scss>[0][0];
     }
+
+    #| .new positional takes Str $code
+    multi method new(Str $code, *%h) {
+        self.bless:  :$code, |%h;
+    }
+
+    method warnings { note $!tmpl.warnings }
+
+    multi method HTML {
+        my %prm = :contents($!code), :$!lang;
+        $!hltr.templates<code>(%prm, $!tmpl);
+    }
+
+    method JS-LINKS  { @!js-links }
+    method SCRIPT    { $!script }
+
+    method CSS-LINKS { @!css-links }
+    method STYLE     { $!style }
 }
 
 ##### Functions Export #####

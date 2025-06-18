@@ -14,6 +14,29 @@ Proposed changes
 
    # if :css-lib is set, then use to select css response & sub wrapper
 
+
+Notes
+
+  ultimately the CSS style mappings should come from a Theme
+  the Processor / Receptacle should mediate plugin and theme capabilities
+  some kind of publish and subscribe at the enable phase
+  meantime, I want HiLite to have a hardwired default mapping
+
+  short term, I note that the Bulma colours are stable over light / dark
+    - toggle Change Theme
+    - except black <=> white
+    - so dark = dark grey bg, light = light grey bg
+    - non raku always light grey bg (!)
+  https://finanalyst.github.io/plugins/Hilite#Raku%20examples
+
+  my personal preference would be (i) GH like (toned back) or (ii) Inteliij like (jazzy)
+  but I see the sense in having raku.org match the doc.raku.org hilite scheme
+
+  tbh I think that the new Bulma hilites are a step back from the current raku doc site
+  so I will clone the color maps from that
+
+  Other
+  - avoid multiple same style injections
 #]
 
 unit class Hilite;
@@ -22,7 +45,7 @@ has %.config = %(
     :name-space<hilite>,
     :license<Artistic-2.0>,
     :credit<finanalyst, lizmat>,
-    :author<<Richard Hainsworth, aka finanalyst\nElizabeth Mattijsen, aka lizmat>>,
+    :author<<Richard Hainsworth, aka finanalyst\nElizabeth Mattijsen, aka lizmat\nSteve Roe, aka librasteve\n>>,
     :version<0.1.1>,
     :js-link(
     ['src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"', 2 ],
@@ -83,8 +106,11 @@ method enable( $rdp ) {
     $rdp.add-templates( $.templates, :source<Hilite plugin> );
     $rdp.add-data( %!config<name-space>, %!config );
 }
-sub wrapper(str $color, str $c) {
+sub wrapperOLD(str $color, str $c) {
     $c.trim ?? "<span style=\"color:var(--bulma-$color);font-weight:500;\">$c\</span>" !! $c
+}
+sub wrapper(str $color, str $c, str $css-lib? = 'base') {
+    $c.trim ?? "<span style=\"color:var(--$css-lib-$color);font-weight:500;\">$c\</span>" !! $c
 }
 my %mapping = mapper(
     black     => -> $c { wrapper( "black",   $c ) },
@@ -107,7 +133,7 @@ method templates {
             # if :lang is set to a lang in list, then enable highlightjs
             # if :lang is set to lang not in list, not raku or RakuDoc, then no highlighting
             # if :lang is not set, then highlight as Raku
-            # if :css-lib is set, then use to select css response & sub wrapper
+            # if :css-lib is set, then use to select css response & sub wrapper iamerejh
 
             # select hilite engine
             my $engine = $!default-engine;
@@ -229,9 +255,11 @@ method templates {
                         NOHIGHS
             }
 
+#            <button class="copy-code" title="Copy code"><i class="far fa-clipboard"></i></button>
+
             qq[
                 <div class="raku-code">
-                    <button class="copy-code" title="Copy code"><i class="far fa-clipboard"></i></button>
+                    <button class="copy-code" title="copy code">⿻</button>
                     <label>$syntax-label\</label>
                     <div>$code\</div>
                 </div>
@@ -392,16 +420,21 @@ method scss-str {
     q:to/SCSS/
     /* Raku code highlighting */
     .raku-code {
+        text-align:left;
+        //padding: 1em;
         position: relative;
-        margin: 1rem 0;
+        //margin: 1rem 0;
+        min-width: 470px;
         button.copy-code {
+            float: right;
             cursor: pointer;
             opacity: 0;
             padding: 0 0.25rem 0.25rem 0.25rem;
-            position: absolute;
+            margin-left: 0.25rem;
+            position: relative;
         }
         &:hover button.copy-code {
-            opacity: 0.5;
+            opacity: 1;
         }
         label {
             float: right;
@@ -409,6 +442,7 @@ method scss-str {
             font-style: italic;
             height: auto;
             padding-right: 0;
+            margin-top: 1rem;
         }
         /* required to match highlights-js css with raku highlighter css */
         pre.browser-hl { padding: 7px; }
@@ -431,102 +465,101 @@ method scss-str {
             padding: 0rem;
         }
 
+        //hardwire hilite style (dupe)
         :root {
-          --color-scalar: #3273dc;       /* Similar to Bulma link-40 */
-          --color-array: #485fc7;        /* Bulma link */
-          --color-hash: #00d1b2;         /* Bulma link-60 or similar */
-          --color-code: #209cee;         /* Bulma info */
-          --color-keyword: #00d1b2;      /* Bulma primary */
-          --color-operator: #23d160;     /* Bulma success */
-          --color-type: #ff3860;         /* Bulma danger-60 */
-          --color-routine: #b2dfff;      /* Info-30 like */
-          --color-string: #8cd2f0;       /* Info-40 like */
-          --color-string-delimiter: #7dd3fc; /* Primary-40 like */
-          --color-escape: #4a4a4a;       /* Black-60 like */
-          --color-text: #363636;         /* Black */
-          --color-comment: #a6f6c2;      /* Success-30 like */
-          --color-regex-special: #00c48c; /* Success-60 like */
-          --color-regex-literal: #4a4a4a;
-          --color-regex-delimiter: #485fc7;
-          --color-doc-text: #48c78e;
-          --color-doc-markup: #ff3860;
+          --base-color-scalar: #3273dc;       /* Similar to Bulma link-40 */
+          --base-color-array: #485fc7;        /* Bulma link */
+          --base-color-hash: #00d1b2;         /* Bulma link-60 or similar */
+          --base-color-code: #209cee;         /* Bulma info */
+          --base-color-keyword: #00d1b2;      /* Bulma primary */
+          --base-color-operator: #23d160;     /* Bulma success */
+          --base-color-type: #ff3860;         /* Bulma danger-60 */
+          --base-color-routine: #b2dfff;      /* Info-30 like */
+          --base-color-string: #8cd2f0;       /* Info-40 like */
+          --base-color-string-delimiter: #7dd3fc; /* Primary-40 like */
+          --base-color-escape: #4a4a4a;       /* Black-60 like */
+          --base-color-text: #363636;         /* Black */
+          --base-color-comment: #a6f6c2;      /* Success-30 like */
+          --base-color-regex-special: #00c48c; /* Success-60 like */
+          --base-color-regex-literal: #4a4a4a;
+          --base-color-regex-delimiter: #485fc7;
+          --base-color-doc-text: #48c78e;
+          --base-color-doc-markup: #ff3860;
         }
 
         .rainbow-name_scalar {
-          color: var(--color-scalar);
+          color: var(--base-color-scalar);
           font-weight: 500;
         }
         .rainbow-name_array {
-          color: var(--color-array);
+          color: var(--base-color-array);
           font-weight: 500;
         }
         .rainbow-name_hash {
-          color: var(--color-hash);
+          color: var(--base-color-hash);
           font-weight: 500;
         }
         .rainbow-name_code {
-          color: var(--color-code);
+          color: var(--base-color-code);
           font-weight: 500;
         }
         .rainbow-keyword {
-          color: var(--color-keyword);
+          color: var(--base-color-keyword);
           font-weight: 500;
         }
         .rainbow-operator {
-          color: var(--color-operator);
+          color: var(--base-color-operator);
           font-weight: 500;
         }
         .rainbow-type {
-          color: var(--color-type);
+          color: var(--base-color-type);
           font-weight: 500;
         }
         .rainbow-routine {
-          color: var(--color-routine);
+          color: var(--base-color-routine);
           font-weight: 500;
         }
         .rainbow-string {
-          color: var(--color-string);
+          color: var(--base-color-string);
           font-weight: 500;
         }
         .rainbow-string_delimiter {
-          color: var(--color-string-delimiter);
+          color: var(--base-color-string-delimiter);
           font-weight: 500;
         }
         .rainbow-escape {
-          color: var(--color-escape);
+          color: var(--base-color-escape);
           font-weight: 500;
         }
         .rainbow-text {
-          color: var(--color-text);
+          color: var(--base-color-text);
           font-weight: 500;
         }
         .rainbow-comment {
-          color: var(--color-comment);
+          color: var(--base-color-comment);
           font-weight: 500;
         }
         .rainbow-regex_special {
-          color: var(--color-regex-special);
+          color: var(--base-color-regex-special);
           font-weight: 500;
         }
         .rainbow-regex_literal {
-          color: var(--color-regex-literal);
+          color: var(--base-color-regex-literal);
           font-weight: 500;
         }
         .rainbow-regex_delimiter {
-          color: var(--color-regex-delimiter);
+          color: var(--base-color-regex-delimiter);
           font-weight: 500;
         }
         .rainbow-rakudoc_text {
-          color: var(--color-doc-text);
+          color: var(--base-color-doc-text);
           font-weight: 500;
         }
         .rainbow-rakudoc_markup {
-          color: var(--color-doc-markup);
+          color: var(--base-color-doc-markup);
           font-weight: 500;
         }
     }
     SCSS
 }
-
-
 

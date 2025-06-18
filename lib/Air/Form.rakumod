@@ -345,7 +345,7 @@ role Form does Cro::WebApp::Form does Taggable {
         END
     }
 
-    #| get form-scripts, pass in a custom $suffix for required labels (may be overridden)
+    #| get form-scripts, pass in a custom $suffix for required labels (default '*')
     method SCRIPT($suffix = '*') {
         my $javascript = q:to/END/;
 
