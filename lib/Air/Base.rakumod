@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Hilite>;
+my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Spacer Hilite>;
 
 =head2 Basic Tags
 
@@ -846,12 +846,19 @@ class Site {
                 for $registrant.?JS-LINKS -> $src {
                     $page.html.head.scripts.append: Script.new( :$src );
                 }
-                $page.html.body.scripts.append: Script.new($registrant.?SCRIPT);
+
+                with $registrant.?SCRIPT {
+                    $page.html.body.scripts.append: Script.new($_)
+                }
 
                 for $registrant.?CSS-LINKS -> $href {
                     $page.html.head.links.append: Link.new( :$href );
                 }
-                $page.html.head.styles.append: Style.new($registrant.?STYLE);
+
+                with $registrant.?STYLE {
+                    $page.html.head.styles.append: Style.new($_)
+                }
+
             }
         }
     }
@@ -1170,10 +1177,17 @@ role Flexbox   does Component {
 
 =head3 role Tab does Tag[Regular] {...}
 
-role Tab      does Tag[Regular] {
-    multi method HTML {
-        my %attrs  = |%.attrs, :id<tab>;
-        do-regular-tag( $.name, @.inners, |%attrs )
+role Tab       does Component {
+    has @.inners;
+    has %.attrs;
+
+    multi method new(*@inners, *%attrs) {
+        self.bless:  :@inners, |%attrs;
+    }
+
+    method HTML {
+        my %attrs = |%.attrs, :class<tab>;
+        do-regular-tag( 'div', @.inners, |%attrs )
     }
 }
 
@@ -1187,8 +1201,6 @@ subset TabItem of Pair where .value ~~ Tab;
 role Tabs       does Component {
     has $!loaded = 0;
 
-    #| HTMX attributes
-    has Str     $.hx-target = '#tab';
     #| list of tab sections
     has TabItem @.items;
 
@@ -1217,17 +1229,31 @@ role Tabs       does Component {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
                 when Tab {
-                    li a(:hx-get("$.url-path/$name"), :$!hx-target, Safe.new: $name)
+                    li a(:hx-get("$.url-path/$name"), :hx-target("#$.html-id"), Safe.new: $name)
                 }
             }
         }
     }
 
-    multi method HTML {
-        div [
+    method HTML {
+        div :hx-boost, [
             nav ul :class<tab-links>, self.tab-items;
-            div :id<tab>, :hx-get</tabs/1/Tab1>, :hx-trigger<load>;
+            div :id($.html-id), @!items[0].value;
         ]
+    }
+}
+
+=head3 role Spacer does Tag
+
+role Spacer     does Tag {
+    has Str $.min-height = '1em';
+
+    multi method new($min-height) {
+        self.bless: :$min-height;
+    }
+
+    multi method HTML {
+        do-regular-tag( 'div', :style("min-height:$!min-height;") )
     }
 }
 
