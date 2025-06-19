@@ -37,6 +37,8 @@ Notes
 
   Other
   - avoid multiple same style injections
+
+  oh - I just remembered that Hilite is going to be a combination of something like Air::Plugin::Hilite [that uses a standalone raku module called Hilite] when this stabilizes ... so you will have to go use Air::Plugin::Hilite in the preamble - so in the short term the guidance will be to not do that if you want to use Red
 #]
 
 unit class Hilite;

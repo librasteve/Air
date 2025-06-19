@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox Tabs Hilite>;
+my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Hilite>;
 
 =head2 Basic Tags
 
@@ -576,11 +576,16 @@ role Internal  does Tag {
         do-regular-tag( 'a', [$.label], |%.attrs )
     }
 }
+
+=head3 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
+
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
 #| Nav does Component in order to support multiple nav instances
 #| with distinct NavItem and Widget attributes
 class Nav      does Component {
+    has $!loaded = 0;
+
     #| HTMX attributes
     has Str     $.hx-target = '#content';
     has Str     $.hx-swap   = 'outerHTML';
@@ -595,11 +600,13 @@ class Nav      does Component {
         self.bless:  :@items, |%h;
     }
 
-    #| makes routes for Content NavItems (eg. SPA links that use HTMX), must be called from within a Cro route block
+    #| makes routes for Content NavItems (eg. SPA links that use HTMX)
+    #| must be called from within a Cro route block
     method make-routes() {
+        return if $!loaded++;
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
-                when * ~~ Content {
+                when Content {
                     my &new-method = method {$target.?HTML};
                     trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
                     self.^add_method($name, &new-method);
@@ -608,7 +615,7 @@ class Nav      does Component {
         }
     }
 
-    #| renders NavItems [subset NavItem of Pair where .value ~~ Internal | External | Content | Page;]
+    #| renders NavItems
     method nav-items {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
@@ -1161,51 +1168,66 @@ role Flexbox   does Component {
     }
 }
 
+=head3 role Tab does Tag[Regular] {...}
+
+role Tab      does Tag[Regular] {
+    multi method HTML {
+        my %attrs  = |%.attrs, :id<tab>;
+        do-regular-tag( $.name, @.inners, |%attrs )
+    }
+}
+
+=head3 subset TabItem of Pair where .value ~~ Tab;
+
+subset TabItem of Pair where .value ~~ Tab;
+
 =head3 role Tabs does Component
 
+#| Tabs does Component in order to support multiple tabs instances
 role Tabs       does Component {
-    #| tab navigation
-    has $.nav;
-    #| list of tab sections
-    has @.tabs;
+    has $!loaded = 0;
 
+    #| HTMX attributes
+    has Str     $.hx-target = '#tab';
+    #| list of tab sections
+    has TabItem @.items;
 
     #| .new positional takes @items
-    multi method new(*@tabs, *%h) {
-        self.bless:  :@tabs, |%h;
+    multi method new(*@items, *%h) {
+        self.bless:  :@items, |%h;
     }
 
-    # optional grid style from https://cssgrid-generator.netlify.app/
-    method style {
-        my $str = q:to/END/;
-        <style>
-            #%HTML-ID% {
-                display: grid;
-                grid-template-columns: %GTC%;
-                grid-template-rows: %GTR%;
-                gap: %GAP%em;
-                direction: %DIR%;
-            }
-
-            @media (max-width: 1024px) {
-                #%HTML-ID% {
-                    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-                    gap: 1px;
+    #| makes routes for Tabs
+    #| must be called from within a Cro route block
+    method make-routes() {
+        return if $!loaded++;
+        do for self.items.map: *.kv -> ($name, $target) {
+            given $target {
+                when Tab {
+                    my &new-method = method {$target.?HTML};
+                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                    self.^add_method($name, &new-method);
                 }
             }
-        </style>
-        END
+        }
+    }
 
-        $str ~~ s:g/'%HTML-ID%'/$.html-id/;
-        $str
+    #| renders Tabs
+    method tab-items {
+        do for @.items.map: *.kv -> ($name, $target) {
+            given $target {
+                when Tab {
+                    li a(:hx-get("$.url-path/$name"), :$!hx-target, Safe.new: $name)
+                }
+            }
+        }
     }
 
     multi method HTML {
-#        $.style ~
-        div :id($.html-id), [
-            $!nav;
-            @!tabs[0];
-        ];
+        div [
+            nav ul :class<tab-links>, self.tab-items;
+            div :id<tab>, :hx-get</tabs/1/Tab1>, :hx-trigger<load>;
+        ]
     }
 }
 
