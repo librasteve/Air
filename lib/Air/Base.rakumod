@@ -584,7 +584,7 @@ subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 #| Nav does Component in order to support multiple nav instances
 #| with distinct NavItem and Widget attributes
 class Nav      does Component {
-    has $!loaded = 0;
+    has $!routed = 0;
 
     #| HTMX attributes
     has Str     $.hx-target = '#content';
@@ -603,10 +603,15 @@ class Nav      does Component {
     #| makes routes for Content NavItems (eg. SPA links that use HTMX)
     #| must be called from within a Cro route block
     method make-routes() {
-        return if $!loaded++;
+        return if $!routed++;
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
                 when Content {
+                    my &new-method = method {$target.?HTML};
+                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                    self.^add_method($name, &new-method);
+                }
+                when Page {
                     my &new-method = method {$target.?HTML};
                     trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
                     self.^add_method($name, &new-method);
@@ -620,14 +625,14 @@ class Nav      does Component {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
                 when External | Internal {
-                    $target.label = $name;
-                    li $target.HTML
+                    .label = $name;
+                    li .HTML
                 }
                 when Content {
                     li a(:hx-get("$.url-path/$name"), Safe.new: $name)
                 }
                 when Page {
-                    li a(:href("/{.url-name}/{.id}"), Safe.new: $name)
+                    li a(:href("$.url-path/$name"), Safe.new: $name)
                 }
             }
         }
@@ -729,7 +734,7 @@ class Nav      does Component {
 #| Page does Component in order to support
 #| multiple page instances with distinct content and attributes.
 class Page     does Component {
-    has $!loaded = 0;
+    has $!loaded;
 
     #| auto refresh browser every n secs in dev't
     has Int     $.REFRESH;
@@ -785,7 +790,7 @@ class Page     does Component {
         self.bless: :$header, :$main, :$footer, |%h
     }
 
-    #| issue page DOM
+    #| issue page
     method HTML {
         self.defaults unless $!loaded;
         '<!doctype html>' ~ $!html.HTML
@@ -897,16 +902,6 @@ class Site {
             get -> 'img', *@path { static 'static/img', @path }
             get -> 'js',  *@path { static 'static/js',  @path }
             get ->        *@path { static 'static',     @path }
-
-            #| setup external navigation Cro routes
-            for @!pages {
-                my ($url-name, $id) = .url-name, .id;
-
-                note "adding GET {$url-name}/<#>";
-                get -> Str $url-name, Int $id {
-                    content 'text/html', @!pages[$id-1].HTML
-                }
-            }
         }
     }
 
@@ -1066,7 +1061,6 @@ role Table     does Tag {
 
     multi method HTML {
         table |%(:$!class if $!class), [
-#            note $!thead;
             thead do-part($!thead, :head);
             tbody do-part($!tbody), :attrs(|%!tbody-attrs);
             tfoot do-part($!tfoot);
@@ -1080,9 +1074,9 @@ role Grid      does Component {
     #| list of items to populate grid
     has @.items;
 
-    has $.cols = 4;
+    has $.cols = 1;
     has $.grid-template-columns = "repeat($!cols, 1fr)";
-    has $.rows = 3;
+    has $.rows = 1;
     has $.grid-template-rows    = "repeat($!rows, 1fr)";
     has $.gap = 0;
     has $.direction = 'ltr';
@@ -1198,7 +1192,7 @@ subset TabItem of Pair where .value ~~ Tab;
 =head3 role Tabs does Component
 
 #| Tabs does Component in order to support multiple tabs instances
-role Tabs       does Component {
+role Tabs      does Component {
     has $!loaded = 0;
 
     #| list of tab sections
@@ -1245,7 +1239,7 @@ role Tabs       does Component {
 
 =head3 role Spacer does Tag
 
-role Spacer     does Tag {
+role Spacer    does Tag {
     has Str $.min-height = '1em';
 
     multi method new($min-height) {
@@ -1259,7 +1253,7 @@ role Spacer     does Tag {
 
 =head2 Other Tags
 
-role Hilite     does Tag {
+role Hilite    does Tag {
     use Hilite;   #ie Hilite.rakumod
 
     #| code to be highlited
