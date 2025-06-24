@@ -199,8 +199,11 @@ role Link   does Tag[Singular] {}
 =head3 role A      does Tag[Regular] {...}
 
 role A      does Tag[Regular]  {
+    #| defaults to target="_blank"
     multi method HTML {
-        my %attrs = |%.attrs, :target<_blank>;
+        my %attrs = |%.attrs;
+        %attrs<target> = '_blank' without %attrs<target>;
+
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
@@ -664,7 +667,7 @@ class Nav      does Component {
         self.style.HTML ~ (
 
         nav [
-            { ul li :class<logo>, :href</>, $.logo } with $.logo;
+            { ul li :class<logo>, $.logo } with $.logo;
 
             button( :class<hamburger>, :id<hamburger>, Safe.new: '&#9776;' );
 
@@ -754,7 +757,7 @@ class Nav      does Component {
 
 =head3 role Background  does Component
 
-role Background  does Component {
+role Background does Component {
     #| top of background image (in px)
     has $.top = 140;
     #| height of background image (in px)
