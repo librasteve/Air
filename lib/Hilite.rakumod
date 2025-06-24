@@ -467,6 +467,13 @@ method scss-str {
             padding: 0rem;
         }
 
+        // Exception: If inside .nohighlights, reset styles
+        .nohighlights {
+            background: none;
+            color: inherit;
+        }
+
+        /*
         //hardwire hilite style (dupe)
         :root {
           --base-color-scalar: #3273dc;       /* Similar to Bulma link-40 */
@@ -488,6 +495,7 @@ method scss-str {
           --base-color-doc-text: #48c78e;
           --base-color-doc-markup: #ff3860;
         }
+        */
 
         .rainbow-name_scalar {
           color: var(--base-color-scalar);

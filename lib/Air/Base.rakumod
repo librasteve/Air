@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Spacer Hilite>;
+my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Hilite>;
 
 =head2 Basic Tags
 
@@ -366,7 +366,14 @@ role Section   does Tag[Regular] {}
 
 =head3 role Article   does Tag[Regular] {}
 
-role Article   does Tag[Regular] {}
+role Article   does Tag[Regular] {
+
+    # Keep text ltr even when grid direction rtl
+    multi method HTML {
+        my %attrs  = |%.attrs, :style("direction:ltr;");
+        do-regular-tag( $.name, @.inners, |%attrs )
+    }
+}
 
 =head3 role Aside     does Tag[Regular] {}
 
@@ -410,6 +417,20 @@ role Time      does Tag[Regular] {
         }
 
         do-regular-tag( $.name, [inner], |%.attrs )
+    }
+}
+
+=head3 role Spacer does Tag
+
+role Spacer    does Tag {
+    has Str $.min-height = '1em';
+
+    multi method new($min-height) {
+        self.bless: :$min-height;
+    }
+
+    multi method HTML {
+        do-regular-tag( 'div', :style("min-height:$!min-height;") )
     }
 }
 
@@ -731,6 +752,16 @@ class Nav      does Component {
     }
 }
 
+=head3 role Background  does Tag
+
+role Background  does Tag {  #iamerejh
+    has Str $.label is rw = '';
+
+    multi method HTML {
+        do-regular-tag( 'a', [$.label], |%.attrs )
+    }
+}
+
 #| Page does Component in order to support
 #| multiple page instances with distinct content and attributes.
 class Page     does Component {
@@ -753,9 +784,6 @@ class Page     does Component {
     has Main    $.main is rw;
     #| shortcut self.html.body.footer
     has Footer  $.footer;
-
-    #| set to True with :styled-aside-on to apply self.html.head.style with right hand aside block
-    has Bool    $.styled-aside-on = False;
 
     #| build page DOM by calling Air tags
     has Html    $.html .= new;
@@ -822,6 +850,8 @@ class Page     does Component {
 #| Site is a holder for pages, performs setup
 #| of Cro routes and offers high level controls for style via Pico SASS.
 class Site {
+    has $!loaded;
+
     #| Page holder -or-
     has Page @.pages;
     #| index Page ( otherwise $!index = @!pages[0] )
@@ -830,7 +860,8 @@ class Site {
     has      @.register;
 
     #| use :!scss to disable SASS compiler run
-    has Bool $.scss = True;
+    has Bool $.scss-off;
+    has Str  $!scss-gather;
 
     #| pick from: amber azure blue cyan fuchsia green indigo jade lime orange
     #| pink pumpkin purple red violet yellow (pico theme)
@@ -846,7 +877,14 @@ class Site {
     }
 
     method enqueue-all {
+        return if $!loaded++;
+
         for @!register.unique( as => *.^name ) -> $registrant {
+
+            with $registrant.?SCSS {
+                $!scss-gather ~= "\n\n" ~ $_;
+            }
+
             for @!pages -> $page {
                 for $registrant.?JS-LINKS -> $src {
                     $page.html.head.scripts.append: Script.new( :$src );
@@ -863,7 +901,6 @@ class Site {
                 with $registrant.?STYLE {
                     $page.html.head.styles.append: Style.new($_)
                 }
-
             }
         }
     }
@@ -874,12 +911,11 @@ class Site {
         else    { note "No pages or index found!" }
 
         self.enqueue-all;
+        self.scss-run unless $!scss-off;
     }
 
     method routes {
         use Cro::HTTP::Router;
-
-        self.scss with $!scss;
 
         route {
             #| always route Nav
@@ -905,8 +941,8 @@ class Site {
         }
     }
 
-    method scss {
-        my $css = self.css;
+    method scss-run {
+        my $css = self.scss-theme ~ "\n\n" ~ $!scss-gather;
 
         note "theme-color=$!theme-color";
         $css ~~ s:g/'%THEME_COLOR%'/$!theme-color/;
@@ -920,7 +956,7 @@ class Site {
         chdir "../..";
     }
 
-    method css { Q:to/END/;
+    method scss-theme { Q:to/END/;
         @use "node_modules/@picocss/pico/scss" with (
           $theme-color: "%THEME_COLOR%"
         );
@@ -969,52 +1005,18 @@ class Site {
           font-size:66%;
           font-style:italic;
         }
-
-        //hardwire hilite style
-        :root {
-          --base-color-scalar:           #3b82f6; /* Constant - soft blue */
-          --base-color-array:            #3b82f6; /* Array - same as scalar */
-          --base-color-hash:             #3b82f6; /* Hash - same as scalar */
-          --base-color-code:             #1e1e1e; /* Generic code text */
-          --base-color-keyword:          #0d9488; /* Statement - teal */
-          --base-color-operator:         #0d9488; /* Matches keyword */
-          --base-color-type:             #22c55e; /* Type - green */
-          --base-color-routine:          #b45309; /* Identifier - orange-brown */
-          --base-color-string:           #3b82f6; /* Reuses scalar */
-          --base-color-string-delimiter: #3b82f6; /* Reuses scalar */
-          --base-color-escape:           #6b7280; /* Escape / neutral gray */
-          --base-color-text:             #1e1e1e; /* Main text */
-          --base-color-comment:          #6b7280; /* Comment - soft gray */
-          --base-color-regex-special:    #0d9488; /* Regex special - teal */
-          --base-color-regex-literal:    #475569; /* Regex content - slate */
-          --base-color-regex-delimiter:  #d946ef; /* Regex delimiters - magenta */
-          --base-color-doc-text:         #10b981; /* Doc text - emerald */
-          --base-color-doc-markup:       #d946ef; /* Doc markup - magenta */
-        }
-
-        // Exception: If inside .nohighlights, reset styles
-        .nohighlights {
-            background: none;
-            color: inherit;
-        }
-
-        // Exception: keep text ltr even when grid direction rtl
-        article {
-            direction: ltr;
-        }
-
         END
     }
 }
 
 
-=head2 Pico Tags
+=head2 Component Library
 
 =para  The Air roadmap is to provide a full set of pre-styled tags as defined in the Pico L<docs|https://picocss.com/docs>. Did we say that Air::Base implements Pico CSS?
 
 =head3 role Table does Tag
 
-role Table     does Tag {
+role Table     does Component {
 
     =para Attrs thead, tbody and tfoot can each be a 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for multi-row thead and tfoot.
 
@@ -1038,11 +1040,6 @@ role Table     does Tag {
         self.bless:  :@tbody, |%h;
     }
 
-    submethod TWEAK {
-        %!tbody-attrs = $!tbody.grep:   * ~~ Pair;
-        $!tbody       = $!tbody.grep: !(* ~~ Pair);
-    }
-
     multi sub do-part($part, :$head) { '' }
     multi sub do-part(@part where .all ~~ Tag|Taggable) {
         tbody @part.map(*.HTML)
@@ -1060,6 +1057,9 @@ role Table     does Tag {
     }
 
     multi method HTML {
+        %!tbody-attrs = $!tbody.grep:   * ~~ Pair;
+        $!tbody       = $!tbody.grep: !(* ~~ Pair);
+
         table |%(:$!class if $!class), [
             thead do-part($!thead, :head);
             tbody do-part($!tbody), :attrs(|%!tbody-attrs);
@@ -1237,20 +1237,6 @@ role Tabs      does Component {
     }
 }
 
-=head3 role Spacer does Tag
-
-role Spacer    does Tag {
-    has Str $.min-height = '1em';
-
-    multi method new($min-height) {
-        self.bless: :$min-height;
-    }
-
-    multi method HTML {
-        do-regular-tag( 'div', :style("min-height:$!min-height;") )
-    }
-}
-
 =head2 Other Tags
 
 role Hilite    does Tag {
@@ -1328,6 +1314,32 @@ role Hilite    does Tag {
 
     method CSS-LINKS { @!css-links }
     method STYLE     { $!style }
+
+    method SCSS {
+        q:to/SCSS/
+        //hardwire hilite style (dupe)
+        :root {
+            --base-color-scalar: #3273dc;       /* Similar to Bulma link-40 */
+            --base-color-array: #485fc7;        /* Bulma link */
+            --base-color-hash: #00d1b2;         /* Bulma link-60 or similar */
+            --base-color-code: #209cee;         /* Bulma info */
+            --base-color-keyword: #00d1b2;      /* Bulma primary */
+            --base-color-operator: #23d160;     /* Bulma success */
+            --base-color-type: #ff3860;         /* Bulma danger-60 */
+            --base-color-routine: #b2dfff;      /* Info-30 like */
+            --base-color-string: #8cd2f0;       /* Info-40 like */
+            --base-color-string-delimiter: #7dd3fc; /* Primary-40 like */
+            --base-color-escape: #4a4a4a;       /* Black-60 like */
+            --base-color-text: #363636;         /* Black */
+            --base-color-comment: #a6f6c2;      /* Success-30 like */
+            --base-color-regex-special: #00c48c; /* Success-60 like */
+            --base-color-regex-literal: #4a4a4a;
+            --base-color-regex-delimiter: #485fc7;
+            --base-color-doc-text: #48c78e;
+            --base-color-doc-markup: #ff3860;
+        }
+        SCSS
+    }
 }
 
 ##### Functions Export #####
