@@ -752,13 +752,50 @@ class Nav      does Component {
     }
 }
 
-=head3 role Background  does Tag
+=head3 role Background  does Component
 
-role Background  does Tag {  #iamerejh
-    has Str $.label is rw = '';
+role Background  does Component {
+    #| top of background image (in px)
+    has $.top = 140;
+    #| height of background image (in px)
+    has $.height = 320;
+    #| url of background image
+    has $.url = 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Butterfly_bottom_PSF_transparent.gif';
+    #| opacity of background image
+    has $.opacity = 0.1;
+    #| rotate angle of background image (in deg)
+    has $.rotate = -9;
 
-    multi method HTML {
-        do-regular-tag( 'a', [$.label], |%.attrs )
+    method STYLE {
+        my $scss = q:to/END/;
+        #background {
+            position: fixed;
+            top: %TOP%px;
+            left: 0;
+            width: 100vw;
+            height: %HEIGHT%px;
+            background: url('%URL%');
+            opacity: %OPACITY%;
+            filter: grayscale(100%);
+            transform: rotate(%ROTATE%deg);
+            background-repeat: no-repeat;
+            background-position: center center;
+            z-index: -1;
+            pointer-events: none;
+            padding: 20px;
+        }
+        END
+
+        $scss ~~ s:g/'%TOP%'/$!top/;
+        $scss ~~ s:g/'%HEIGHT%'/$!height/;
+        $scss ~~ s:g/'%URL%'/$!url/;
+        $scss ~~ s:g/'%OPACITY%'/$!opacity/;
+        $scss ~~ s:g/'%ROTATE%'/$!rotate/;
+        $scss
+    }
+
+    method HTML {
+        do-regular-tag( 'div', :id<background> )
     }
 }
 
@@ -887,6 +924,7 @@ class Site {
 
             for @!pages -> $page {
                 for $registrant.?JS-LINKS -> $src {
+                    next unless $src.defined;
                     $page.html.head.scripts.append: Script.new( :$src );
                 }
 
@@ -895,6 +933,7 @@ class Site {
                 }
 
                 for $registrant.?CSS-LINKS -> $href {
+                    next unless $href.defined;
                     $page.html.head.links.append: Link.new( :$href );
                 }
 
