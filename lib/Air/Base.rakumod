@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Hilite>;
+my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Hilite Markdown Dialog Lightbox>;
 
 =head2 Basic Tags
 
@@ -805,7 +805,7 @@ role Background does Component {
 #| Page does Component in order to support
 #| multiple page instances with distinct content and attributes.
 class Page     does Component {
-    has $!loaded;
+    my $loaded;
 
     #| auto refresh browser every n secs in dev't
     has Int     $.REFRESH;
@@ -830,7 +830,7 @@ class Page     does Component {
 
     #| set all provided shortcuts on first use
     method defaults {
-        unless $!loaded++ {
+        unless $loaded++ {
             self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
             self.html.head.title = Title.new: $.title                   with $.title;
 
@@ -860,7 +860,7 @@ class Page     does Component {
 
     #| issue page
     method HTML {
-        self.defaults unless $!loaded;
+        self.defaults unless $loaded;
         '<!doctype html>' ~ $!html.HTML
     }
 
@@ -890,7 +890,7 @@ class Page     does Component {
 #| Site is a holder for pages, performs setup
 #| of Cro routes and offers high level controls for style via Pico SASS.
 class Site {
-    has $!loaded;
+    my $loaded;
 
     #| Page holder -or-
     has Page @.pages;
@@ -917,7 +917,7 @@ class Site {
     }
 
     method enqueue-all {
-        return if $!loaded++;
+        return if $loaded++;
 
         for @!register.unique( as => *.^name ) -> $registrant {
 
@@ -984,7 +984,8 @@ class Site {
     }
 
     method scss-run {
-        my $css = self.scss-theme ~ "\n\n" ~ $!scss-gather;
+        my $css = self.scss-theme ~ "\n\n";
+        $css ~= $_ with $!scss-gather;
 
         note "theme-color=$!theme-color";
         $css ~~ s:g/'%THEME_COLOR%'/$!theme-color/;
@@ -1222,7 +1223,7 @@ role Tab       does Component {
     }
 
     method HTML {
-        my %attrs = |%.attrs, :class<tab>;
+        my %attrs = |%.attrs, :class<tab>, :align<left>;
         do-regular-tag( 'div', @.inners, |%attrs )
     }
 }
@@ -1233,9 +1234,11 @@ subset TabItem of Pair where .value ~~ Tab;
 
 =head3 role Tabs does Component
 
-#| Tabs does Component in order to support multiple tabs instances
+#| Tabs does Component to control multiple tabs
 role Tabs      does Component {
-    has $!loaded = 0;
+    my $loaded = 0;
+
+    has $.align-nav = 'left';
 
     #| list of tab sections
     has TabItem @.items;
@@ -1248,7 +1251,7 @@ role Tabs      does Component {
     #| makes routes for Tabs
     #| must be called from within a Cro route block
     method make-routes() {
-        return if $!loaded++;
+        return if $loaded++;
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
                 when Tab {
@@ -1271,15 +1274,254 @@ role Tabs      does Component {
         }
     }
 
+    method STYLE {
+        my $css = q:to/END/;
+        .tab-nav {
+            display: block;
+            justify-content: %ALIGN-NAV%;
+        }
+        .tab-links {
+            display: block;
+        }
+        END
+
+        $css ~~ s:g/'%ALIGN-NAV%'/$!align-nav/;
+        $css
+    }
+
     method HTML {
-        div :hx-boost, [
-            nav ul :class<tab-links>, self.tab-items;
+        div [
+            nav :class<tab-nav>, ul :class<tab-links>, self.tab-items;
             div :id($.html-id), @!items[0].value;
         ]
     }
 }
 
+=head3 role Dialog does Component
+
+# fixme
+role Dialog     does Component {
+    method SCRIPT {
+q:to/END/;
+/*
+* Modal
+*
+* Pico.css - https://picocss.com
+* Copyright 2019-2024 - Licensed under MIT
+*/
+
+// Config
+const isOpenClass = "modal-is-open";
+const openingClass = "modal-is-opening";
+const closingClass = "modal-is-closing";
+const scrollbarWidthCssVar = "--pico-scrollbar-width";
+const animationDuration = 1000; // ms
+let visibleModal = null;
+
+// Toggle modal
+const toggleModal = (event) => {
+  event.preventDefault();
+  const modal = document.getElementById(event.currentTarget.dataset.target);
+  if (!modal) return;
+  modal && (modal.open ? closeModal(modal) : openModal(modal));
+};
+
+// Open modal
+const openModal = (modal) => {
+  const { documentElement: html } = document;
+  const scrollbarWidth = getScrollbarWidth();
+  if (scrollbarWidth) {
+    html.style.setProperty(scrollbarWidthCssVar, `${scrollbarWidth}px`);
+  }
+  html.classList.add(isOpenClass, openingClass);
+  setTimeout(() => {
+    visibleModal = modal;
+    html.classList.remove(openingClass);
+  }, animationDuration);
+  modal.showModal();
+};
+
+// Close modal
+const closeModal = (modal) => {
+  visibleModal = null;
+  const { documentElement: html } = document;
+  html.classList.add(closingClass);
+  setTimeout(() => {
+    html.classList.remove(closingClass, isOpenClass);
+    html.style.removeProperty(scrollbarWidthCssVar);
+    modal.close();
+  }, animationDuration);
+};
+
+// Close with a click outside
+document.addEventListener("click", (event) => {
+  if (visibleModal === null) return;
+  const modalContent = visibleModal.querySelector("article");
+  const isClickInside = modalContent.contains(event.target);
+  !isClickInside && closeModal(visibleModal);
+});
+
+// Close with Esc key
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && visibleModal) {
+    closeModal(visibleModal);
+  }
+});
+
+// Get scrollbar width
+const getScrollbarWidth = () => {
+  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+  return scrollbarWidth;
+};
+
+// Is scrollbar visible
+const isScrollbarVisible = () => {
+  return document.body.scrollHeight > screen.height;
+};
+END
+    }
+
+    method HTML {
+        div [
+        Safe.new: '<button class="contrast" data-target="modal-example" onclick="toggleModal(event)">Launch demo modal</button>';
+        Safe.new: q:to/MODAL/;
+            <dialog id="modal-example">
+                <article>
+                <header>
+                <button aria-label="Close" rel="prev" data-target="modal-example" onclick="toggleModal(event)"></button>
+                  <h3>Confirm your action!</h3>
+                </header>
+                <p>
+                  Cras sit amet maximus risus. Pellentesque sodales odio sit amet augue finibus
+                  pellentesque. Nullam finibus risus non semper euismod.
+                </p>
+                <footer>
+                  <button role="button" class="secondary" data-target="modal-example" onclick="toggleModal(event)">
+                    Cancel</button><button autofocus="" data-target="modal-example" onclick="toggleModal(event)">
+                    Confirm
+                  </button>
+                </footer>
+              </article>
+            </dialog>
+            MODAL
+        ]
+    }
+}
+
+=head3 role Dialog does Component
+
+# fixme
+role Lightbox     does Component {
+    my $loaded = 0;
+
+    #| unique lightbox label
+    has $.label = 'open';
+
+    #| can be provided with attrs
+    has %.attrs is rw;
+
+    #| can be provided with inners
+    has @.inners;
+
+    #| ok to call .new with @inners as Positional
+    multi method new(*@inners, *%attrs) {
+        self.bless:  :@inners, :%attrs
+    }
+
+    method HTML {  #iamerejh pop button
+        div [
+            a :href<#>, :class<open-link>, :data-target("#$.html-id"), 'Open';
+
+            div :class<lightbox-overlay>, :id($.html-id), [
+                div :class<lightbox-content>, [
+                    span :class<close-btn>, Safe.new: '&times';
+                    do-regular-tag( 'div', @.inners, |%.attrs )
+                ];
+            ];
+        ];
+    }
+
+    method STYLE {
+        q:to/END/;
+        .lightbox-overlay {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          background: rgba(0, 0, 0, 0.6);
+          display: none;
+          align-items: center;
+          justify-content: center;
+          z-index: 900;
+        }
+
+        .lightbox-overlay.active {
+          display: flex;
+        }
+
+        .lightbox-content {
+          background: grey;
+          opacity: 0.9;
+          width: 70vw;
+          height: 70vh;
+          position: relative;
+          border-radius: 10px;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+          padding: 1rem;
+        }
+
+        .close-btn {
+          position: absolute;
+          top: 10px;
+          right: 15px;
+          font-size: 24px;
+          color: #333;
+          cursor: pointer;
+        }
+        END
+    }
+
+    method SCRIPT {
+        q:to/END/;
+        // Open specific lightbox
+        document.querySelectorAll('.open-link').forEach(link => {
+          link.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.querySelector(link.dataset.target);
+            if (target) target.classList.add('active');
+          });
+        });
+
+        // Close when clicking the X or outside the content
+        document.querySelectorAll('.lightbox-overlay').forEach(lightbox => {
+          const content = lightbox.querySelector('.lightbox-content');
+          const closeBtn = lightbox.querySelector('.close-btn');
+
+          closeBtn.addEventListener('click', () => {
+            lightbox.classList.remove('active');
+          });
+
+          lightbox.addEventListener('click', e => {
+            if (!content.contains(e.target)) {
+              lightbox.classList.remove('active');
+            }
+          });
+        });
+
+        // Close any open lightbox on Escape
+        document.addEventListener('keydown', e => {
+          if (e.key === 'Escape') {
+            document.querySelectorAll('.lightbox-overlay.active').forEach(lb => {
+              lb.classList.remove('active');
+            });
+          }
+        });
+        END
+    }
+}
+
 =head2 Other Tags
+
+=head3 role Hilite does Tag
 
 role Hilite    does Tag {
     use Hilite;   #ie Hilite.rakumod
@@ -1381,6 +1623,27 @@ role Hilite    does Tag {
             --base-color-doc-markup: #ff3860;
         }
         SCSS
+    }
+}
+
+=head3 role Markdown does Tag
+
+role Markdown    does Tag {
+    use Text::Markdown;
+
+    #| markdown to be converted
+    has Str $.markdown;
+    # cache the result
+    has Markup() $!result;
+
+    #| .new positional takes Str $code
+    multi method new(Str $markdown, *%h) {
+        self.bless: :$markdown, |%h;
+    }
+
+    multi method HTML {
+        $!result = Text::Markdown.new($!markdown).render unless $!result;
+        $!result
     }
 }
 

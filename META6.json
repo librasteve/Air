@@ -15,7 +15,8 @@
         "Cro::WebApp::Template",
         "Cro::WebApp::Form",
         "Cromponent",
-        "Rainbow"
+        "Rainbow",
+        "Text::Markdown"
     ],
     "build-depends": [],
     "provides": {
