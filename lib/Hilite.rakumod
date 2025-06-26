@@ -422,10 +422,9 @@ method scss-str {
     q:to/SCSS/
     /* Raku code highlighting */
     .raku-code {
+        z-index: 1; /* or even 0 */
         text-align:left;
-        //padding: 1em;
         position: relative;
-        //margin: 1rem 0;
         min-width: 470px;
         button.copy-code {
             float: right;
@@ -473,29 +472,7 @@ method scss-str {
             color: inherit;
         }
 
-        /*
-        //hardwire hilite style (dupe)
-        :root {
-          --base-color-scalar: #3273dc;       /* Similar to Bulma link-40 */
-          --base-color-array: #485fc7;        /* Bulma link */
-          --base-color-hash: #00d1b2;         /* Bulma link-60 or similar */
-          --base-color-code: #209cee;         /* Bulma info */
-          --base-color-keyword: #00d1b2;      /* Bulma primary */
-          --base-color-operator: #23d160;     /* Bulma success */
-          --base-color-type: #ff3860;         /* Bulma danger-60 */
-          --base-color-routine: #b2dfff;      /* Info-30 like */
-          --base-color-string: #8cd2f0;       /* Info-40 like */
-          --base-color-string-delimiter: #7dd3fc; /* Primary-40 like */
-          --base-color-escape: #4a4a4a;       /* Black-60 like */
-          --base-color-text: #363636;         /* Black */
-          --base-color-comment: #a6f6c2;      /* Success-30 like */
-          --base-color-regex-special: #00c48c; /* Success-60 like */
-          --base-color-regex-literal: #4a4a4a;
-          --base-color-regex-delimiter: #485fc7;
-          --base-color-doc-text: #48c78e;
-          --base-color-doc-markup: #ff3860;
-        }
-        */
+        //--base-color dfs moved to SCSS
 
         .rainbow-name_scalar {
           color: var(--base-color-scalar);

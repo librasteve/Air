@@ -327,7 +327,7 @@ role Body   does Tag[Regular]  {
 =head3 role Html   does Tag[Regular] {...}
 
 role Html   does Tag[Regular]  {
-    my $loaded = 0;
+    has $!loaded = 0;
 
     #| head
     has Head   $.head .= instance;
@@ -344,7 +344,7 @@ role Html   does Tag[Regular]  {
     }
 
     multi method HTML {
-        self.defaults unless $loaded++;
+        self.defaults unless $!loaded++;
 
         opener($.name, |%.attrs) ~
         $!head.HTML              ~
@@ -809,7 +809,7 @@ role Background does Component {
 #| Page does Component in order to support
 #| multiple page instances with distinct content and attributes.
 class Page     does Component {
-    my $loaded;
+    has $!loaded;
 
     #| auto refresh browser every n secs in dev't
     has Int     $.REFRESH;
@@ -834,7 +834,7 @@ class Page     does Component {
 
     #| set all provided shortcuts on first use
     method defaults {
-        unless $loaded++ {
+        unless $!loaded++ {
             self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
             self.html.head.title = Title.new: $.title                   with $.title;
 
@@ -864,7 +864,7 @@ class Page     does Component {
 
     #| issue page
     method HTML {
-        self.defaults unless $loaded;
+        self.defaults unless $!loaded;
         '<!doctype html>' ~ $!html.HTML
     }
 
@@ -1240,7 +1240,7 @@ subset TabItem of Pair where .value ~~ Tab;
 
 #| Tabs does Component to control multiple tabs
 role Tabs      does Component {
-    my $loaded = 0;
+    has $!loaded = 0;
 
     has $.align-nav = 'left';
 
@@ -1255,7 +1255,7 @@ role Tabs      does Component {
     #| makes routes for Tabs
     #| must be called from within a Cro route block
     method make-routes() {
-        return if $loaded++;
+        return if $!loaded++;
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
                 when Tab {
@@ -1412,11 +1412,10 @@ END
     }
 }
 
-=head3 role Dialog does Component
+=head3 role Lightbox does Component
 
-# fixme
 role Lightbox     does Component {
-    my $loaded;
+    has $!loaded;
 
     #| unique lightbox label
     has Str    $.label = 'open';
@@ -1434,7 +1433,7 @@ role Lightbox     does Component {
     }
 
     method HTML {
-        if @!inners[0] ~~ Button && ! $loaded++ {
+        if @!inners[0] ~~ Button && ! $!loaded++ {
             $!button = @!inners.shift;
         }
 
@@ -1460,7 +1459,7 @@ role Lightbox     does Component {
           position: fixed;
           top: 0; left: 0;
           width: 100%; height: 100%;
-          background: rgba(0, 0, 0, 0.6);
+          background: rgba(0, 0, 0, 0.8);
           display: none;
           align-items: center;
           justify-content: center;
@@ -1473,9 +1472,7 @@ role Lightbox     does Component {
 
         .lightbox-content {
           background: grey;
-          opacity: 0.9;
           width: 70vw;
-          height: 70vh;
           position: relative;
           border-radius: 10px;
           box-shadow: 0 5px 15px rgba(0,0,0,0.3);
@@ -1616,24 +1613,24 @@ role Hilite    does Tag {
         q:to/SCSS/
         //hardwire hilite style (dupe)
         :root {
-            --base-color-scalar: #3273dc;       /* Similar to Bulma link-40 */
-            --base-color-array: #485fc7;        /* Bulma link */
-            --base-color-hash: #00d1b2;         /* Bulma link-60 or similar */
+            --base-color-scalar: #2458a2;       /* Darker than #3273dc */
+            --base-color-array: #ed143d;        /* crimson */
+            --base-color-hash: #00a693;         /* Darker cyan-green */
             --base-color-code: #209cee;         /* Bulma info */
-            --base-color-keyword: #00d1b2;      /* Bulma primary */
-            --base-color-operator: #23d160;     /* Bulma success */
-            --base-color-type: #ff3860;         /* Bulma danger-60 */
-            --base-color-routine: #b2dfff;      /* Info-30 like */
-            --base-color-string: #8cd2f0;       /* Info-40 like */
-            --base-color-string-delimiter: #7dd3fc; /* Primary-40 like */
-            --base-color-escape: #4a4a4a;       /* Black-60 like */
-            --base-color-text: #363636;         /* Black */
-            --base-color-comment: #a6f6c2;      /* Success-30 like */
-            --base-color-regex-special: #00c48c; /* Success-60 like */
-            --base-color-regex-literal: #4a4a4a;
-            --base-color-regex-delimiter: #485fc7;
-            --base-color-doc-text: #48c78e;
-            --base-color-doc-markup: #ff3860;
+            --base-color-keyword: #008c7e;      /* Darkened primary cyan */
+            --base-color-operator: #1ca24f;     /* Darker green for contrast */
+            --base-color-type: #d12c4c;         /* Deeper pinkish red */
+            --base-color-routine: #489fdc;      /* Richer blue, not too pale */
+            --base-color-string: #369ec6;       /* Stronger blue-cyan */
+            --base-color-string-delimiter: #1d90d2; /* More contrast than #7dd3fc */
+            --base-color-escape: #2b2b2b;       /* Darkened for visibility */
+            --base-color-text: #2a2a2a;         /* Darker base text */
+            --base-color-comment: #4aa36c;      /* Less pastel, more visible green */
+            --base-color-regex-special: #00996f; /* Balanced mid-green */
+            --base-color-regex-literal: #a52a2a; /* brown */
+            --base-color-regex-delimiter: #cc00cc; /* dark fuchsia */
+            --base-color-doc-text: #2b9e71;     /* Deeper mint green */
+            --base-color-doc-markup: #d02b4c;   /* Matches adjusted danger */
         }
         SCSS
     }
