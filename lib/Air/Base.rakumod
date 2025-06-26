@@ -566,6 +566,7 @@ role Analytics does Tool {
     has Str      $.key;
 
     multi method defaults($page) {
+        note 42;
         given $!provider {
             when Umami {
                 $page.html.head.scripts.append:
@@ -902,6 +903,9 @@ class Site {
     has Page $.index;
     #| Register for route setup; default = [Nav.new]
     has      @.register;
+    #| Tools for sitewide behaviours
+    has Tool @.tools      = [];
+
 
     #| use :!scss to disable SASS compiler run
     has Bool $.scss-off;
@@ -958,6 +962,12 @@ class Site {
 
         self.enqueue-all;
         self.scss-run unless $!scss-off;
+
+        for @!tools -> $tool {
+            for @!pages -> $page {
+                $tool.defaults($page)
+            }
+        }
     }
 
     method routes {

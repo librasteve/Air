@@ -109,7 +109,7 @@ enum   TagType        is export(:MANDATORY) <Singular Regular>;
 
 =head3 role Attr is Str {} - type for Attribute values, use Attr() for coercion
 
-role   Attr    is Str is export(:MANDATORY) {}
+role   Attr     is Str is export(:MANDATORY) {}
 
 =head3 subset Inner where Str | Tag | Taggable | Markup - type union for Inner elements
 
@@ -130,7 +130,13 @@ role   Tag[TagType $tag-type?] is export(:MANDATORY) {
 
     #| ok to call .new with @inners as Positional
     multi method new(*@inners, *%attrs) {
-        self.bless:  :@inners, :%attrs
+
+        #| Special case Bool attrs eg <input type="checkbox" checked>
+        my %fixed = %attrs;
+        my @bools = %attrs.keys.grep: { %attrs{$_} eq 'True' }; # ie a Bool
+        @bools.map: { %fixed{$_} = 'True' };                    # ie a Str
+
+        self.bless:  :@inners, :attrs(%fixed)
     }
 
     #| provides default .HTML method used by tag render
