@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Hilite Markdown Dialog Lightbox>;
+my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Hilite Markdown Dialog Lightbox>;
 
 =head2 Basic Tags
 
@@ -207,6 +207,10 @@ role A      does Tag[Regular]  {
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
+
+=head3 role Button does Tag[Regular] {}
+
+role Button does Tag[Regular]  {}
 
 =head2 Page Tags
 
@@ -1412,10 +1416,11 @@ END
 
 # fixme
 role Lightbox     does Component {
-    my $loaded = 0;
+    my $loaded;
 
     #| unique lightbox label
-    has $.label = 'open';
+    has Str    $.label = 'open';
+    has Button $.button;
 
     #| can be provided with attrs
     has %.attrs is rw;
@@ -1428,9 +1433,17 @@ role Lightbox     does Component {
         self.bless:  :@inners, :%attrs
     }
 
-    method HTML {  #iamerejh pop button
+    method HTML {
+        if @!inners[0] ~~ Button && ! $loaded++ {
+            $!button = @!inners.shift;
+        }
+
         div [
-            a :href<#>, :class<open-link>, :data-target("#$.html-id"), 'Open';
+            if $!button {
+                a :href<#>, :class<open-link>, :data-target("#$.html-id"), $!button;
+            } else {
+                a :href<#>, :class<open-link>, :data-target("#$.html-id"), $!label;
+            }
 
             div :class<lightbox-overlay>, :id($.html-id), [
                 div :class<lightbox-content>, [
