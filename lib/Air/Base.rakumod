@@ -566,7 +566,6 @@ role Analytics does Tool {
     has Str      $.key;
 
     multi method defaults($page) {
-        note 42;
         given $!provider {
             when Umami {
                 $page.html.head.scripts.append:
@@ -722,6 +721,8 @@ class Nav      does Component {
             background: none;
             border: none;
             padding: 0.5rem;
+            pointer-events: auto;
+            z-index: 900;
         }
 
         @media (max-width: 768px) {
@@ -1552,7 +1553,7 @@ role Hilite    does Tag {
     has $.lang = 'raku';
 
     #! make a stub to consume Rakudoc Plugin
-    my class Template {  # fixme => role
+    my class Template {
         my class Globals {
             has %.helper;
 
@@ -1609,7 +1610,7 @@ role Hilite    does Tag {
     method warnings { note $!tmpl.warnings }
 
     multi method HTML {
-        my %prm = :contents($!code), :$!lang;
+        my %prm = :contents($!code), :$!lang, :css-lib<pico>;
         $!hltr.templates<code>(%prm, $!tmpl);
     }
 
@@ -1624,7 +1625,7 @@ role Hilite    does Tag {
         //hardwire hilite style (dupe)
         :root {
             --base-color-scalar: #2458a2;       /* Darker than #3273dc */
-            --base-color-array: #ed143d;        /* crimson */
+            --base-color-array: #B01030;        /* Darkened crimson */
             --base-color-hash: #00a693;         /* Darker cyan-green */
             --base-color-code: #209cee;         /* Bulma info */
             --base-color-keyword: #008c7e;      /* Darkened primary cyan */
@@ -1638,7 +1639,7 @@ role Hilite    does Tag {
             --base-color-comment: #4aa36c;      /* Less pastel, more visible green */
             --base-color-regex-special: #00996f; /* Balanced mid-green */
             --base-color-regex-literal: #a52a2a; /* brown */
-            --base-color-regex-delimiter: #cc00cc; /* dark fuchsia */
+            --base-color-regex-delimiter: #aa00aa; /* Darkened fuchsia */
             --base-color-doc-text: #2b9e71;     /* Deeper mint green */
             --base-color-doc-markup: #d02b4c;   /* Matches adjusted danger */
         }

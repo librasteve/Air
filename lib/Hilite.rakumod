@@ -1,45 +1,6 @@
 use experimental :rakuast;
 use RakuAST::Deparse::Highlight;
 use Rainbow;
-#use RakuDoc::Render;
-
-#`[
-Proposed changes
-- do not use Rakudoc::Render
-  - ie. drop $rdp param type check from method enable
-
-   need to check fontawesome
-   keep bulma, add picocss
-   - new attr :css-lib = bulma | pico
-
-   # if :css-lib is set, then use to select css response & sub wrapper
-
-
-Notes
-
-  ultimately the CSS style mappings should come from a Theme
-  the Processor / Receptacle should mediate plugin and theme capabilities
-  some kind of publish and subscribe at the enable phase
-  meantime, I want HiLite to have a hardwired default mapping
-
-  short term, I note that the Bulma colours are stable over light / dark
-    - toggle Change Theme
-    - except black <=> white
-    - so dark = dark grey bg, light = light grey bg
-    - non raku always light grey bg (!)
-  https://finanalyst.github.io/plugins/Hilite#Raku%20examples
-
-  my personal preference would be (i) GH like (toned back) or (ii) Inteliij like (jazzy)
-  but I see the sense in having raku.org match the doc.raku.org hilite scheme
-
-  tbh I think that the new Bulma hilites are a step back from the current raku doc site
-  so I will clone the color maps from that
-
-  Other
-  - avoid multiple same style injections
-
-  oh - I just remembered that Hilite is going to be a combination of something like Air::Plugin::Hilite [that uses a standalone raku module called Hilite] when this stabilizes ... so you will have to go use Air::Plugin::Hilite in the preamble - so in the short term the guidance will be to not do that if you want to use Red
-#]
 
 unit class Hilite;
 has $!default-engine;
@@ -257,8 +218,6 @@ method templates {
                         NOHIGHS
             }
 
-#            <button class="copy-code" title="Copy code"><i class="far fa-clipboard"></i></button>
-
             qq[
                 <div class="raku-code">
                     <button class="copy-code" title="copy code">⿻</button>
@@ -425,7 +384,7 @@ method scss-str {
         z-index: 1; /* or even 0 */
         text-align:left;
         position: relative;
-        min-width: 470px;
+        min-width: 400px;
         button.copy-code {
             float: right;
             cursor: pointer;
