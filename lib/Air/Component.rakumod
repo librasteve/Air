@@ -217,7 +217,7 @@ use Air::Functional :CRO;
 use Cromponent;
 use Cromponent::MetaCromponentRole;
 
-sub to-kebab(Str() $_) {
+sub to-kebab(Str() $_ ) {
     lc S:g/(\w)<?before <[A..Z]>>/$0-/
 }
 
@@ -237,7 +237,7 @@ role Component::Common does Taggable {
     method base {$!base}
 
     #| get url safe name of class doing Component role
-    method url-name { self.^shortname.&to-kebab, }
+    method url-name(--> Str()) { self.^shortname.&to-kebab, }
 
     #| get url (ie base/name)
     method url(--> Str) { do with self.base { "$_/" } ~ self.url-name}

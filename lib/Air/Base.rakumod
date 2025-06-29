@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A External Internal Content Section Article Aside Time Nav LightDark Body Header Main Footer Table Grid Flexbox>;
+my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Markdown Dialog Lightbox>;
 
 =head2 Basic Tags
 
@@ -199,11 +199,18 @@ role Link   does Tag[Singular] {}
 =head3 role A      does Tag[Regular] {...}
 
 role A      does Tag[Regular]  {
+    #| defaults to target="_blank"
     multi method HTML {
-        my %attrs = |%.attrs, :target<_blank>;
+        my %attrs = |%.attrs;
+        %attrs<target> = '_blank' without %attrs<target>;
+
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
+
+=head3 role Button does Tag[Regular] {}
+
+role Button does Tag[Regular]  {}
 
 =head2 Page Tags
 
@@ -236,27 +243,27 @@ role Head   does Tag[Regular]  {
     #| links
     has Link   @.links;
     #| style
-    has Style  $.style is rw;
+    has Style  @.styles;
 
     #| set up common defaults (called on instantiation)
     method defaults {
         self.metas.append: Meta.new: :charset<utf-8>;
         self.metas.append: Meta.new: :name<viewport>, :content('width=device-width, initial-scale=1');
-        self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
         self.links.append: Link.new: :rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>;
+        self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
         self.scripts.append: Script.new: :src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
                 :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>;
     }
 
-    #| .HTML method calls .HTML on all attrs
+    #| .HTML method calls .HTML on all inners
     multi method HTML {
-        opener($.name, |%.attrs)                    ~
+        opener($.name, |%.attrs)          ~
         "{ .HTML with $!title          }" ~
         "{ .HTML with $!description    }" ~
         "{(.HTML for  @!metas   ).join }" ~
         "{(.HTML for  @!scripts ).join }" ~
         "{(.HTML for  @!links   ).join }" ~
-        "{ .HTML with $!style          }" ~
+        "{(.HTML for  @!styles  ).join }" ~
         closer($.name)                    ~ "\n"
     }
 }
@@ -320,7 +327,7 @@ role Body   does Tag[Regular]  {
 =head3 role Html   does Tag[Regular] {...}
 
 role Html   does Tag[Regular]  {
-    my $loaded = 0;
+    has $!loaded = 0;
 
     #| head
     has Head   $.head .= instance;
@@ -337,7 +344,7 @@ role Html   does Tag[Regular]  {
     }
 
     multi method HTML {
-        self.defaults unless $loaded++;
+        self.defaults unless $!loaded++;
 
         opener($.name, |%.attrs) ~
         $!head.HTML              ~
@@ -366,13 +373,35 @@ role Section   does Tag[Regular] {}
 
 =head3 role Article   does Tag[Regular] {}
 
-role Article   does Tag[Regular] {}
+role Article   does Tag[Regular] {
 
-=head3 role Article   does Tag[Regular] {}
+    # Keep text ltr even when grid direction rtl
+    multi method HTML {
+        my %attrs  = |%.attrs, :style("direction:ltr;");
+        do-regular-tag( $.name, @.inners, |%attrs )
+    }
+}
 
-# TODO load aside style via HTMX OOB
+=head3 role Aside     does Tag[Regular] {}
 
-role Aside     does Tag[Regular] {}
+role Aside     does Tag[Regular] {
+    method STYLE {
+        q:to/END/
+        /* Custom styles for aside layout */
+        main {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 20px;
+        }
+        aside {
+            background-color: aliceblue;
+            opacity: 0.9;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        END
+    }
+}
 
 =head3 role Time      does Tag[Regular] {...}
 
@@ -395,6 +424,21 @@ role Time      does Tag[Regular] {
         }
 
         do-regular-tag( $.name, [inner], |%.attrs )
+    }
+}
+
+=head3 role Spacer does Tag
+
+role Spacer    does Tag {
+    has Str $.height = '1em';  #iamerejh
+
+#    multi method new($height) {
+#        self.bless: :$height;
+#    }
+
+    multi method HTML {
+        note $!height;
+        do-regular-tag( 'div', :style("min-height:$!height;") )
     }
 }
 
@@ -561,11 +605,16 @@ role Internal  does Tag {
         do-regular-tag( 'a', [$.label], |%.attrs )
     }
 }
+
+=head3 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
+
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
 #| Nav does Component in order to support multiple nav instances
 #| with distinct NavItem and Widget attributes
 class Nav      does Component {
+    has $!routed = 0;
+
     #| HTMX attributes
     has Str     $.hx-target = '#content';
     has Str     $.hx-swap   = 'outerHTML';
@@ -580,11 +629,18 @@ class Nav      does Component {
         self.bless:  :@items, |%h;
     }
 
-    #| makes routes for Content NavItems (eg. SPA links that use HTMX), must be called from within a Cro route block
+    #| makes routes for Content NavItems (eg. SPA links that use HTMX)
+    #| must be called from within a Cro route block
     method make-routes() {
+        return if $!routed++;
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
-                when * ~~ Content {
+                when Content {
+                    my &new-method = method {$target.?HTML};
+                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                    self.^add_method($name, &new-method);
+                }
+                when Page {
                     my &new-method = method {$target.?HTML};
                     trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
                     self.^add_method($name, &new-method);
@@ -593,19 +649,19 @@ class Nav      does Component {
         }
     }
 
-    #| renders NavItems [subset NavItem of Pair where .value ~~ Internal | External | Content | Page;]
+    #| renders NavItems
     method nav-items {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
                 when External | Internal {
-                    $target.label = $name;
-                    li $target.HTML
+                    .label = $name;
+                    li .HTML
                 }
                 when Content {
                     li a(:hx-get("$.url-path/$name"), Safe.new: $name)
                 }
                 when Page {
-                    li a(:href("/{.url-name}/{.id}"), Safe.new: $name)
+                    li a(:href("$.url-path/$name"), Safe.new: $name)
                 }
             }
         }
@@ -616,7 +672,7 @@ class Nav      does Component {
         self.style.HTML ~ (
 
         nav [
-            { ul li :class<logo>, :href</>, $.logo } with $.logo;
+            { ul li :class<logo>, $.logo } with $.logo;
 
             button( :class<hamburger>, :id<hamburger>, Safe.new: '&#9776;' );
 
@@ -666,6 +722,8 @@ class Nav      does Component {
             background: none;
             border: none;
             padding: 0.5rem;
+            pointer-events: auto;
+            z-index: 900;
         }
 
         @media (max-width: 768px) {
@@ -704,10 +762,57 @@ class Nav      does Component {
     }
 }
 
+=head3 role Background  does Component
+
+role Background does Component {
+    #| top of background image (in px)
+    has $.top = 140;
+    #| height of background image (in px)
+    has $.height = 320;
+    #| url of background image
+    has $.url = 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Butterfly_bottom_PSF_transparent.gif';
+    #| opacity of background image
+    has $.opacity = 0.1;
+    #| rotate angle of background image (in deg)
+    has $.rotate = -9;
+
+    method STYLE {
+        my $scss = q:to/END/;
+        #background {
+            position: fixed;
+            top: %TOP%px;
+            left: 0;
+            width: 100vw;
+            height: %HEIGHT%px;
+            background: url('%URL%');
+            opacity: %OPACITY%;
+            filter: grayscale(100%);
+            transform: rotate(%ROTATE%deg);
+            background-repeat: no-repeat;
+            background-position: center center;
+            z-index: -1;
+            pointer-events: none;
+            padding: 20px;
+        }
+        END
+
+        $scss ~~ s:g/'%TOP%'/$!top/;
+        $scss ~~ s:g/'%HEIGHT%'/$!height/;
+        $scss ~~ s:g/'%URL%'/$!url/;
+        $scss ~~ s:g/'%OPACITY%'/$!opacity/;
+        $scss ~~ s:g/'%ROTATE%'/$!rotate/;
+        $scss
+    }
+
+    method HTML {
+        do-regular-tag( 'div', :id<background> )
+    }
+}
+
 #| Page does Component in order to support
 #| multiple page instances with distinct content and attributes.
 class Page     does Component {
-    has $!loaded = 0;
+    has $!loaded;
 
     #| auto refresh browser every n secs in dev't
     has Int     $.REFRESH;
@@ -726,13 +831,6 @@ class Page     does Component {
     has Main    $.main is rw;
     #| shortcut self.html.body.footer
     has Footer  $.footer;
-    #| enqueue SCRIPT [creates Script tags from registrant .SCRIPT methods to be appended at the end of the body tag]
-    has Script  @.enqueue;
-
-    has $.thing;
-
-    #| set to True with :styled-aside-on to apply self.html.head.style with right hand aside block
-    has Bool    $.styled-aside-on = False;
 
     #| build page DOM by calling Air tags
     has Html    $.html .= new;
@@ -741,8 +839,6 @@ class Page     does Component {
     method defaults {
         unless $!loaded++ {
             self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
-            self.html.body.scripts.append: @.enqueue;
-
             self.html.head.title = Title.new: $.title                   with $.title;
 
             self.html.head.description = Meta.new:
@@ -753,8 +849,6 @@ class Page     does Component {
 
             self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
-
-            self.html.head.style  = $.styled-aside                      if $.styled-aside-on;
         }
     }
 
@@ -771,26 +865,10 @@ class Page     does Component {
         self.bless: :$header, :$main, :$footer, |%h
     }
 
-    #| issue page DOM
+    #| issue page
     method HTML {
         self.defaults unless $!loaded;
         '<!doctype html>' ~ $!html.HTML
-    }
-
-    method styled-aside { Style.new: q:to/END/
-        /* Custom styles for aside layout */
-        main {
-            display: grid;
-            grid-template-columns: 3fr 1fr;
-            gap: 20px;
-        }
-        aside {
-            background-color: aliceblue;
-            opacity: 0.9;
-            padding: 20px;
-            border-radius: 5px;
-        }
-        END
     }
 
     method scripted-refresh { Script.new: qq:to/END/
@@ -819,15 +897,21 @@ class Page     does Component {
 #| Site is a holder for pages, performs setup
 #| of Cro routes and offers high level controls for style via Pico SASS.
 class Site {
+    my $loaded;
+
     #| Page holder -or-
     has Page @.pages;
     #| index Page ( otherwise $!index = @!pages[0] )
     has Page $.index;
     #| Register for route setup; default = [Nav.new]
     has      @.register;
+    #| Tools for sitewide behaviours
+    has Tool @.tools      = [];
+
 
     #| use :!scss to disable SASS compiler run
-    has Bool $.scss = True;
+    has Bool $.scss-off;
+    has Str  $!scss-gather;
 
     #| pick from: amber azure blue cyan fuchsia green indigo jade lime orange
     #| pink pumpkin purple red violet yellow (pico theme)
@@ -842,26 +926,59 @@ class Site {
         self.bless: :$index, |%h;
     }
 
+    method enqueue-all {
+        return if $loaded++;
+
+        for @!register.unique( as => *.^name ) -> $registrant {
+
+            with $registrant.?SCSS {
+                $!scss-gather ~= "\n\n" ~ $_;
+            }
+
+            # enqueued items will be rendered in order supplied
+            # this is deterministic and each plugin can apply an internal order
+            # several plugins can be registered in a specific order
+            # (please avoid interdependent js / css)
+
+            my $page = @!pages.first;  # NB. head is a singleton
+
+            for $registrant.?JS-LINKS -> $src {
+                next unless $src.defined;
+                $page.html.head.scripts.append: Script.new( :$src );
+            }
+
+            with $registrant.?SCRIPT {
+                $page.html.head.scripts.append: Script.new($_)
+            }
+
+            for $registrant.?CSS-LINKS -> $href {
+                next unless $href.defined;
+                $page.html.head.links.append: Link.new( :$href, :rel<stylesheet> );
+            }
+
+            with $registrant.?STYLE {
+                $page.html.head.styles.append: Style.new($_)
+            }
+        }
+    }
+
     submethod TWEAK {
         with    @!pages[0] { $!index = @!pages[0] }
         orwith  $!index    { @!pages[0] = $!index }
         else    { note "No pages or index found!" }
 
         self.enqueue-all;
-    }
+        self.scss-run unless $!scss-off;
 
-    method enqueue-all {
-        for @!register.unique( as => *.^name ) -> $registrant {
+        for @!tools -> $tool {
             for @!pages -> $page {
-                $page.html.body.scripts.append: Script.new($registrant.?SCRIPT)
+                $tool.defaults($page)
             }
         }
     }
 
     method routes {
         use Cro::HTTP::Router;
-
-        self.scss with $!scss;
 
         route {
             #| always route Nav
@@ -876,7 +993,6 @@ class Site {
                 when Form {
                     .form-routes
                 }
-                default { note "Only Component::Common and Form types may be added" }
             }
 
             #| setup static Cro routes
@@ -885,21 +1001,12 @@ class Site {
             get -> 'img', *@path { static 'static/img', @path }
             get -> 'js',  *@path { static 'static/js',  @path }
             get ->        *@path { static 'static',     @path }
-
-            #| setup external navigation Cro routes
-            for @!pages {
-                my ($url-name, $id) = .url-name, .id;
-
-                note "adding GET {$url-name}/<#>";
-                get -> Str $url-name, Int $id {
-                    content 'text/html', @!pages[$id-1].HTML
-                }
-            }
         }
     }
 
-    method scss {
-        my $css = self.css;
+    method scss-run {
+        my $css = self.scss-theme ~ "\n\n";
+        $css ~= $_ with $!scss-gather;
 
         note "theme-color=$!theme-color";
         $css ~~ s:g/'%THEME_COLOR%'/$!theme-color/;
@@ -913,7 +1020,7 @@ class Site {
         chdir "../..";
     }
 
-    method css { Q:to/END/;
+    method scss-theme { Q:to/END/;
         @use "node_modules/@picocss/pico/scss" with (
           $theme-color: "%THEME_COLOR%"
         );
@@ -967,13 +1074,13 @@ class Site {
 }
 
 
-=head2 Pico Tags
+=head2 Component Library
 
 =para  The Air roadmap is to provide a full set of pre-styled tags as defined in the Pico L<docs|https://picocss.com/docs>. Did we say that Air::Base implements Pico CSS?
 
 =head3 role Table does Tag
 
-role Table     does Tag {
+role Table     does Component {
 
     =para Attrs thead, tbody and tfoot can each be a 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for multi-row thead and tfoot.
 
@@ -997,11 +1104,6 @@ role Table     does Tag {
         self.bless:  :@tbody, |%h;
     }
 
-    submethod TWEAK {
-        %!tbody-attrs = $!tbody.grep:   * ~~ Pair;
-        $!tbody       = $!tbody.grep: !(* ~~ Pair);
-    }
-
     multi sub do-part($part, :$head) { '' }
     multi sub do-part(@part where .all ~~ Tag|Taggable) {
         tbody @part.map(*.HTML)
@@ -1019,6 +1121,9 @@ role Table     does Tag {
     }
 
     multi method HTML {
+        %!tbody-attrs = $!tbody.grep:   * ~~ Pair;
+        $!tbody       = $!tbody.grep: !(* ~~ Pair);
+
         table |%(:$!class if $!class), [
             thead do-part($!thead, :head);
             tbody do-part($!tbody), :attrs(|%!tbody-attrs);
@@ -1027,17 +1132,18 @@ role Table     does Tag {
     }
 }
 
-=head3 role Grid does Tag
+=head3 role Grid does Component
 
 role Grid      does Component {
-    #| list of items to populate grid,
+    #| list of items to populate grid
     has @.items;
-    #| col count (default 5)
-    has $.cols = 5;
-    #| row count (default 5)
-    has $.rows = 5;
-    #| row / col gap in em (default 0)
+
+    has $.cols = 1;
+    has $.grid-template-columns = "repeat($!cols, 1fr)";
+    has $.rows = 1;
+    has $.grid-template-rows    = "repeat($!rows, 1fr)";
     has $.gap = 0;
+    has $.direction = 'ltr';
 
 
     #| .new positional takes @items
@@ -1048,21 +1154,29 @@ role Grid      does Component {
     # optional grid style from https://cssgrid-generator.netlify.app/
     method style {
         my $str = q:to/END/;
-		<style>
-			#%HTML-ID% {
-				display: grid;
-				grid-template-columns: repeat(%COLS%, 1fr);
-				grid-template-rows: repeat(%ROWS%, 1fr);
-				grid-column-gap: %GAP%em;
-				grid-row-gap: %GAP%em;
-			}
-		</style>
-		END
+        <style>
+            #%HTML-ID% {
+                display: grid;
+                grid-template-columns: %GTC%;
+                grid-template-rows: %GTR%;
+                gap: %GAP%em;
+                direction: %DIR%;
+            }
+
+            @media (max-width: 1024px) {
+                #%HTML-ID% {
+                    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                    gap: 1px;
+                }
+            }
+        </style>
+        END
 
         $str ~~ s:g/'%HTML-ID%'/$.html-id/;
-        $str ~~ s:g/'%COLS%'/$!cols/;
-        $str ~~ s:g/'%ROWS%'/$!rows/;
+        $str ~~ s:g/'%GTC%'/$!grid-template-columns/;
+        $str ~~ s:g/'%GTR%'/$!grid-template-rows/;
         $str ~~ s:g/'%GAP%'/$!gap/;
+        $str ~~ s:g/'%DIR%'/$!direction/;
         $str
 	}
 
@@ -1072,14 +1186,14 @@ role Grid      does Component {
     }
 }
 
-=head3 role Grid does Tag
+=head3 role Flexbox does Component
 
 role Flexbox   does Component {
     #| list of items to populate grid,
     has @.items;
     #| flex-direction (default row)
     has $.direction = 'row';
-    #| gap bewteen items in em (default 1)
+    #| gap between items in em (default 1)
     has $.gap = 1;
 
     #| .new positional takes @items
@@ -1087,7 +1201,6 @@ role Flexbox   does Component {
         self.bless:  :@items, |%h;
     }
 
-    # optional grid style from https://cssgrid-generator.netlify.app/
     method style {
         my $str = q:to/END/;
         <style>
@@ -1102,6 +1215,7 @@ role Flexbox   does Component {
             @media (max-width: 768px) {
                 #%HTML-ID% {
                     flex-direction: column;
+                    gap: 0;
                 }
             }
         </style>
@@ -1116,6 +1230,342 @@ role Flexbox   does Component {
     multi method HTML {
         $.style ~
         div :id($.html-id), @!items;
+    }
+}
+
+=head3 role Tab does Tag[Regular] {...}
+
+role Tab       does Component {
+    has @.inners;
+    has %.attrs;
+
+    multi method new(*@inners, *%attrs) {
+        self.bless:  :@inners, |%attrs;
+    }
+
+    method HTML {
+        my %attrs = |%.attrs, :class<tab>, :align<left>;
+        do-regular-tag( 'div', @.inners, |%attrs )
+    }
+}
+
+=head3 subset TabItem of Pair where .value ~~ Tab;
+
+subset TabItem of Pair where .value ~~ Tab;
+
+=head3 role Tabs does Component
+
+#| Tabs does Component to control multiple tabs
+role Tabs      does Component {
+    has $!loaded = 0;
+
+    has $.align-nav = 'left';
+
+    #| list of tab sections
+    has TabItem @.items;
+
+    #| .new positional takes @items
+    multi method new(*@items, *%h) {
+        self.bless:  :@items, |%h;
+    }
+
+    #| makes routes for Tabs
+    #| must be called from within a Cro route block
+    method make-routes() {
+        return if $!loaded++;
+        do for self.items.map: *.kv -> ($name, $target) {
+            given $target {
+                when Tab {
+                    my &new-method = method {$target.?HTML};
+                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                    self.^add_method($name, &new-method);
+                }
+            }
+        }
+    }
+
+    #| renders Tabs
+    method tab-items {
+        do for @.items.map: *.kv -> ($name, $target) {
+            given $target {
+                when Tab {
+                    li a(:hx-get("$.url-path/$name"), :hx-target("#$.html-id"), Safe.new: $name)
+                }
+            }
+        }
+    }
+
+    method STYLE {
+        my $css = q:to/END/;
+        .tab-nav {
+            display: block;
+            justify-content: %ALIGN-NAV%;
+        }
+        .tab-links {
+            display: block;
+        }
+        END
+
+        $css ~~ s:g/'%ALIGN-NAV%'/$!align-nav/;
+        $css
+    }
+
+    method HTML {
+        div [
+            nav :class<tab-nav>, ul :class<tab-links>, self.tab-items;
+            div :id($.html-id), @!items[0].value;
+        ]
+    }
+}
+
+=head3 role Dialog does Component
+
+# fixme
+role Dialog     does Component {
+    method SCRIPT {
+q:to/END/;
+/*
+* Modal
+*
+* Pico.css - https://picocss.com
+* Copyright 2019-2024 - Licensed under MIT
+*/
+
+// Config
+const isOpenClass = "modal-is-open";
+const openingClass = "modal-is-opening";
+const closingClass = "modal-is-closing";
+const scrollbarWidthCssVar = "--pico-scrollbar-width";
+const animationDuration = 1000; // ms
+let visibleModal = null;
+
+// Toggle modal
+const toggleModal = (event) => {
+  event.preventDefault();
+  const modal = document.getElementById(event.currentTarget.dataset.target);
+  if (!modal) return;
+  modal && (modal.open ? closeModal(modal) : openModal(modal));
+};
+
+// Open modal
+const openModal = (modal) => {
+  const { documentElement: html } = document;
+  const scrollbarWidth = getScrollbarWidth();
+  if (scrollbarWidth) {
+    html.style.setProperty(scrollbarWidthCssVar, `${scrollbarWidth}px`);
+  }
+  html.classList.add(isOpenClass, openingClass);
+  setTimeout(() => {
+    visibleModal = modal;
+    html.classList.remove(openingClass);
+  }, animationDuration);
+  modal.showModal();
+};
+
+// Close modal
+const closeModal = (modal) => {
+  visibleModal = null;
+  const { documentElement: html } = document;
+  html.classList.add(closingClass);
+  setTimeout(() => {
+    html.classList.remove(closingClass, isOpenClass);
+    html.style.removeProperty(scrollbarWidthCssVar);
+    modal.close();
+  }, animationDuration);
+};
+
+// Close with a click outside
+document.addEventListener("click", (event) => {
+  if (visibleModal === null) return;
+  const modalContent = visibleModal.querySelector("article");
+  const isClickInside = modalContent.contains(event.target);
+  !isClickInside && closeModal(visibleModal);
+});
+
+// Close with Esc key
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && visibleModal) {
+    closeModal(visibleModal);
+  }
+});
+
+// Get scrollbar width
+const getScrollbarWidth = () => {
+  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+  return scrollbarWidth;
+};
+
+// Is scrollbar visible
+const isScrollbarVisible = () => {
+  return document.body.scrollHeight > screen.height;
+};
+END
+    }
+
+    method HTML {
+        div [
+        Safe.new: '<button class="contrast" data-target="modal-example" onclick="toggleModal(event)">Launch demo modal</button>';
+        Safe.new: q:to/MODAL/;
+            <dialog id="modal-example">
+                <article>
+                <header>
+                <button aria-label="Close" rel="prev" data-target="modal-example" onclick="toggleModal(event)"></button>
+                  <h3>Confirm your action!</h3>
+                </header>
+                <p>
+                  Cras sit amet maximus risus. Pellentesque sodales odio sit amet augue finibus
+                  pellentesque. Nullam finibus risus non semper euismod.
+                </p>
+                <footer>
+                  <button role="button" class="secondary" data-target="modal-example" onclick="toggleModal(event)">
+                    Cancel</button><button autofocus="" data-target="modal-example" onclick="toggleModal(event)">
+                    Confirm
+                  </button>
+                </footer>
+              </article>
+            </dialog>
+            MODAL
+        ]
+    }
+}
+
+=head3 role Lightbox does Component
+
+role Lightbox     does Component {
+    has $!loaded;
+
+    #| unique lightbox label
+    has Str    $.label = 'open';
+    has Button $.button;
+
+    #| can be provided with attrs
+    has %.attrs is rw;
+
+    #| can be provided with inners
+    has @.inners;
+
+    #| ok to call .new with @inners as Positional
+    multi method new(*@inners, *%attrs) {
+        self.bless:  :@inners, :%attrs
+    }
+
+    method HTML {
+        if @!inners[0] ~~ Button && ! $!loaded++ {
+            $!button = @!inners.shift;
+        }
+
+        div [
+            if $!button {
+                a :href<#>, :class<open-link>, :data-target("#$.html-id"), $!button;
+            } else {
+                a :href<#>, :class<open-link>, :data-target("#$.html-id"), $!label;
+            }
+
+            div :class<lightbox-overlay>, :id($.html-id), [
+                div :class<lightbox-content>, [
+                    span :class<close-btn>, Safe.new: '&times';
+                    do-regular-tag( 'div', @.inners, |%.attrs )
+                ];
+            ];
+        ];
+    }
+
+    method STYLE {
+        q:to/END/;
+        .lightbox-overlay {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          background: rgba(0, 0, 0, 0.8);
+          display: none;
+          align-items: center;
+          justify-content: center;
+          z-index: 900;
+        }
+
+        .lightbox-overlay.active {
+          display: flex;
+        }
+
+        .lightbox-content {
+          background: grey;
+          width: 70vw;
+          position: relative;
+          border-radius: 10px;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+          padding: 1rem;
+        }
+
+        .close-btn {
+          position: absolute;
+          top: 10px;
+          right: 15px;
+          font-size: 24px;
+          color: #333;
+          cursor: pointer;
+        }
+        END
+    }
+
+    method SCRIPT {
+        q:to/END/;
+        // Open specific lightbox
+        document.querySelectorAll('.open-link').forEach(link => {
+          link.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.querySelector(link.dataset.target);
+            if (target) target.classList.add('active');
+          });
+        });
+
+        // Close when clicking the X or outside the content
+        document.querySelectorAll('.lightbox-overlay').forEach(lightbox => {
+          const content = lightbox.querySelector('.lightbox-content');
+          const closeBtn = lightbox.querySelector('.close-btn');
+
+          closeBtn.addEventListener('click', () => {
+            lightbox.classList.remove('active');
+          });
+
+          lightbox.addEventListener('click', e => {
+            if (!content.contains(e.target)) {
+              lightbox.classList.remove('active');
+            }
+          });
+        });
+
+        // Close any open lightbox on Escape
+        document.addEventListener('keydown', e => {
+          if (e.key === 'Escape') {
+            document.querySelectorAll('.lightbox-overlay.active').forEach(lb => {
+              lb.classList.remove('active');
+            });
+          }
+        });
+        END
+    }
+}
+
+=head2 Other Tags
+
+=head3 role Markdown does Tag
+
+role Markdown    does Tag {
+    use Text::Markdown;
+
+    #| markdown to be converted
+    has Str $.markdown;
+    # cache the result
+    has Markup() $!result;
+
+    #| .new positional takes Str $code
+    multi method new(Str $markdown, *%h) {
+        self.bless: :$markdown, |%h;
+    }
+
+    multi method HTML {
+        $!result = Text::Markdown.new($!markdown).render unless $!result;
+        $!result
     }
 }
 

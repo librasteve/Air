@@ -16,7 +16,7 @@ my $page = Page.new:
     title => "Raku HTMX", :$main;
 #    main  => Main.new: p 'Hello World!';   #iamerejh
 
-$page.html.head.style = Style.new: 'p {color: blue;}';
+$page.html.head.styles.append: Style.new: 'p {color: blue;}';
 
 my $expect =
     q:to/END/;

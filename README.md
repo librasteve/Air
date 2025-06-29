@@ -28,8 +28,8 @@ Install raku - eg. from [rakubrew](https://rakubrew.org), then:
 
     Install Air, Cro & Red
     - zef install --/test cro [117 sec]
-    - zef install Red --exclude="pq:ver<5>" --/test [98 sec]
-    - zef install Air [15 sec]
+    - zef install Red --exclude="pq:ver<5>" --/test [98 sec][only if needed]
+    - zef install Air [80 sec]
 
     Run and view some examples
     - git clone https://github.com/librasteve/Air-Play.git && cd Air-Play

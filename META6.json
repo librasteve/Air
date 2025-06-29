@@ -8,12 +8,14 @@
     "auth": "zef:librasteve",
     "depends": [
         "UUID::V4",
+        "CSS::Writer",
         "DateTime::Format",
         "HTML::Escape",
         "Cro::HTTP::Router",
         "Cro::WebApp::Template",
         "Cro::WebApp::Form",
-        "Cromponent"
+        "Cromponent",
+        "Text::Markdown"
     ],
     "build-depends": [],
     "provides": {
