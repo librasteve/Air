@@ -60,7 +60,7 @@ Install raku - eg. from [rakubrew](https://rakubrew.org), then:
     - zef install Air
 
     Run and view some examples
-    - git clone https://github.com/librasteve/Air-Play.git && cd Air-Play
+    - git clone https://github.com/librasteve/Air-Examples.git && cd Air-Examples
     - export WEBSITE_HOST="0.0.0.0" && export WEBSITE_PORT="3000"
     - raku -Ilib service.raku
     - browse to http://localhost:3000

@@ -10,14 +10,14 @@ Air::Base uses Air::Functional for standard HTML tags expressed as raku subs. Ai
 Architecture
 ------------
 
-Here's a diagram of the various Air parts. (Air::Play is a separate raku module with several examples of Air websites.)
+Here's a diagram of the various Air parts. (Air::Examples is a separate raku module with several examples of Air websites.)
 
                              +----------------+
-                             |    Air::Play   |    <-- Web App
+                             |  Air::Example  |    <-- Web App
                              +----------------+
                                      |
                         +--------------------------+
-                        |     Air::Play::Site      |  <-- Site Lib
+                        |   Air::Example::Site     |  <-- Site Lib
                         +--------------------------+
                            /                    \
                   +----------------+   +-----------------+
