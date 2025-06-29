@@ -91,7 +91,10 @@ Air is comprised of four core libraries:
 =item Air::Component - make your own components
 =item Air::Form - declarative forms
 
-B<L<Air::Play|https://raku.land/zef:librasteve/Air::Play>> is a companion raku module with various B<Air> website examples.
+Air also has a plugin system, for example:
+=item Air::Plugin::Hilite - code highlighter
+
+B<L<Air::Examples|https://raku.land/zef:librasteve/Air::Examples>> is a companion raku module with various B<Air> website examples.
 
 The Air documentation is at L<https://librasteve.github.io/Air>
 

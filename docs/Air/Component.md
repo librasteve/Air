@@ -239,7 +239,7 @@ optional attr to specify url base
 ### method url-name
 
 ```raku
-method url-name() returns Mu
+method url-name() returns Str(Any)
 ```
 
 get url safe name of class doing Component role

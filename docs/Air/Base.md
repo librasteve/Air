@@ -195,6 +195,16 @@ no html escape
 
 ### role A does Tag[Regular] {...}
 
+### method HTML
+
+```raku
+method HTML() returns Mu
+```
+
+defaults to target="_blank"
+
+### role Button does Tag[Regular] {}
+
 Page Tags
 ---------
 
@@ -224,7 +234,7 @@ scripts
 
 links
 
-### has Style $.style
+### has Positional[Style] @.styles
 
 style
 
@@ -242,7 +252,7 @@ set up common defaults (called on instantiation)
 method HTML() returns Mu
 ```
 
-.HTML method calls .HTML on all attrs
+.HTML method calls .HTML on all inners
 
 ### role Header does Tag[Regular] {...}
 
@@ -308,13 +318,15 @@ These are re-published with minor adjustments and align with Pico CSS semantic t
 
 ### role Article does Tag[Regular] {}
 
-### role Article does Tag[Regular] {}
+### role Aside does Tag[Regular] {}
 
 ### role Time does Tag[Regular] {...}
 
 In HTML the time tag is typically of the form < time datetime="2025-03-13" > 13 March, 2025 < /time > . In Air you can just go time(:datetime < 2025-02-27 > ); and raku will auto format and fill out the inner human readable text.
 
 Optionally specify mode => [time | datetime], mode => date is default
+
+### role Spacer does Tag
 
 Widgets
 -------
@@ -357,6 +369,8 @@ First we set up the NavItems = Internal | External | Content | Page
 
 ### role Internal does Tag[Regular] {...}
 
+### subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
+
 class Nav
 ---------
 
@@ -366,7 +380,7 @@ Nav does Component in order to support multiple nav instances with distinct NavI
 
 HTMX attributes
 
-### has Safe $.logo
+### has Air::Functional::Markup $.logo
 
 logo
 
@@ -384,7 +398,7 @@ Widgets
 method make-routes() returns Mu
 ```
 
-makes routes for Content NavItems (eg. SPA links that use HTMX), must be called from within a Cro route block
+makes routes for Content NavItems (eg. SPA links that use HTMX) must be called from within a Cro route block
 
 ### method nav-items
 
@@ -392,7 +406,7 @@ makes routes for Content NavItems (eg. SPA links that use HTMX), must be called 
 method nav-items() returns Mu
 ```
 
-renders NavItems [subset NavItem of Pair where .value ~~ Internal | External | Content | Page;]
+renders NavItems
 
 ### method HTML
 
@@ -401,6 +415,28 @@ method HTML() returns Mu
 ```
 
 applies Style and Script for Hamburger reactive menu
+
+### role Background does Component
+
+### has Mu $.top
+
+top of background image (in px)
+
+### has Mu $.height
+
+height of background image (in px)
+
+### has Mu $.url
+
+url of background image
+
+### has Mu $.opacity
+
+opacity of background image
+
+### has Mu $.rotate
+
+rotate angle of background image (in deg)
 
 class Page
 ----------
@@ -436,14 +472,6 @@ shortcut self.html.body.main
 ### has Footer $.footer
 
 shortcut self.html.body.footer
-
-### has Positional[Script] @.enqueue
-
-enqueue SCRIPT [creates Script tags from registrant .SCRIPT methods to be appended at the end of the body tag]
-
-### has Bool $.styled-aside-on
-
-set to True with :styled-aside-on to apply self.html.head.style with right hand aside block
 
 ### has Html $.html
 
@@ -499,7 +527,7 @@ multi method new(
 method HTML() returns Mu
 ```
 
-issue page DOM
+issue page
 
 class Site
 ----------
@@ -518,7 +546,11 @@ index Page ( otherwise $!index = @!pages[0] )
 
 Register for route setup; default = [Nav.new]
 
-### has Bool $.scss
+### has Positional[Tool] @.tools
+
+Tools for sitewide behaviours
+
+### has Bool $.scss-off
 
 use :!scss to disable SASS compiler run
 
@@ -541,8 +573,8 @@ multi method new(
 
 .new positional with index only
 
-Pico Tags
----------
+Component Library
+-----------------
 
 The Air roadmap is to provide a full set of pre-styled tags as defined in the Pico [docs](https://picocss.com/docs). Did we say that Air::Base implements Pico CSS?
 
@@ -581,11 +613,11 @@ method new(
 
 .new positional takes tbody [[]]
 
-### role Grid does Tag
+### role Grid does Component
 
 ### has Positional @.items
 
-list of items to populate grid, each item is wrapped in a span tag
+list of items to populate grid
 
 ### method new
 
@@ -597,6 +629,119 @@ method new(
 ```
 
 .new positional takes @items
+
+### role Flexbox does Component
+
+### has Positional @.items
+
+list of items to populate grid,
+
+### has Mu $.direction
+
+flex-direction (default row)
+
+### has Mu $.gap
+
+gap between items in em (default 1)
+
+### method new
+
+```raku
+method new(
+    *@items,
+    *%h
+) returns Mu
+```
+
+.new positional takes @items
+
+### role Tab does Tag[Regular] {...}
+
+### subset TabItem of Pair where .value ~~ Tab;
+
+### role Tabs does Component
+
+
+
+Tabs does Component to control multiple tabs
+
+### has Positional[TabItem] @.items
+
+list of tab sections
+
+### method new
+
+```raku
+method new(
+    *@items,
+    *%h
+) returns Mu
+```
+
+.new positional takes @items
+
+### method make-routes
+
+```raku
+method make-routes() returns Mu
+```
+
+makes routes for Tabs must be called from within a Cro route block
+
+### method tab-items
+
+```raku
+method tab-items() returns Mu
+```
+
+renders Tabs
+
+### role Dialog does Component
+
+### role Lightbox does Component
+
+### has Str $.label
+
+unique lightbox label
+
+### has Associative %.attrs
+
+can be provided with attrs
+
+### has Positional @.inners
+
+can be provided with inners
+
+### method new
+
+```raku
+method new(
+    *@inners,
+    *%attrs
+) returns Mu
+```
+
+ok to call .new with @inners as Positional
+
+Other Tags
+----------
+
+### role Markdown does Tag
+
+### has Str $.markdown
+
+markdown to be converted
+
+### method new
+
+```raku
+method new(
+    Str $markdown,
+    *%h
+) returns Mu
+```
+
+.new positional takes Str $code
 
 package EXPORT::DEFAULT
 -----------------------

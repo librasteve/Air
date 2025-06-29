@@ -337,7 +337,7 @@ method SCRIPT(
 ) returns Mu
 ```
 
-get form-scripts, pass in a custom $suffix for required labels (may be overridden)
+get form-scripts, pass in a custom $suffix for required labels (default '*')
 
 AUTHOR
 ======
