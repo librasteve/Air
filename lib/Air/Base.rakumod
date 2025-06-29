@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Hilite Markdown Dialog Lightbox>;
+my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Markdown Dialog Lightbox>;
 
 =head2 Basic Tags
 
