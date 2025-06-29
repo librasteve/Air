@@ -15,7 +15,6 @@
         "Cro::WebApp::Template",
         "Cro::WebApp::Form",
         "Cromponent",
-        "Rainbow",
         "Text::Markdown"
     ],
     "build-depends": [],
@@ -24,8 +23,7 @@
         "Air::Base": "lib/Air/Base.rakumod",
         "Air::Component": "lib/Air/Component.rakumod",
         "Air::Form": "lib/Air/Form.rakumod",
-        "Air::Functional": "lib/Air/Functional.rakumod",
-        "Hilite": "lib/Hilite.rakumod"
+        "Air::Functional": "lib/Air/Functional.rakumod"
     },
     "license": "Artistic-2.0",
     "source-url": "https://github.com/librasteve/Air.git"

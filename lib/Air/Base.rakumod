@@ -430,14 +430,15 @@ role Time      does Tag[Regular] {
 =head3 role Spacer does Tag
 
 role Spacer    does Tag {
-    has Str $.min-height = '1em';
+    has Str $.height = '1em';  #iamerejh
 
-    multi method new($min-height) {
-        self.bless: :$min-height;
-    }
+#    multi method new($height) {
+#        self.bless: :$height;
+#    }
 
     multi method HTML {
-        do-regular-tag( 'div', :style("min-height:$!min-height;") )
+        note $!height;
+        do-regular-tag( 'div', :style("min-height:$!height;") )
     }
 }
 
@@ -934,24 +935,29 @@ class Site {
                 $!scss-gather ~= "\n\n" ~ $_;
             }
 
-            for @!pages -> $page {
-                for $registrant.?JS-LINKS -> $src {
-                    next unless $src.defined;
-                    $page.html.head.scripts.append: Script.new( :$src );
-                }
+            # enqueued items will be rendered in order supplied
+            # this is deterministic and each plugin can apply an internal order
+            # several plugins can be registered in a specific order
+            # (please avoid interdependent js / css)
 
-                with $registrant.?SCRIPT {
-                    $page.html.body.scripts.append: Script.new($_)
-                }
+            my $page = @!pages.first;  # NB. head is a singleton
 
-                for $registrant.?CSS-LINKS -> $href {
-                    next unless $href.defined;
-                    $page.html.head.links.append: Link.new( :$href );
-                }
+            for $registrant.?JS-LINKS -> $src {
+                next unless $src.defined;
+                $page.html.head.scripts.append: Script.new( :$src );
+            }
 
-                with $registrant.?STYLE {
-                    $page.html.head.styles.append: Style.new($_)
-                }
+            with $registrant.?SCRIPT {
+                $page.html.head.scripts.append: Script.new($_)
+            }
+
+            for $registrant.?CSS-LINKS -> $href {
+                next unless $href.defined;
+                $page.html.head.links.append: Link.new( :$href, :rel<stylesheet> );
+            }
+
+            with $registrant.?STYLE {
+                $page.html.head.styles.append: Style.new($_)
             }
         }
     }
@@ -1552,7 +1558,7 @@ role Hilite    does Tag {
     #| language (from highlight.js + haskell + raku + rakudoc)
     has $.lang = 'raku';
 
-    #! make a stub to consume Rakudoc Plugin
+    #! make a stub to consume
     my class Template {
         my class Globals {
             has %.helper;
@@ -1580,13 +1586,13 @@ role Hilite    does Tag {
 
     has $!tmpl = Template.new;
     has $!rctl = Receptacle.new;
-    has $!hltr = Hilite.new;
+    has $!hltr = Hilite.new: :css-lib<pico>;
 
     #| script, styles from Hilite.rakumod
     has @!js-links;     #list of script src urls
     has $!script;
     has @!css-links;    #list of link href urls
-    has $.style;
+    has $.scss;
 
     submethod TWEAK {
         $!hltr.enable: $!rctl;
@@ -1596,10 +1602,10 @@ role Hilite    does Tag {
         @!js-links  .= map: *.substr(1,*-1);     #rm quote marks
         $!script     = $!rctl.data<hilite><js>[0][0];
 
-        @!css-links  = $!rctl.data<hilite><css-link>.map: *[0];
+        @!css-links  = $!rctl.data<hilite><css-link-dark>.map: *[0];
         @!css-links .= map: *.split('=')[1];     #pick the url
         @!css-links .= map: *.substr(1,*-1);     #rm quote marks
-        $!style      = $!rctl.data<hilite><scss>[0][0];
+        $!scss       = $!rctl.data<hilite><scss>[0][0];
     }
 
     #| .new positional takes Str $code
@@ -1610,7 +1616,7 @@ role Hilite    does Tag {
     method warnings { note $!tmpl.warnings }
 
     multi method HTML {
-        my %prm = :contents($!code), :$!lang, :css-lib<pico>;
+        my %prm = :contents($!code), :$!lang;
         $!hltr.templates<code>(%prm, $!tmpl);
     }
 
@@ -1618,33 +1624,7 @@ role Hilite    does Tag {
     method SCRIPT    { $!script }
 
     method CSS-LINKS { @!css-links }
-    method STYLE     { $!style }
-
-    method SCSS {
-        q:to/SCSS/
-        //hardwire hilite style (dupe)
-        :root {
-            --base-color-scalar: #2458a2;       /* Darker than #3273dc */
-            --base-color-array: #B01030;        /* Darkened crimson */
-            --base-color-hash: #00a693;         /* Darker cyan-green */
-            --base-color-code: #209cee;         /* Bulma info */
-            --base-color-keyword: #008c7e;      /* Darkened primary cyan */
-            --base-color-operator: #1ca24f;     /* Darker green for contrast */
-            --base-color-type: #d12c4c;         /* Deeper pinkish red */
-            --base-color-routine: #489fdc;      /* Richer blue, not too pale */
-            --base-color-string: #369ec6;       /* Stronger blue-cyan */
-            --base-color-string-delimiter: #1d90d2; /* More contrast than #7dd3fc */
-            --base-color-escape: #2b2b2b;       /* Darkened for visibility */
-            --base-color-text: #2a2a2a;         /* Darker base text */
-            --base-color-comment: #4aa36c;      /* Less pastel, more visible green */
-            --base-color-regex-special: #00996f; /* Balanced mid-green */
-            --base-color-regex-literal: #a52a2a; /* brown */
-            --base-color-regex-delimiter: #aa00aa; /* Darkened fuchsia */
-            --base-color-doc-text: #2b9e71;     /* Deeper mint green */
-            --base-color-doc-markup: #d02b4c;   /* Matches adjusted danger */
-        }
-        SCSS
-    }
+    method SCSS      { $!scss }
 }
 
 =head3 role Markdown does Tag

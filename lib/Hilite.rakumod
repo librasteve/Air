@@ -1,13 +1,13 @@
-use experimental :rakuast;
-use RakuAST::Deparse::Highlight;
 use Rainbow;
 
 unit class Hilite;
-has $!default-engine;
+
+has $.css-lib = 'bulma';
+
 has %.config = %(
     :name-space<hilite>,
     :license<Artistic-2.0>,
-    :credit<finanalyst, lizmat>,
+    :credit<finanalyst, lizmat, librasteve>,
     :author<<Richard Hainsworth, aka finanalyst\nElizabeth Mattijsen, aka lizmat\nSteve Roe, aka librasteve\n>>,
     :version<0.1.1>,
     :js-link(
@@ -17,8 +17,11 @@ has %.config = %(
     :css-link(
     ['href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css"',1],
     ),
+    :css-link-dark(
+    ['href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"',1],
+    ),
     :js([self.js-text,1],),
-    :scss([ self.scss-str, 1], ),
+    :scss([self.scss-str, 1], ),
 );
 has %!hilight-langs = %(
     'HTML' => 'xml',
@@ -65,30 +68,13 @@ has %!hilight-langs = %(
     'HASKELL' => 'haskell',
 );
 method enable( $rdp ) {
-    $!default-engine = (%*ENV<HIGHLIGHTER> // 'rainbow').lc;
     $rdp.add-templates( $.templates, :source<Hilite plugin> );
     $rdp.add-data( %!config<name-space>, %!config );
 }
-sub wrapperOLD(str $color, str $c) {
-    $c.trim ?? "<span style=\"color:var(--bulma-$color);font-weight:500;\">$c\</span>" !! $c
-}
-sub wrapper(str $color, str $c, str $css-lib? = 'base') {
-    $c.trim ?? "<span style=\"color:var(--$css-lib-$color);font-weight:500;\">$c\</span>" !! $c
-}
-my %mapping = mapper(
-    black     => -> $c { wrapper( "black",   $c ) },
-    blue      => -> $c { wrapper( "link",    $c ) },
-    cyan      => -> $c { wrapper( "info",    $c ) },
-    green     => -> $c { wrapper( "primary", $c ) },
-    magenta   => -> $c { wrapper( "success", $c ) },
-    none      => -> $c { wrapper( "none",    $c ) },
-    red       => -> $c { wrapper( "danger",  $c ) },
-    yellow    => -> $c { wrapper( "warning", $c ) },
-    white     => -> $c { wrapper( "white",   $c ) },
-);
 
 method templates {
     constant CUT-LENG = 500; # crop length in error message
+
     %(
         code => sub (%prm, $tmpl) {
             # if :allow is set, then no highlighting as allow creates alternative styling
@@ -96,15 +82,14 @@ method templates {
             # if :lang is set to a lang in list, then enable highlightjs
             # if :lang is set to lang not in list, not raku or RakuDoc, then no highlighting
             # if :lang is not set, then highlight as Raku
-            # if :css-lib is set, then use to select css response & sub wrapper iamerejh
 
-            # select hilite engine
-            my $engine = $!default-engine;
-            $engine = %prm<highlighter>.lc
-            if (%prm<highlighter>:exists && %prm<highlighter> ~~ /:i 'Deparse' | 'Rainbow' /);
             my $code;
             my $syntax-label;
             my $source = %prm<contents>.Str.trim-trailing;
+
+            # promote css-lib to outer scope
+            $!css-lib = $_ with %prm<css-lib>;
+
             my Bool $hilite = %prm<syntax-highlighting> // True;
             if %prm<allow> {
                 $syntax-label = '<b>allow</b> styling';
@@ -115,7 +100,7 @@ method templates {
                     NOHIGHS
             }
             elsif $hilite {
-                my $lang = %prm<lang> // 'Raku';
+                my $lang = %prm<lang> // 'raku';
                 given $lang.uc {
                     when any( %!hilight-langs.keys ) {
                         $syntax-label = $lang ~  ' highlighting by highlight-js';
@@ -138,7 +123,7 @@ method templates {
                             NOHIGHS
                     }
                     default {
-                        $syntax-label = 'Raku highlighting';
+                        $syntax-label = 'raku highlighting';
                     }
                 }
             }
@@ -150,67 +135,33 @@ method templates {
                     </pre>
                     NOHIGHS
             }
+
             without $code { # so need Raku highlighting
-                if $engine eq 'deparse' {
-                    # for RakuDoc, deparse needs an explicit =rakudoc block
-                    if $syntax-label eq 'RakuDoc' {
-                        $source = "=begin rakudoc\n$source\n=end rakudoc";
-                    }
-                    my $c = highlight( $source, :unsafe, %mapping);
-                    if $c {
-                        $code = $c.trim
-                    }
-                    else {
-                        my $m = $c.exception.message;
-                        $tmpl.globals.helper<add-to-warnings>( 'Error when highlighting ｢' ~
-                            ( $source.chars > CUT-LENG
-                                ?? ($source.substr(0,CUT-LENG) ~ ' ... ')
-                                !! $source.trim ) ~
-                            '｣' ~ "\nbecause\n$m" );
-                        $code = $source;
-                    }
-                    CATCH {
-                        default {
-                            $tmpl.globals.helper<add-to-warnings>( 'Error in code block with ｢' ~
-                                ( $source.chars > CUT-LENG
-                                    ?? ($source.substr(0,CUT-LENG) ~ ' ... ')
-                                    !! $source.trim ) ~
-                                '｣' ~ "\nbecause\n" ~ .message );
-                            $code = $tmpl.globals.escape.($source);
+                if $syntax-label eq 'RakuDoc' {
+                    $code = Rainbow::tokenize-rakudoc($source).map( -> $t {
+                        my $cont = $tmpl.globals.escape.($t.text);
+                        if $t.type.key ne 'TEXT' {
+                            qq[<span class="rainbow-{$t.type.key.lc}">$cont\</span>]
                         }
-                    }
-                    if $syntax-label eq 'RakuDoc' {
-                        $code .= subst(/ '<span' <-[ > ]>+ '>=begin</span> <span' <-[ > ]>+  '>rakudoc</span>' \s*/,'');
-                        $code .= subst(/ \s* '<span' <-[ > ]>+ '>=end</span> <span' <-[ > ]>+  '>rakudoc</span>' \s* /,'')
-                    }
+                        else {
+                            $cont .= subst(/ ' ' /, '&nbsp;',:g);
+                        }
+                    }).join('');
                 }
                 else {
-                    if $syntax-label eq 'RakuDoc' {
-                        $code = Rainbow::tokenize-rakudoc($source).map( -> $t {
-                            my $cont = $tmpl.globals.escape.($t.text);
-                            if $t.type.key ne 'TEXT' {
-                                qq[<span class="rainbow-{$t.type.key.lc}">$cont\</span>]
-                            }
-                            else {
-                                $cont .= subst(/ ' ' /, '&nbsp;',:g);
-                            }
-                        }).join('');
-                    }
-                    else {
-                        $code = Rainbow::tokenize($source).map( -> $t {
-                            my $cont = $tmpl.globals.escape.($t.text);
-                            if $t.type.key ne 'TEXT' {
-                                qq[<span class="rainbow-{$t.type.key.lc}">$cont\</span>]
-                            }
-                            else {
-                                $cont .= subst(/ ' ' /, '&nbsp;',:g);
-                            }
-                        }).join('');
-                    }
-                    $code .= subst( / \v+ <?before $> /, '');
-                    $code .= subst( / \v /, '<br>', :g);
-                    $code .= subst( / "\t" /, '&nbsp' x 4, :g );
+                    $code = Rainbow::tokenize($source).map( -> $t {
+                        my $cont = $tmpl.globals.escape.($t.text);
+                        if $t.type.key ne 'TEXT' {
+                            qq[<span class="rainbow-{$t.type.key.lc}">$cont\</span>]
+                        }
+                        else {
+                            $cont .= subst(/ ' ' /, '&nbsp;',:g);
+                        }
+                    }).join('');
                 }
+                $code .= subst( / \v+ <?before $> /, '');
+                $code .= subst( / \v /, '<br>', :g);
+                $code .= subst( / "\t" /, '&nbsp' x 4, :g );
                 $code = qq:to/NOHIGHS/;
                         <pre class="nohighlights">
                         $code
@@ -228,13 +179,12 @@ method templates {
         }
     )
 }
+
 method js-text {
     q:to/JSCOPY/;
         // Hilite-helper.js
-        document.addEventListener('DOMContentLoaded', function () {
-            // trigger the highlighter for non-Raku code
-            hljs.highlightAll();
 
+        function copyCode() {
             // copy code block to clipboard adapted from solution at
             // https://stackoverflow.com/questions/34191780/javascript-copy-string-to-clipboard-as-text-html
             // if behaviour problems with different browsers add stylesheet code from that solution.
@@ -256,10 +206,32 @@ method js-text {
                     document.body.removeChild(container);
                 });
             });
+        }
+
+        // DOM ready
+        document.addEventListener('DOMContentLoaded', function () {
+            // trigger the highlighter for non-Raku code
+            copyCode();
+            hljs.highlightAll();
+        });
+
+        // HTMX updates
+        document.addEventListener('htmx:afterSwap', function () {
+            copyCode();
+            hljs.highlightAll();
         });
     JSCOPY
 }
-method scss-strOLD {
+
+method scss-str {
+    given $!css-lib {
+        when m:i/bulma/ { self.scss-str-bulma }
+        when m:i/pico/  { self.scss-str-pico }
+        default { note 'Cannot find SCSS for selected css-lib!' }
+    }
+}
+
+method scss-str-bulma {
     q:to/SCSS/
     /* Raku code highlighting */
     .raku-code {
@@ -377,9 +349,32 @@ method scss-strOLD {
     SCSS
 }
 
-method scss-str {
+method scss-str-pico {
     q:to/SCSS/
     /* Raku code highlighting */
+
+    //hardwire hilite colours (for now)
+    :root {
+        --base-color-scalar: #2458a2;       /* Darker than #3273dc */
+        --base-color-array: #B01030;        /* Darkened crimson */
+        --base-color-hash: #00a693;         /* Darker cyan-green */
+        --base-color-code: #209cee;         /* Bulma info */
+        --base-color-keyword: #008c7e;      /* Darkened primary cyan */
+        --base-color-operator: #1ca24f;     /* Darker green for contrast */
+        --base-color-type: #d12c4c;         /* Deeper pinkish red */
+        --base-color-routine: #489fdc;      /* Richer blue, not too pale */
+        --base-color-string: #369ec6;       /* Stronger blue-cyan */
+        --base-color-string-delimiter: #1d90d2; /* More contrast than #7dd3fc */
+        --base-color-escape: #2b2b2b;       /* Darkened for visibility */
+        --base-color-text: #2a2a2a;         /* Darker base text */
+        --base-color-comment: #4aa36c;      /* Less pastel, more visible green */
+        --base-color-regex-special: #00996f; /* Balanced mid-green */
+        --base-color-regex-literal: #a52a2a; /* brown */
+        --base-color-regex-delimiter: #aa00aa; /* Darkened fuchsia */
+        --base-color-doc-text: #2b9e71;     /* Deeper mint green */
+        --base-color-doc-markup: #d02b4c;   /* Matches adjusted danger */
+    }
+
     .raku-code {
         z-index: 1; /* or even 0 */
         text-align:left;
@@ -430,9 +425,6 @@ method scss-str {
             background: none;
             color: inherit;
         }
-
-        //--base-color dfs moved to SCSS
-
         .rainbow-name_scalar {
           color: var(--base-color-scalar);
           font-weight: 500;
