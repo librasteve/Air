@@ -32,7 +32,7 @@ Install raku - eg. from [rakubrew](https://rakubrew.org), then:
     - zef install Air [80 sec]
 
     Run and view some examples
-    - git clone https://github.com/librasteve/Air-Play.git && cd Air-Play
+    - git clone https://github.com/librasteve/Air-Examples.git && cd Air-Examples
     - export WEBSITE_HOST="0.0.0.0" && export WEBSITE_PORT="3000"
     - raku -Ilib service.raku
     - browse to http://localhost:3000
@@ -97,7 +97,7 @@ Air is comprised of three core libraries:
   
 * Air::Form - declarative forms
 
-**[Air::Play](https://raku.land/zef:librasteve/Air::Play)** is a companion raku module with various **Air** website examples.
+**[Air::Examples](https://raku.land/zef:librasteve/Air::Examples)** is a companion raku module with various **Air** website examples.
 
 The Air documentation is at [https://librasteve.github.io/Air](https://librasteve.github.io/Air)
 
