@@ -4,7 +4,7 @@ Revision history for Air
 
 0.0.17  2025-06-29T16:38:10+01:00
     - Air::Plugin::Hilite / Hilite / Rainbow
-    - Markdown, Tabs, Lighbox, Dialog(some), Flexbox
+    - Markdown, Tabs, Lightbox, Dialog(some), Flexbox
 
 0.0.16  2025-06-05T09:14:49+01:00
     - fix test & deps, keep Red optional
