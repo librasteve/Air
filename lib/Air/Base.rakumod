@@ -527,11 +527,11 @@ role LightDark does Tag does Widget {
                 updateIcons(newTheme);
             }
 
-            // Load saved theme on page load
+            // select theme on page load
             document.addEventListener("DOMContentLoaded", () => {
-                const savedTheme = localStorage.getItem("theme") || "dark";  //default to dark
+                const savedTheme = localStorage.getItem("theme");
                 const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                const initialTheme = savedTheme || (systemPrefersDark ? "dark" : "light");
+                const initialTheme = savedTheme ?? (systemPrefersDark ? "dark" : "light");
 
                 updateIcons(initialTheme);
                 document.documentElement.setAttribute("data-theme", initialTheme);
