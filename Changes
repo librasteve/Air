@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.18  2025-07-05T22:02:55+01:00
+    - fix lightdark on load
+
 0.0.17  2025-06-29T16:38:10+01:00
     - Air::Plugin::Hilite / Hilite / Rainbow
     - Markdown, Tabs, Lightbox, Dialog(some), Flexbox
