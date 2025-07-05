@@ -432,12 +432,7 @@ role Time      does Tag[Regular] {
 role Spacer    does Tag {
     has Str $.height = '1em';  #iamerejh
 
-#    multi method new($height) {
-#        self.bless: :$height;
-#    }
-
     multi method HTML {
-        note $!height;
         do-regular-tag( 'div', :style("min-height:$!height;") )
     }
 }
