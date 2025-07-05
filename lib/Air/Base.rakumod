@@ -669,7 +669,6 @@ class Nav      does Component {
 
     #| applies Style and Script for Hamburger reactive menu
     method HTML {
-        self.style.HTML ~ (
 
         nav [
             { ul li :class<logo>, $.logo } with $.logo;
@@ -687,11 +686,10 @@ class Nav      does Component {
                 self.nav-items,
             );
         ]
-
-        ) ~ self.script.HTML
     }
 
-    method style { Style.new: q:to/END/
+    method STYLE {
+        q:to/END/
         /* Custom styles for the hamburger menu */
         .menu {
             display: none;
@@ -700,10 +698,11 @@ class Nav      does Component {
             position: absolute;
             top: 60px;
             right: 20px;
-            background: rgba(128, 128, 128, .97);
+            background: rgba(0, 0, 0, .85);
             padding: 1rem;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(128, 128, 128, .2);
+            z-index: 800;
         }
 
         .menu a {
@@ -722,8 +721,6 @@ class Nav      does Component {
             background: none;
             border: none;
             padding: 0.5rem;
-            pointer-events: auto;
-            z-index: 900;
         }
 
         @media (max-width: 768px) {
@@ -735,10 +732,11 @@ class Nav      does Component {
                 display: none;
             }
         }
-    END
+        END
 	}
 
-    method script { Script.new: Q:to/END/;
+    method SCRIPT {
+        Q:to/END/;
         const hamburger = document.getElementById('hamburger');
         const menu = document.getElementById('menu');
 
@@ -758,7 +756,7 @@ class Nav      does Component {
                 menu.classList.remove('show');
             }
         });
-    END
+        END
     }
 }
 
@@ -926,6 +924,11 @@ class Site {
         self.bless: :$index, |%h;
     }
 
+    #| enqueued items will be rendered in order supplied
+    #| this is deterministic
+    #|  - each plugin can apply an internal order
+    #|  - registration is performed in list order
+    #| (please avoid interdependent js / css)
     method enqueue-all {
         return if $loaded++;
 
@@ -935,29 +938,32 @@ class Site {
                 $!scss-gather ~= "\n\n" ~ $_;
             }
 
-            # enqueued items will be rendered in order supplied
-            # this is deterministic and each plugin can apply an internal order
-            # several plugins can be registered in a specific order
-            # (please avoid interdependent js / css)
+            #| SCRIPT default inserts at end of body
+            for @!pages -> $page {
+                with $registrant.?SCRIPT {
+                    $page.html.body.scripts.append: Script.new($_)
+                }
+            }
 
-            my $page = @!pages.first;  # NB. head is a singleton
+            my $head = @!pages.first.html.head;  # NB. head is a singleton
 
             for $registrant.?JS-LINKS -> $src {
                 next unless $src.defined;
-                $page.html.head.scripts.append: Script.new( :$src );
+                $head.scripts.append: Script.new( :$src );
             }
 
-            with $registrant.?SCRIPT {
-                $page.html.head.scripts.append: Script.new($_)
+            #| SCRIPT-HEAD can be used if needed
+            with $registrant.?SCRIPT-HEAD {
+                $head.scripts.append: Script.new($_)
             }
 
             for $registrant.?CSS-LINKS -> $href {
                 next unless $href.defined;
-                $page.html.head.links.append: Link.new( :$href, :rel<stylesheet> );
+                $head.links.append: Link.new( :$href, :rel<stylesheet> );
             }
 
             with $registrant.?STYLE {
-                $page.html.head.styles.append: Style.new($_)
+                $head.styles.append: Style.new($_)
             }
         }
     }
@@ -966,6 +972,9 @@ class Site {
         with    @!pages[0] { $!index = @!pages[0] }
         orwith  $!index    { @!pages[0] = $!index }
         else    { note "No pages or index found!" }
+
+        #| always enqueue & route Nav
+        @!register.push: Nav.new;
 
         self.enqueue-all;
         self.scss-run unless $!scss-off;
@@ -981,9 +990,6 @@ class Site {
         use Cro::HTTP::Router;
 
         route {
-            #| always route Nav
-            @!register.push: Nav.new;
-
             #| setup Cro routes
             for @!register.unique( as => *.^name ) {
                 when Component::Common {
