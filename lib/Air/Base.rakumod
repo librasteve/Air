@@ -693,7 +693,7 @@ class Nav      does Component {
             position: absolute;
             top: 60px;
             right: 20px;
-            background: rgba(0, 0, 0, .85);
+            background: rgba(0, 0, 0, .95);
             padding: 1rem;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(128, 128, 128, .2);
@@ -1153,6 +1153,7 @@ role Grid      does Component {
     }
 
     # optional grid style from https://cssgrid-generator.netlify.app/
+    # fixme load Grid.new as standard (like Nav.new)
     method style {
         my $str = q:to/END/;
         <style>
@@ -1166,7 +1167,9 @@ role Grid      does Component {
 
             @media (max-width: 1024px) {
                 #%HTML-ID% {
-                    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                    display: flex;
+                    flex-direction: column-reverse;
+
                     gap: 1px;
                 }
             }
@@ -1285,7 +1288,6 @@ role Tabs      does Component {
         }
     }
 
-    #| renders Tabs
     method tab-items {
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
@@ -1294,6 +1296,13 @@ role Tabs      does Component {
                 }
             }
         }
+    }
+
+    method HTML {
+        div [
+            nav :class<tab-nav>, ul :class<tab-links>, self.tab-items;
+            div :id($.html-id), @!items[0].value;
+        ]
     }
 
     method STYLE {
@@ -1305,17 +1314,20 @@ role Tabs      does Component {
         .tab-links {
             display: block;
         }
+
+        @media (max-width: 1024px) {
+            .tab-nav {
+                text-align: center;
+            }
+            .tab-links > * {
+                padding-top: 0;
+                padding-bottom:1em;
+            }
+        }
         END
 
         $css ~~ s:g/'%ALIGN-NAV%'/$!align-nav/;
         $css
-    }
-
-    method HTML {
-        div [
-            nav :class<tab-nav>, ul :class<tab-links>, self.tab-items;
-            div :id($.html-id), @!items[0].value;
-        ]
     }
 }
 

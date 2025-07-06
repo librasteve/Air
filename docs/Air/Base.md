@@ -573,6 +573,14 @@ multi method new(
 
 .new positional with index only
 
+### method enqueue-all
+
+```raku
+method enqueue-all() returns Mu
+```
+
+enqueued items will be rendered in order supplied this is deterministic - each plugin can apply an internal order - registration is performed in list order (please avoid interdependent js / css)
+
 Component Library
 -----------------
 
@@ -687,14 +695,6 @@ method make-routes() returns Mu
 ```
 
 makes routes for Tabs must be called from within a Cro route block
-
-### method tab-items
-
-```raku
-method tab-items() returns Mu
-```
-
-renders Tabs
 
 ### role Dialog does Component
 
