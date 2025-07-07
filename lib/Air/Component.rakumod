@@ -248,7 +248,7 @@ role Component::Common does Taggable {
     #| get html-id (ie url-name-id), intended for HTML id attr
     method html-id(--> Str) { self.url-name ~ '-' ~ self.id }
 
-    #| In general Cromponent::MetaCromponentRole calls .Str on a Cromponent when returning it
+    #| Cromponent::MetaCromponentRole normally calls .Str on a Cromponent
     #| this method substitutes .HTML for .Str
     method Str { self.HTML }
 }

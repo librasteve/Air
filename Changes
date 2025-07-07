@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.20  2025-07-07T11:39:14+01:00
+    - pin Cromponent:ver<0.0.13>
+
 0.0.19  2025-07-06T15:47:45+01:00
     - some tweaks to styles
 

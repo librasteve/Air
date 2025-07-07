@@ -13,7 +13,7 @@
     "Cro::HTTP::Router",
     "Cro::WebApp::Template",
     "Cro::WebApp::Form",
-    "Cromponent",
+    "Cromponent:ver<0.0.13>",
     "Text::Markdown"
   ],
   "description": "Just build websites the right way.",
@@ -33,5 +33,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.19"
+  "version": "0.0.20"
 }
