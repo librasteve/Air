@@ -1331,6 +1331,77 @@ role Tabs      does Component {
     }
 }
 
+#role Tabs      does Component {
+#    has $!loaded = 0;
+#
+#    has $.align-nav = 'left';
+#
+#    #| list of tab sections
+#    has TabItem @.items;
+#
+#    #| .new positional takes @items
+#    multi method new(*@items, *%h) {
+#        self.bless:  :@items, |%h;
+#    }
+#
+#    #| makes routes for Tabs
+#    #| must be called from within a Cro route block
+#    method make-routes() {
+#        return if $!loaded++;
+#        do for self.items.map: *.kv -> ($name, $target) {
+#            given $target {
+#                when Tab {
+#                    my &new-method = method {$target.?HTML};
+#                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+#                    self.^add_method($name, &new-method);
+#                }
+#            }
+#        }
+#    }
+#
+#    method tab-items {
+#        do for @.items.map: *.kv -> ($name, $target) {
+#            given $target {
+#                when Tab {
+#                    li a(:hx-get("$.url-path/$name"), :hx-target("#$.html-id"), Safe.new: $name)
+#                }
+#            }
+#        }
+#    }
+#
+#    method HTML {
+#        div [
+#            nav :class<tab-nav>, ul :class<tab-links>, self.tab-items;
+#            div :id($.html-id), @!items[0].value;
+#        ]
+#    }
+#
+#    method STYLE {
+#        my $css = q:to/END/;
+#        .tab-nav {
+#            display: block;
+#            justify-content: %ALIGN-NAV%;
+#        }
+#        .tab-links {
+#            display: block;
+#        }
+#
+#        @media (max-width: 1024px) {
+#            .tab-nav {
+#                text-align: center;
+#            }
+#            .tab-links > * {
+#                padding-top: 0;
+#                padding-bottom:1em;
+#            }
+#        }
+#        END
+#
+#        $css ~~ s:g/'%ALIGN-NAV%'/$!align-nav/;
+#        $css
+#    }
+#}
+
 =head3 role Dialog does Component
 
 # fixme
