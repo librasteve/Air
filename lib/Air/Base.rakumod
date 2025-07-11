@@ -735,15 +735,17 @@ class Nav      does Component {
         const hamburger = document.getElementById('hamburger');
         const menu = document.getElementById('menu');
 
-        hamburger.addEventListener('click', () => {
-            menu.classList.toggle('show');
-        });
+        if (hamburger && menu) {
+            hamburger.addEventListener('click', () => {
+                menu.classList.toggle('show');
+            });
 
-        document.addEventListener('click', (e) => {
-            if (!menu.contains(e.target) && !hamburger.contains(e.target)) {
-                menu.classList.remove('show');
-            }
-        });
+            document.addEventListener('click', (e) => {
+                if (!menu.contains(e.target) && !hamburger.contains(e.target)) {
+                    menu.classList.remove('show');
+                }
+            });
+        }
 
         // Hide the menu when resizing the viewport to a wider width
         window.addEventListener('resize', () => {
@@ -1263,7 +1265,8 @@ subset TabItem of Pair where .value ~~ Tab;
 role Tabs      does Component {
     has $!loaded = 0;
 
-    has $.align-nav = 'left';
+    has $.align-menu = 'left';
+    has $.adapt-menu;
 
     #| list of tab sections
     has TabItem @.items;
@@ -1288,36 +1291,55 @@ role Tabs      does Component {
         }
     }
 
+    method tab-content { $.html-id ~ '-content' }
+
+    #viz. https://chatgpt.com/share/68708997-9b18-8009-8e44-14e127fc4e8f
     method tab-items {
+
+        my $i = 1; my %attrs;
         do for @.items.map: *.kv -> ($name, $target) {
             given $target {
                 when Tab {
-                    li a(:hx-get("$.url-path/$name"), :hx-target("#$.html-id"), Safe.new: $name)
+                    %attrs<class> = ($i==1) ?? 'active' !!'';
+
+                        li |%attrs,
+                        a(
+                            :hx-get("$.url-path/$name"),
+                            :hx-target("#$.tab-content"),
+                            :data-value($i++),
+                            Safe.new: $name,
+                        )
                 }
             }
         }
     }
 
     method HTML {
-        div [
-            nav :class<tab-nav>, ul :class<tab-links>, self.tab-items;
-            div :id($.html-id), @!items[0].value;
+        method load-path  { $.url-path ~ '/' ~ @!items[0].key }
+
+        div :class<tabs>, [
+            nav :class<tab-menu>,
+                ul :class<tab-links>, self.tab-items;
+            div :id($.tab-content), :hx-get($.load-path), :hx-trigger<load>;
         ]
     }
 
     method STYLE {
         my $css = q:to/END/;
-        .tab-nav {
+        .tab-menu {
             display: block;
-            justify-content: %ALIGN-NAV%;
+            justify-content: %ALIGN-MENU%;
         }
         .tab-links {
             display: block;
         }
+        .tab-links > li.active > a {
+            text-decoration: underline;
+        }
 
-        @media (max-width: 1024px) {
-            .tab-nav {
-                text-align: center;
+        @media (max-width: 768px) {
+            .tab-menu {
+                text-align: %ADAPT-MENU%;
             }
             .tab-links > * {
                 padding-top: 0;
@@ -1326,81 +1348,43 @@ role Tabs      does Component {
         }
         END
 
-        $css ~~ s:g/'%ALIGN-NAV%'/$!align-nav/;
+        $!adapt-menu = $!adapt-menu ?? 'center' !! $!align-menu;
+
+        $css ~~ s:g/'%ALIGN-MENU%'/$!align-menu/;
+        $css ~~ s:g/'%ADAPT-MENU%'/$!adapt-menu/;
         $css
     }
-}
 
-#role Tabs      does Component {
-#    has $!loaded = 0;
-#
-#    has $.align-nav = 'left';
-#
-#    #| list of tab sections
-#    has TabItem @.items;
-#
-#    #| .new positional takes @items
-#    multi method new(*@items, *%h) {
-#        self.bless:  :@items, |%h;
-#    }
-#
-#    #| makes routes for Tabs
-#    #| must be called from within a Cro route block
-#    method make-routes() {
-#        return if $!loaded++;
-#        do for self.items.map: *.kv -> ($name, $target) {
-#            given $target {
-#                when Tab {
-#                    my &new-method = method {$target.?HTML};
-#                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
-#                    self.^add_method($name, &new-method);
-#                }
-#            }
-#        }
-#    }
-#
-#    method tab-items {
-#        do for @.items.map: *.kv -> ($name, $target) {
-#            given $target {
-#                when Tab {
-#                    li a(:hx-get("$.url-path/$name"), :hx-target("#$.html-id"), Safe.new: $name)
-#                }
-#            }
-#        }
-#    }
-#
-#    method HTML {
-#        div [
-#            nav :class<tab-nav>, ul :class<tab-links>, self.tab-items;
-#            div :id($.html-id), @!items[0].value;
-#        ]
-#    }
-#
-#    method STYLE {
-#        my $css = q:to/END/;
-#        .tab-nav {
-#            display: block;
-#            justify-content: %ALIGN-NAV%;
-#        }
-#        .tab-links {
-#            display: block;
-#        }
-#
-#        @media (max-width: 1024px) {
-#            .tab-nav {
-#                text-align: center;
-#            }
-#            .tab-links > * {
-#                padding-top: 0;
-#                padding-bottom:1em;
-#            }
-#        }
-#        END
-#
-#        $css ~~ s:g/'%ALIGN-NAV%'/$!align-nav/;
-#        $css
-#    }
-#}
+    method SCRIPT {
+        q:to/END/;
+        function setupTabLinks() {
+            const links = document.querySelectorAll('.tab-links > *');
+            const hiddenInput = document.getElementById('selectedOption');
+            const display = document.getElementById('selectedDisplay');
+
+            links.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    links.forEach(l => l.classList.remove('active'));
+
+                    this.classList.add('active');
+
+                    const value = this.getAttribute('data-value');
+                    if (hiddenInput) hiddenInput.value = value;
+                    if (display) display.textContent = `Selected: ${this.textContent}`;
+                });
+            });
+        }
+
+        // Run on initial load
+        document.addEventListener('DOMContentLoaded', setupTabLinks);
+
+        // Re-run after HTMX swaps in new content
+        document.body.addEventListener('htmx:afterSwap', setupTabLinks);
+        END
+    }
+}
 
 =head3 role Dialog does Component
 
