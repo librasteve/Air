@@ -430,7 +430,7 @@ role Time      does Tag[Regular] {
 =head3 role Spacer does Tag
 
 role Spacer    does Tag {
-    has Str $.height = '1em';  #iamerejh
+    has Str $.height = '1em';
 
     multi method HTML {
         do-regular-tag( 'div', :style("min-height:$!height;") )
@@ -1265,8 +1265,12 @@ subset TabItem of Pair where .value ~~ Tab;
 role Tabs      does Component {
     has $!loaded = 0;
 
-    has $.align-menu = 'left';
-    has $.adapt-menu;
+    #| Tabs take two attrs for menu alignment
+    #| The default is to align="left" and to not adapt to media width
+    #| $.align-menu <left right center> sets the overall preference
+    has Str $.align-menu = 'left';
+    #| $.adapt-menu <Nil left right center> sets the value for small viewport
+    has Str $.adapt-menu;
 
     #| list of tab sections
     has TabItem @.items;
@@ -1298,24 +1302,24 @@ role Tabs      does Component {
 
         my $i = 1; my %attrs;
         do for @.items.map: *.kv -> ($name, $target) {
-            given $target {
-                when Tab {
-                    %attrs<class> = ($i==1) ?? 'active' !!'';
 
-                        li |%attrs,
-                        a(
-                            :hx-get("$.url-path/$name"),
-                            :hx-target("#$.tab-content"),
-                            :data-value($i++),
-                            Safe.new: $name,
-                        )
-                }
+            given $target {
+                %attrs<class> = ($i==1) ?? 'active' !!'';
+
+                li |%attrs,
+                a(
+                    :hx-get("$.url-path/$name"),
+                    :hx-target("#$.tab-content"),
+                    :data-value($i++),
+                    Safe.new: $name,
+                )
             }
+
         }
     }
 
     method HTML {
-        method load-path  { $.url-path ~ '/' ~ @!items[0].key }
+        method load-path  { $.url-path ~ '/' ~ @.items[0].key }
 
         div :class<tabs>, [
             nav :class<tab-menu>,
@@ -1348,10 +1352,10 @@ role Tabs      does Component {
         }
         END
 
-        $!adapt-menu = $!adapt-menu ?? 'center' !! $!align-menu;
+        $.adapt-menu = $.adapt-menu ?? 'center' !! $.align-menu;
 
-        $css ~~ s:g/'%ALIGN-MENU%'/$!align-menu/;
-        $css ~~ s:g/'%ADAPT-MENU%'/$!adapt-menu/;
+        $css ~~ s:g/'%ALIGN-MENU%'/$.align-menu/;
+        $css ~~ s:g/'%ADAPT-MENU%'/$.adapt-menu/;
         $css
     }
 
