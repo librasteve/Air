@@ -140,7 +140,7 @@ use Air::Functional;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Tab Tabs Markdown Dialog Lightbox>;
+my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>;
 
 =head2 Basic Tags
 
@@ -374,7 +374,6 @@ role Section   does Tag[Regular] {}
 =head3 role Article   does Tag[Regular] {}
 
 role Article   does Tag[Regular] {
-
     # Keep text ltr even when grid direction rtl
     multi method HTML {
         my %attrs  = |%.attrs, :style("direction:ltr;");
@@ -851,6 +850,10 @@ class Page     does Component {
     multi method new(Main $main, *%h) {
         self.bless: :$main, |%h
     }
+    #| .new positional with header & main only
+    multi method new(Header $header, Main $main, *%h) {
+        self.bless: :$header, :$main, |%h
+    }
     #| .new positional with main & footer only
     multi method new(Main $main, Footer $footer, *%h) {
         self.bless: :$main, :$footer, |%h
@@ -1236,6 +1239,46 @@ role Flexbox   does Component {
     multi method HTML {
         $.style ~
         div :id($.html-id), @!items;
+    }
+}
+
+=head3 role Dashboard does Tag[Regular]
+
+role Dashboard does Tag[Regular] {
+    method STYLE {
+        Q:to/END/;
+        dashboard {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+        END
+    }
+}
+
+=head3 role Box does Component
+
+role Box       does Component {
+    # this emits an article tag with pico style
+    # Keep text ltr even when grid direction rtl
+    multi method HTML {
+        my %attrs  = |%.attrs, :style("direction:ltr;");
+        do-regular-tag( 'article', @.inners, |%attrs )
+    }
+
+    method STYLE {
+        Q:to/END/;
+        article {
+          display: flex;
+          align-items: center;
+
+          /* Responsive sizing */
+          flex: 1 1 400px;
+          min-width: 400px;
+          max-width: 600px;
+          height: 200px;
+        }
+        END
     }
 }
 
