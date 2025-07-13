@@ -1259,10 +1259,25 @@ role Dashboard does Tag[Regular] {
 =head3 role Box does Component
 
 role Box       does Component {
+    #| specify sequential order of box
+    has Int $.order;# is required;
+
+    has @.inners;
+    has %.attrs;
+
+    multi method new(*@inners, *%attrs) {
+        self.bless:  :@inners, |%attrs;
+    }
+
     # this emits an article tag with pico style
     # Keep text ltr even when grid direction rtl
     multi method HTML {
         my %attrs  = |%.attrs, :style("direction:ltr;");
+
+        if $.order {
+            %attrs  = |%.attrs, :style("order: $.order;");
+        }
+
         do-regular-tag( 'article', @.inners, |%attrs )
     }
 
