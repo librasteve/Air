@@ -274,7 +274,7 @@ get html-id (ie url-name-id), intended for HTML id attr
 method Str() returns Mu
 ```
 
-In general Cromponent::MetaCromponentRole calls .Str on a Cromponent when returning it this method substitutes .HTML for .Str
+Cromponent::MetaCromponentRole normally calls .Str on a Cromponent this method substitutes .HTML for .Str
 
 
 

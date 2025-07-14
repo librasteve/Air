@@ -907,7 +907,7 @@ class Site {
     has Tool @.tools      = [];
 
 
-    #| use :!scss to disable SASS compiler run
+    #| use :scss-off to disable the SASS compiler run
     has Bool $.scss-off;
     has Str  $!scss-gather;
 

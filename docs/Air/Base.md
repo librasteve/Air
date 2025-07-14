@@ -500,6 +500,18 @@ multi method new(
 
 ```raku
 multi method new(
+    Header $header,
+    Main $main,
+    *%h
+) returns Mu
+```
+
+.new positional with header & main only
+
+### multi method new
+
+```raku
+multi method new(
     Main $main,
     Footer $footer,
     *%h
@@ -552,7 +564,7 @@ Tools for sitewide behaviours
 
 ### has Bool $.scss-off
 
-use :!scss to disable SASS compiler run
+use :scss-off to disable the SASS compiler run
 
 ### has Str $.theme-color
 
@@ -663,6 +675,14 @@ method new(
 
 .new positional takes @items
 
+### role Dashboard does Tag[Regular]
+
+### role Box does Component
+
+### has Int $.order
+
+specify sequential order of box
+
 ### role Tab does Tag[Regular] {...}
 
 ### subset TabItem of Pair where .value ~~ Tab;
@@ -672,6 +692,14 @@ method new(
 
 
 Tabs does Component to control multiple tabs
+
+### has Str $.align-menu
+
+Tabs take two attrs for menu alignment The default is to align="left" and to not adapt to media width $.align-menu <left right center> sets the overall preference
+
+### has Str $.adapt-menu
+
+$.adapt-menu <Nil left right center> sets the value for small viewport
 
 ### has Positional[TabItem] @.items
 
