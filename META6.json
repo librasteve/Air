@@ -1,30 +1,37 @@
 {
-    "name": "Air",
-    "description": "Just build websites the right way.",
-    "version": "0.0.20",
-    "authors": [
-        "librasteve"
-    ],
-    "auth": "zef:librasteve",
-    "depends": [
-        "UUID::V4",
-        "CSS::Writer",
-        "DateTime::Format",
-        "HTML::Escape",
-        "Cro::HTTP::Router",
-        "Cro::WebApp::Template",
-        "Cro::WebApp::Form",
-        "Cromponent:ver<0.0.13>",
-        "Text::Markdown"
-    ],
-    "build-depends": [],
-    "provides": {
-        "Air": "lib/Air.rakumod",
-        "Air::Base": "lib/Air/Base.rakumod",
-        "Air::Component": "lib/Air/Component.rakumod",
-        "Air::Form": "lib/Air/Form.rakumod",
-        "Air::Functional": "lib/Air/Functional.rakumod"
-    },
-    "license": "Artistic-2.0",
-    "source-url": "https://github.com/librasteve/Air.git"
+  "auth": "zef:librasteve",
+  "authors": [
+    "librasteve"
+  ],
+  "build-depends": [
+  ],
+  "depends": [
+    "UUID::V4",
+    "CSS::Writer",
+    "DateTime::Format",
+    "HTML::Escape",
+    "Cro::HTTP::Router",
+    "Cro::WebApp::Template",
+    "Cro::WebApp::Form",
+    "Cromponent:ver<0.0.13>",
+    "Text::Markdown"
+  ],
+  "description": "Just build websites the right way.",
+  "license": "Artistic-2.0",
+  "name": "Air",
+  "provides": {
+    "Air": "lib/Air.rakumod",
+    "Air::Base": "lib/Air/Base.rakumod",
+    "Air::Component": "lib/Air/Component.rakumod",
+    "Air::Form": "lib/Air/Form.rakumod",
+    "Air::Functional": "lib/Air/Functional.rakumod"
+  },
+  "resources": [
+  ],
+  "source-url": "https://github.com/librasteve/Air.git",
+  "tags": [
+  ],
+  "test-depends": [
+  ],
+  "version": "0.0.21"
 }
