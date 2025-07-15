@@ -1088,11 +1088,9 @@ class Site {
 
 role Table     does Component {
 
-    =para Attrs thead, tbody and tfoot can each be a 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for multi-row thead and tfoot.
+    =para Attrs thead, tbody and tfoot can each be a 1D [values] or 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for single- and multi-row thead and tfoot.
 
     =para Table applies col and row header tags as required for Pico styles.
-
-    =para Attrs provided as Pairs via tbody are extracted and applied. This is needed for :id<target> where HTMX is targeting the table body.
 
     #| default = [] is provided
     has $.tbody is rw = [];
@@ -1103,37 +1101,38 @@ role Table     does Component {
     #| class for table
     has $.class;
 
-    has %!tbody-attrs;
-
     #| .new positional takes tbody [[]]
     multi method new(*@tbody, *%h) {
         self.bless:  :@tbody, |%h;
     }
 
-#    multi sub do-part($part, :$head) { '' }
+    sub do-row(@row, :$head) {
+        tr do for @row.kv -> $col, $cell {
+            given    	$col, $head {
+                when   	  *,    *.so  { th $cell, :scope<col> }
+                when   	  0,    *     { th $cell, :scope<row> }
+                default               { td $cell }
+            }
+        }
+    }
+
     multi sub do-part(@part where .all ~~ Tag|Taggable) {
         tbody @part.map(*.HTML)
     }
     multi sub do-part(@part where .all ~~ Positional, :$head) {
         do for @part -> @row {
-            tr do for @row.kv -> $col, $cell {
-                given    	$col, $head {
-                    when   	  *,    *.so  { th $cell, :scope<col> }
-                    when   	  0,    *     { th $cell, :scope<row> }
-                    default               { td $cell }
-                }
-            }
+            do-row(@row, :$head)
         }
+    }
+    multi sub do-part(@part, :$head) {
+        do-row(@part, :$head)
     }
 
     multi method HTML {
-        %!tbody-attrs = $.tbody.grep:   * ~~ Pair;
-        my $tbody-out = $.tbody.grep: !(* ~~ Pair);
-
         table |%(:$!class if $!class), [
             thead .&do-part(:head) with $.thead;
-            tbody do-part($tbody-out), :attrs(|%!tbody-attrs);
-            tfoot .&do-part with $.tfoot;
+            tbody .&do-part        with $.tbody;
+            tfoot .&do-part        with $.tfoot;
         ]
     }
 }

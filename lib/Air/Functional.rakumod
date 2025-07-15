@@ -178,16 +178,16 @@ sub opener($tag, *%h -->Str) is export {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ '>'
 }
 
-multi sub render-tag(Tag     $inner) {
+multi sub render-tag(Tag      $inner) {
     $inner.HTML
 }
 multi sub render-tag(Taggable $inner) {
     $inner.HTML
 }
-multi sub render-tag(Markup  $inner) {
+multi sub render-tag(Markup   $inner) {
     $inner
 }
-multi sub render-tag(Str()   $inner) {
+multi sub render-tag(Str()    $inner) {
     escape-html($inner)
 }
 
