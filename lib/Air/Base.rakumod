@@ -1092,10 +1092,10 @@ role Table     does Component {
 
     =para Table applies col and row header tags as required for Pico styles.
 
-    =para Attrs provided as Pairs via tbody are extracted and applied. This is needed for :id<target> where HTMX is targetting the table body.
+    =para Attrs provided as Pairs via tbody are extracted and applied. This is needed for :id<target> where HTMX is targeting the table body.
 
     #| default = [] is provided
-    has $.tbody = [];
+    has $.tbody is rw = [];
     #| optional
     has $.thead;
     #| optional
@@ -1110,11 +1110,11 @@ role Table     does Component {
         self.bless:  :@tbody, |%h;
     }
 
-    multi sub do-part($part, :$head) { '' }
+#    multi sub do-part($part, :$head) { '' }
     multi sub do-part(@part where .all ~~ Tag|Taggable) {
         tbody @part.map(*.HTML)
     }
-    multi sub do-part(@part where .all ~~ Array, :$head) {
+    multi sub do-part(@part where .all ~~ Positional, :$head) {
         do for @part -> @row {
             tr do for @row.kv -> $col, $cell {
                 given    	$col, $head {
@@ -1127,13 +1127,13 @@ role Table     does Component {
     }
 
     multi method HTML {
-        %!tbody-attrs = $!tbody.grep:   * ~~ Pair;
-        $!tbody       = $!tbody.grep: !(* ~~ Pair);
+        %!tbody-attrs = $.tbody.grep:   * ~~ Pair;
+        my $tbody-out = $.tbody.grep: !(* ~~ Pair);
 
         table |%(:$!class if $!class), [
-            thead do-part($!thead, :head);
-            tbody do-part($!tbody), :attrs(|%!tbody-attrs);
-            tfoot do-part($!tfoot);
+            thead .&do-part(:head) with $.thead;
+            tbody do-part($tbody-out), :attrs(|%!tbody-attrs);
+            tfoot .&do-part with $.tfoot;
         ]
     }
 }

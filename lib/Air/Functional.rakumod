@@ -212,7 +212,6 @@ sub closer($tag, :$nl --> Str) is export {
 #| do a regular tag (ie a tag with @inners)
 sub do-regular-tag(Str $tag, *@inners, *%h --> Markup() ) is export(:MANDATORY)  {
     my $nl = @inners >= 2;
-    note 43, @inners;
     opener($tag, |%h) ~ inner(@inners) ~ closer($tag, :$nl)
 }
 
