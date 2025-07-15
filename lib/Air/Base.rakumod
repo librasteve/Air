@@ -929,6 +929,9 @@ class Site {
     #|  - each plugin can apply an internal order
     #|  - registration is performed in list order
     #| (please avoid interdependent js / css)
+    #|
+    #| SCRIPT-LINKS  #list of script src urls
+    #| STYLE-LINKS #list of link href urls
     method enqueue-all {
         return if $loaded++;
 
@@ -947,7 +950,7 @@ class Site {
 
             my $head = @!pages.first.html.head;  # NB. head is a singleton
 
-            for $registrant.?JS-LINKS -> $src {
+            for $registrant.?SCRIPT-LINKS -> $src {
                 next unless $src.defined;
                 $head.scripts.append: Script.new( :$src );
             }
@@ -957,7 +960,7 @@ class Site {
                 $head.scripts.append: Script.new($_)
             }
 
-            for $registrant.?CSS-LINKS -> $href {
+            for $registrant.?STYLE-LINKS -> $href {
                 next unless $href.defined;
                 $head.links.append: Link.new( :$href, :rel<stylesheet> );
             }
@@ -1090,7 +1093,7 @@ role Table     does Component {
 
     =para Attrs thead, tbody and tfoot can each be a 1D [values] or 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for single- and multi-row thead and tfoot.
 
-    =para Table applies col and row header tags as required for Pico styles.
+    =para Table applies col and row header tags <th></th> as required for Pico styles.
 
     #| default = [] is provided
     has $.tbody is rw = [];
