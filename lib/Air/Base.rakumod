@@ -929,37 +929,38 @@ class Site {
     #|  - each plugin can apply an internal order
     #|  - registration is performed in list order
     #| (please avoid interdependent js / css)
-    #|
-    #| SCRIPT-LINKS  #list of script src urls
-    #| STYLE-LINKS #list of link href urls
     method enqueue-all {
         return if $loaded++;
 
         for @!register.unique( as => *.^name ) -> $registrant {
+            my $head = @!pages.first.html.head;  # NB. head is a singleton
 
-            with $registrant.?SCSS {
-                $!scss-gather ~= "\n\n" ~ $_;
-            }
-
-            #| SCRIPT default inserts at end of body
+            #| SCRIPT default inserts at end of body on every page
             for @!pages -> $page {
                 with $registrant.?SCRIPT {
                     $page.html.body.scripts.append: Script.new($_)
                 }
             }
 
-            my $head = @!pages.first.html.head;  # NB. head is a singleton
-
-            for $registrant.?SCRIPT-LINKS -> $src {
-                next unless $src.defined;
-                $head.scripts.append: Script.new( :$src );
-            }
-
-            #| SCRIPT-HEAD can be used if needed
+            #| SCRIPT-HEAD can be used instead to insert in the shared head
             with $registrant.?SCRIPT-HEAD {
                 $head.scripts.append: Script.new($_)
             }
 
+            #| SCRIPT-LINKS default inserts in the shared head
+            #| takes list of script src urls
+            for $registrant.?SCRIPT-LINKS -> $src {
+                $head.scripts.append: Script.new( :$src ) with $src;
+            }
+
+            #| use SCRIPT-LINKS-BODY to insert script in every page body
+            for @!pages -> $page {
+                for $registrant.?SCRIPT-LINKS-BODY -> $src {
+                    $page.html.body.scripts.append: Script.new( :$src ) with $src;
+                }
+            }
+
+            #|  list of link href urls
             for $registrant.?STYLE-LINKS -> $href {
                 next unless $href.defined;
                 $head.links.append: Link.new( :$href, :rel<stylesheet> );
@@ -967,6 +968,10 @@ class Site {
 
             with $registrant.?STYLE {
                 $head.styles.append: Style.new($_)
+            }
+
+            with $registrant.?SCSS {
+                $!scss-gather ~= "\n\n" ~ $_;
             }
         }
     }
@@ -1096,11 +1101,11 @@ role Table     does Component {
     =para Table applies col and row header tags <th></th> as required for Pico styles.
 
     #| default = [] is provided
-    has $.tbody is rw = [];
+    has @.tbody is rw = [];
     #| optional
-    has $.thead;
+    has @.thead;
     #| optional
-    has $.tfoot;
+    has @.tfoot;
     #| class for table
     has $.class;
 
@@ -1119,25 +1124,66 @@ role Table     does Component {
         }
     }
 
-    multi sub do-part(@part where .all ~~ Tag|Taggable) {
-        tbody @part.map(*.HTML)
+# iamerejh
+multi sub do-part(@part where .all ~~ Tag|Taggable) {
+    @part.map(*.HTML)
+}
+# 2D array
+multi sub do-part(@part where .all ~~ Positional, :$head) {
+    note 42;
+    do for @part -> @row {
+        do-row(@row, :$head)
     }
-    multi sub do-part(@part where .all ~~ Positional, :$head) {
-        do for @part -> @row {
-            do-row(@row, :$head)
-        }
-    }
-    multi sub do-part(@part, :$head) {
-        do-row(@part, :$head)
-    }
+}
+# 1D array
+multi sub do-part(@part, :$head) {
+    note 41;
+    do-row(@part, :$head)
+}
 
-    multi method HTML {
-        table |%(:$!class if $!class), [
-            thead .&do-part(:head) with $.thead;
-            tbody .&do-part        with $.tbody;
-            tfoot .&do-part        with $.tfoot;
-        ]
-    }
+multi method HTML {
+    my %attrs = @.tbody.grep:   * ~~ Pair;
+    my @tbody = @.tbody.grep: !(* ~~ Pair);
+
+    note @.tbody.raku;
+    note @tbody.raku;
+    note %attrs.raku;
+
+    table |%(:$!class if $!class), [
+        thead do-part(@.thead, :head)  with @.thead;
+        tbody do-part(@tbody);
+        tfoot do-part(@.tfoot)         with @.tfoot;
+    ]
+}
+
+#    has %.tbody-attrs;
+#
+#    multi sub do-part($part, :$head) { '' }
+#    multi sub do-part(@part where .all ~~ Tag|Taggable) {
+#        tbody @part.map(*.HTML)
+#    }
+#    multi sub do-part(@part where .all ~~ Array, :$head) {
+#        do for @part -> @row {
+#            tr do for @row.kv -> $col, $cell {
+#                given    	$col, $head {
+#                    when   	  *,    *.so  { th $cell, :scope<col> }
+#                    when   	  0,    *     { th $cell, :scope<row> }
+#                    default               { td $cell }
+#                }
+#            }
+#        }
+#    }
+#
+#    multi method HTML {
+#        %!tbody-attrs = $!tbody.grep:   * ~~ Pair;
+#        $!tbody       = $!tbody.grep: !(* ~~ Pair);
+#
+#        table |%(:$!class if $!class), [
+#            thead do-part($!thead, :head);
+#            tbody do-part($!tbody), :attrs(|%!tbody-attrs);
+#            tfoot do-part($!tfoot);
+#        ]
+#    }
 }
 
 =head3 role Grid does Component
