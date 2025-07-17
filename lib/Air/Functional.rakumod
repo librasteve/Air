@@ -130,6 +130,7 @@ role   Tag[TagType $tag-type?] is export(:MANDATORY) {
 
     #| ok to call .new with @inners as Positional
     multi method new(*@inners, *%attrs) {
+        #note @inners, %attrs;   #debug
 
         #| Special case Bool attrs eg <input type="checkbox" checked>
         my %fixed = %attrs;

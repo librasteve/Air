@@ -1101,11 +1101,13 @@ role Table     does Component {
     =para Table applies col and row header tags <th></th> as required for Pico styles.
 
     #| default = [] is provided
-    has @.tbody is rw = [];
+    has $.tbody is rw = [];
+    #| explicitly specify attrs on tbody
+    has %.tbody-attrs;
     #| optional
-    has @.thead;
+    has $.thead;
     #| optional
-    has @.tfoot;
+    has $.tfoot;
     #| class for table
     has $.class;
 
@@ -1124,66 +1126,31 @@ role Table     does Component {
         }
     }
 
-# iamerejh
-multi sub do-part(@part where .all ~~ Tag|Taggable) {
-    @part.map(*.HTML)
-}
-# 2D array
-multi sub do-part(@part where .all ~~ Positional, :$head) {
-    note 42;
-    do for @part -> @row {
-        do-row(@row, :$head)
+    # parts as objects
+    multi sub do-part(@part where .all ~~ Tag|Taggable) {
+        @part.map(*.HTML)
     }
-}
-# 1D array
-multi sub do-part(@part, :$head) {
-    note 41;
-    do-row(@part, :$head)
-}
+    # parts as values - 2D array
+    multi sub do-part(@part where .all ~~ Positional, :$head) {
+        if @part.elems == 1 {   # got a 2D with one element
+            nextwith @part[0]
+        }
+        do for @part -> @row {
+            do-row(@row, :$head)
+        }
+    }
+    # parts as values - 1D array
+    multi sub do-part(@part, :$head) {
+        do-row(@part, :$head)
+    }
 
-multi method HTML {
-    my %attrs = @.tbody.grep:   * ~~ Pair;
-    my @tbody = @.tbody.grep: !(* ~~ Pair);
-
-    note @.tbody.raku;
-    note @tbody.raku;
-    note %attrs.raku;
-
-    table |%(:$!class if $!class), [
-        thead do-part(@.thead, :head)  with @.thead;
-        tbody do-part(@tbody);
-        tfoot do-part(@.tfoot)         with @.tfoot;
-    ]
-}
-
-#    has %.tbody-attrs;
-#
-#    multi sub do-part($part, :$head) { '' }
-#    multi sub do-part(@part where .all ~~ Tag|Taggable) {
-#        tbody @part.map(*.HTML)
-#    }
-#    multi sub do-part(@part where .all ~~ Array, :$head) {
-#        do for @part -> @row {
-#            tr do for @row.kv -> $col, $cell {
-#                given    	$col, $head {
-#                    when   	  *,    *.so  { th $cell, :scope<col> }
-#                    when   	  0,    *     { th $cell, :scope<row> }
-#                    default               { td $cell }
-#                }
-#            }
-#        }
-#    }
-#
-#    multi method HTML {
-#        %!tbody-attrs = $!tbody.grep:   * ~~ Pair;
-#        $!tbody       = $!tbody.grep: !(* ~~ Pair);
-#
-#        table |%(:$!class if $!class), [
-#            thead do-part($!thead, :head);
-#            tbody do-part($!tbody), :attrs(|%!tbody-attrs);
-#            tfoot do-part($!tfoot);
-#        ]
-#    }
+    multi method HTML {
+        table |%(:$!class if $!class), [
+            thead do-part($.thead, :head)  with $.thead;
+            tbody do-part($.tbody), |%.tbody-attrs;
+            tfoot do-part($.tfoot)         with $.tfoot;
+        ]
+    }
 }
 
 =head3 role Grid does Component
