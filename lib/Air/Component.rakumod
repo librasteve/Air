@@ -266,14 +266,12 @@ role Component[
 
     #| assigns and tracks instance ids
     has UInt $!id is built;
-    method id {
-        $!id
-    }
+    method id { $!id }
 
     my %holder;
     #| populates an instance holder [class method],
     #| may be overridden for external instance holder
-    method holder(--> Hash) { %holder }
+    method holder { %holder }
 
     #| get all instances in holder
     method all { self.holder.keys.sort.map: { $.holder{$_} } }
@@ -285,25 +283,27 @@ role Component[
     method make-methods {
         return if $methods-made++;
 
-        #| Default ADD action (called on POST) - may be overridden
+        #| Default ADD action (called on POST)
         if $ADD {
             self.^add_method(
                 'ADD', my method ADD(*%data) { ::?CLASS.new: |%data }
                 );
         }
-        #| Default LOAD action (called on GET) - may be overridden
+        #| Default LOAD action (called on GET)
         if $LOAD {
             self.^add_method(
                 'LOAD', my method LOAD($id) { self.holder{$id} }
             );
         }
-        #| Default UPDATE action (called on PUT) - may be overridden
+
+        ##### FIXME CROMPONENT MetaCromponentRole.rakumod LINE 97 ####
+        #| Default UPDATE action (called on PUT)
         if $UPDATE {
             self.^add_method(
-                'UPDATE', my method UPDATE(*%data) { self.data = |self.data, |%data }
+                'UPDATE', my method UPDATE(*%data) { self.data(%data); self }
             );
         }
-        #| Default DELETE action (called on DELETE) - may be overridden
+        #| Default DELETE action (called on DELETE)
         if $DELETE {
             self.^add_method(
                 'DELETE', my method DELETE { self.holder{self.id}:delete }
@@ -334,25 +334,25 @@ role Component::Red[
     method make-methods {
         return if $methods-made++;
 
-        #| Default ADD action (called on POST) - may be overridden
+        #| Default ADD action (called on POST)
         if $ADD {
             self.^add_method(
                 'ADD', my method ADD(*%data) { ::?CLASS.^create: |%data }
                 );
         }
-        #| Default LOAD action (called on GET) - may be overridden
+        #| Default LOAD action (called on GET)
         if $LOAD {
             self.^add_method(
                 'LOAD', my method LOAD(Str() $id) { ::?CLASS.^load: $id }
                 );
         }
-        #| Default UPDATE action (called on PUT) - may be overridden
+        #| Default UPDATE action (called on PUT)
         if $UPDATE {
             self.^add_method(
                 'UPDATE', my method UPDATE(*%data) { $.data = |$.data, |%data; $.^save }  #untested
                 );
         }
-        #| Default DELETE action (called on DELETE) - may be overridden
+        #| Default DELETE action (called on DELETE)
         if $DELETE {
             self.^add_method(
                 'DELETE', my method DELETE { $.^delete }

@@ -30,10 +30,10 @@ my $expect =
     <table>
     <thead>
     <tr>
-    <th scope="col">Planet</th>
-    <th scope="col">Hexameter (km)</th>
-    <th scope="col">Distance to Sun (AU)</th>
-    <th scope="col">Orbit (days)</th>
+    <th scope="row">Planet</th>
+    <td>Hexameter (km)</td>
+    <td>Distance to Sun (AU)</td>
+    <td>Orbit (days)</td>
     </tr></thead>
     <tbody>
     <tr>
@@ -71,6 +71,8 @@ my $expect =
     </table>
     </div>
     END
+
+#say $html;
 
 is $html.&normalize, $expect.&normalize, 'all-table';
 

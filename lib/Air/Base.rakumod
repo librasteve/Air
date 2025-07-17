@@ -1127,8 +1127,8 @@ role Table     does Component {
     }
 
     # parts as objects
-    multi sub do-part(@part where .all ~~ Tag|Taggable) {
-        @part.map(*.HTML)
+    multi sub do-part($part where Tag|Taggable|Markup) {
+        $part
     }
     # parts as values - 2D array
     multi sub do-part(@part where .all ~~ Positional, :$head) {
