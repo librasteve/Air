@@ -1298,15 +1298,15 @@ role Box       does Component {
 
     method STYLE {
         Q:to/END/;
-        article {
+        dashboard > article {
           display: flex;
           align-items: center;
+          flex-direction: column;
 
           /* Responsive sizing */
-          flex: 1 1 400px;
-          min-width: 400px;
-          max-width: 600px;
-          height: 200px;
+          flex: 1 1 600px;
+          //min-width: 600px;
+          max-width: 800px;
         }
         END
     }
