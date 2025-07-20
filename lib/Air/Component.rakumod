@@ -255,8 +255,8 @@ role Component::Common does Taggable {
 
 #| Component is for non-Red classes
 role Component[
-    :C(:A(:$ADD)),
-    :R(:L(:$LOAD)) = True,
+    :C(:CREATE(:A(:$ADD))),
+    :R(:READ(:L(:$LOAD))) = True,
     :U(:$UPDATE),
     :D(:$DELETE),
 ] does Component::Common {
@@ -320,8 +320,8 @@ role Component[
 
 #| Component::Red is for Red models
 role Component::Red[
-	:C(:A(:$ADD)),
-	:R(:L(:$LOAD)) = True,
+    :C(:CREATE(:A(:$ADD))),
+    :R(:READ(:L(:$LOAD))) = True,
 	:U(:$UPDATE),
 	:D(:$DELETE),
 ] does Component::Common {
