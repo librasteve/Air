@@ -1359,11 +1359,9 @@ role Tabs      does Component {
         return if $!loaded++;
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
-                when Tab {
-                    my &new-method = method {$target.?HTML};
-                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
-                    self.^add_method($name, &new-method);
-                }
+                my &new-method = method {$target.?HTML};
+                trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                self.^add_method($name, &new-method);
             }
         }
     }
@@ -1397,7 +1395,7 @@ role Tabs      does Component {
         div :class<tabs>, [
             nav :class<tab-menu>,
                 ul :class<tab-links>, self.tab-items;
-            div :id($.tab-content), :hx-get($.load-path), :hx-trigger<load>;
+            div :id($.tab-content), @.items[0].value;
         ]
     }
 
