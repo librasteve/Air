@@ -214,7 +214,7 @@ When writing components:
 
 use Air::Functional :CRO;
 
-use Cromponent;
+use Cromponent:ver<0.0.13->;
 use Cromponent::MetaCromponentRole;
 
 sub to-kebab(Str() $_ ) {
