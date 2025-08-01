@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.24  2025-08-01T08:21:58+01:00
+    - pin use Cromponent:ver<0.0.13>
+
 0.0.23  2025-07-21T23:06:13+01:00
     - faster Tabs
 
