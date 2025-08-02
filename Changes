@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.25  2025-08-02T12:08:54+01:00
+    - add site.serve
+
 0.0.24  2025-08-01T08:21:58+01:00
     - pin use Cromponent:ver<0.0.13>
 
