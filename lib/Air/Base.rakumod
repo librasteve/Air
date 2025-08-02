@@ -1018,6 +1018,30 @@ class Site {
         }
     }
 
+    method serve( :$port=3000, :$host='localhost' ) {
+        use Cro::HTTP::Log::File;
+        use Cro::HTTP::Server;
+
+        my Cro::Service $http = Cro::HTTP::Server.new(
+            http => <1.1>,
+            :$host,
+            :$port,
+            application => $.routes,
+            after => [
+                Cro::HTTP::Log::File.new(logs => $*OUT, errors => $*ERR)
+            ],
+            );
+        say "Starting server. Point browser at $host:$port. Ctrl-C to stop server";
+        $http.start;
+        react {
+            whenever signal(SIGINT) {
+                say "Shutting down...";
+                $http.stop;
+                done;
+            }
+        }
+    }
+
     method scss-run {
         my $css = self.scss-theme ~ "\n\n";
         $css ~= $_ with $!scss-gather;
@@ -1028,7 +1052,8 @@ class Site {
         note "bold-color=$!bold-color";
         $css ~~ s:g/'%BOLD_COLOR%'/$!bold-color/;
 
-        chdir "static/css";
+        chdir "../static/css";
+#        chdir "static/css";
         spurt "styles.scss", $css;
         qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
         chdir "../..";
