@@ -1052,8 +1052,18 @@ class Site {
         note "bold-color=$!bold-color";
         $css ~~ s:g/'%BOLD_COLOR%'/$!bold-color/;
 
-        chdir "../static/css";
-#        chdir "static/css";
+        my @dirs = "../static/css", "static/css";
+
+        for @dirs -> $dir {
+            if $dir.IO.d {
+                chdir $dir;
+                last;
+            }
+        }
+        unless $*CWD.ends-with("static/css") {
+            die "Neither '../static/css' nor 'static/css' exists!";
+        }
+
         spurt "styles.scss", $css;
         qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
         chdir "../..";

@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.26  2025-08-02T12:15:45+01:00
+    - handle "../static/css" & "static/css";
+
 0.0.25  2025-08-02T12:08:54+01:00
     - add site.serve
 
