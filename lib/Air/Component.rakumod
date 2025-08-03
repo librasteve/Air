@@ -251,6 +251,9 @@ role Component::Common does Taggable {
     #| Cromponent::MetaCromponentRole normally calls .Str on a Cromponent
     #| this method substitutes .HTML for .Str
     method Str { self.HTML }
+
+    #| show something in 'note $x.raku'
+    method gist { self.url-path }
 }
 
 #| Component is for non-Red classes

@@ -1135,8 +1135,8 @@ role Table     does Component {
 
     =para Table applies col and row header tags <th></th> as required for Pico styles.
 
-    #| default = [] is provided
-    has $.tbody is rw = [];
+    #| optional (ie tbody-attrs only is ok)
+    has $.tbody is rw;
     #| explicitly specify attrs on tbody
     has %.tbody-attrs;
     #| optional
@@ -1146,9 +1146,13 @@ role Table     does Component {
     #| class for table
     has $.class;
 
-    #| .new positional takes tbody [[]]
+    #| .new positional takes tbody unless passed as attr
     multi method new(*@tbody, *%h) {
-        self.bless:  :@tbody, |%h;
+        if %h<tbody> {
+            self.bless: |%h
+        } else {
+            self.bless: :@tbody, |%h
+        }
     }
 
     sub do-row(@row, :$head) {
@@ -1161,9 +1165,13 @@ role Table     does Component {
         }
     }
 
-    # parts as objects
+    # parts as objects - single tbody
     multi sub do-part($part where Tag|Taggable|Markup) {
         $part
+    }
+    # parts as objects - list of eg tr's
+    multi sub do-part(@part where .all ~~ Tag|Taggable|Markup) {
+        |@part
     }
     # parts as values - 2D array
     multi sub do-part(@part where .all ~~ Positional, :$head) {
@@ -1179,11 +1187,13 @@ role Table     does Component {
         do-row(@part, :$head)
     }
 
+
     multi method HTML {
         table |%(:$!class if $!class), [
-            thead do-part($.thead, :head)  with $.thead;
-            tbody do-part($.tbody), |%.tbody-attrs;
-            tfoot do-part($.tfoot)         with $.tfoot;
+            thead do-part($.thead, :head) with $.thead;
+            tbody |%.tbody-attrs,
+                  do-part($.tbody) with $.tbody;
+            tfoot do-part($.tfoot) with $.tfoot;
         ]
     }
 }
