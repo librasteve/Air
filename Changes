@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.27  2025-08-03T10:06:36+01:00
+    - improve Table
+
 0.0.26  2025-08-02T12:15:45+01:00
     - handle "../static/css" & "static/css";
 
