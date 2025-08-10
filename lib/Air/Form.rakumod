@@ -53,7 +53,7 @@ Form Routes:
 =item C<method form-routes {}> is called by C<site> to set up the form post route
 =item the form uses HTMX C<"hx-post="$form-url" hx-swap=\"outerHTML\">
 =item C<self.init> initializes the form HTML with styles, validations and so on
-=item C<self.controller> takes a C<&handler>
+=item C<self.submit> takes a C<&handler>
 =item the handler is called by Cro, form field data is passed in the C<$form> parameter
 
 Essential Methods:
@@ -223,7 +223,7 @@ use Cro::WebApp::Template;
 use Cro::WebApp::Template::Repository;
 use Cro::HTTP::Router;
 
-our %va = (
+constant %va = (
 text     => ( /^ <[A..Za..z0..9\s.,_#-]>+ $/,
               'In text, only ".,_-#" punctuation characters are allowed' ),
 name     => ( /^ <[A..Za..z.'-]>+ $/,
