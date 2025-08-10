@@ -600,15 +600,17 @@ The Air roadmap is to provide a full set of pre-styled tags as defined in the Pi
 
 ### role Table does Tag
 
-Attrs thead, tbody and tfoot can each be a 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for multi-row thead and tfoot.
+Attrs thead, tbody and tfoot can each be a 1D [values] or 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for single- and multi-row thead and tfoot.
 
-Table applies col and row header tags as required for Pico styles.
-
-Attrs provided as Pairs via tbody are extracted and applied. This is needed for :id<target> where HTMX is targetting the table body.
+Table applies col and row header tags <th></th> as required for Pico styles.
 
 ### has Mu $.tbody
 
-default = [] is provided
+optional (ie tbody-attrs only is ok)
+
+### has Associative %.tbody-attrs
+
+explicitly specify attrs on tbody
 
 ### has Mu $.thead
 
@@ -631,7 +633,7 @@ method new(
 ) returns Mu
 ```
 
-.new positional takes tbody [[]]
+.new positional takes tbody unless passed as attr
 
 ### role Grid does Component
 

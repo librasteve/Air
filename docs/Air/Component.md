@@ -276,6 +276,14 @@ method Str() returns Mu
 
 Cromponent::MetaCromponentRole normally calls .Str on a Cromponent this method substitutes .HTML for .Str
 
+### method gist
+
+```raku
+method gist() returns Mu
+```
+
+show something in 'note $x.raku'
+
 
 
 Component is for non-Red classes
@@ -287,7 +295,7 @@ assigns and tracks instance ids
 ### method holder
 
 ```raku
-method holder() returns Hash
+method holder() returns Mu
 ```
 
 populates an instance holder [class method], may be overridden for external instance holder

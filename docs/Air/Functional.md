@@ -175,7 +175,7 @@ open a custom tag
 ```raku
 sub inner(
     @inners
-) returns Str
+) returns Str(Any)
 ```
 
 convert from an inner list to HTML tag inner string
