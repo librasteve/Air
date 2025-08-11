@@ -223,12 +223,12 @@ use Cro::WebApp::Template;
 use Cro::WebApp::Template::Repository;
 use Cro::HTTP::Router;
 
-constant %va = (
+our %va = (
 text     => ( /^ <[A..Za..z0..9\s.,_#-]>+ $/,
               'In text, only ".,_-#" punctuation characters are allowed' ),
 name     => ( /^ <[A..Za..z.'-]>+ $/,
               'In a name, only ".-\'" punctuation characters are allowed' ),
-names     => ( /^ <[A..Za..z\s.'-]>+ $/,
+names    => ( /^ <[A..Za..z\s.'-]>+ $/,
                'In names, only ".-\'" punctuation characters are allowed' ),
 words    => ( /^ <[A..Za..z\s]>+ $/,
               'In words, only text characters are allowed' ),

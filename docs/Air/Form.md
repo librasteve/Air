@@ -63,7 +63,7 @@ Form Routes:
 
   * `self.init` initializes the form HTML with styles, validations and so on
 
-  * `self.submit` takes a `&handler` 
+  * `self.submit` takes a `&handler`
 
   * the handler is called by Cro, form field data is passed in the `$form` parameter
 
