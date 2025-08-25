@@ -1,0 +1,25 @@
+#some yaml
+
+Html:
+  note: "%config-yaml.raku"
+  attrs:
+    lang: "fr"
+    data-theme: "dark"
+
+Head:
+  metas:
+    - charset: "utf-8"
+    - name: "viewport"
+      content: "width=device-width, initial-scale=1"
+
+  links:
+    - rel: "icon"
+      href: "/img/favicon.ico"
+      type: "image/x-icon"
+    - rel: "stylesheet"
+      href: "/css/styles.css"
+
+  scripts:
+    - src: "https://unpkg.com/htmx.org@1.9.5"
+      crossorigin: "plomp"
+      integrity: "sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"

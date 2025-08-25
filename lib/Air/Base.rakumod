@@ -142,6 +142,16 @@ use Air::Form;
 
 my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>;
 
+use YAMLish;
+my %config-yaml := load-yaml(
+#    ".air.yaml".IO.slurp //
+    "$*HOME/.rair-config/.air.yaml".IO.slurp
+);
+role Defaults { ... }
+
+class Nav  { ... }
+class Page { ... }
+
 =head2 Basic Tags
 
 =para Air::Functional converts all HTML tags into raku functions. Air::Base overrides a subset of these HTML tags, providing them both as raku roles and functions.
@@ -149,9 +159,6 @@ my @functions = <Safe Site Page A Button External Internal Content Section Artic
 =para The Air::Base tags each embed some code to provide behaviours. This can be simple - C<role Script {}> just marks JavaScript as exempt from HTML Escape. Or complex - C<role Body {}> has C<Header>, C<Main> and C<Footer> attributes with certain defaults and constructors.
 
 =para Combine these tags in the same way as the overall layout of an HTML webpage. Note that they hide complexity to expose only relevant information to the fore. Override them with your own roles and classes to implement your specific needs.
-
-class Nav  { ... }
-class Page { ... }
 
 =head3 role Safe   does Tag[Regular] {...}
 
@@ -219,6 +226,7 @@ role Button does Tag[Regular]  {}
 =head3 role Head   does Tag[Regular] {...}
 
 role Head   does Tag[Regular]  {
+    also does Defaults;
 
     =para Singleton pattern (ie. same Head for all pages)
 
@@ -228,6 +236,7 @@ role Head   does Tag[Regular]  {
         unless $instance {
             $instance = Head.bless;
             $instance.defaults;
+            note $instance.defaults;
         };
         $instance;
     }
@@ -244,16 +253,6 @@ role Head   does Tag[Regular]  {
     has Link   @.links;
     #| style
     has Style  @.styles;
-
-    #| set up common defaults (called on instantiation)
-    method defaults {
-        self.metas.append: Meta.new: :charset<utf-8>;
-        self.metas.append: Meta.new: :name<viewport>, :content('width=device-width, initial-scale=1');
-        self.links.append: Link.new: :rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>;
-        self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
-        self.scripts.append: Script.new: :src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
-                :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>;
-    }
 
     #| .HTML method calls .HTML on all inners
     multi method HTML {
@@ -327,21 +326,14 @@ role Body   does Tag[Regular]  {
 =head3 role Html   does Tag[Regular] {...}
 
 role Html   does Tag[Regular]  {
+    also does Defaults;
+
     has $!loaded = 0;
 
     #| head
     has Head   $.head .= instance;
     #| body
     has Body   $.body is rw .= new;
-
-    #| default :lang<en>
-    has Attr() %.lang is rw = :lang<en>;
-    #| default :data-theme<dark>
-    has Attr() %.mode is rw = :data-theme<dark>;
-
-    method defaults {
-        self.attrs = |%!lang, |%!mode, |%.attrs;
-    }
 
     multi method HTML {
         self.defaults unless $!loaded++;
@@ -560,7 +552,7 @@ role Analytics does Tool {
     #| website ID from provider
     has Str      $.key;
 
-    multi method defaults($page) {
+    multi method inject($page) {
         given $!provider {
             when Umami {
                 $page.html.head.scripts.append:
@@ -830,8 +822,8 @@ class Page     does Component {
     has Html    $.html .= new;
 
     #| set all provided shortcuts on first use
-    method defaults {
-        unless $!loaded++ {
+    method shortcuts {
+#        unless $!loaded++ {
             self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
             self.html.head.title = Title.new: $.title                   with $.title;
 
@@ -843,7 +835,7 @@ class Page     does Component {
 
             self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
-        }
+#        }
     }
 
     #| .new positional with main only
@@ -865,7 +857,7 @@ class Page     does Component {
 
     #| issue page
     method HTML {
-        self.defaults unless $!loaded;
+        self.shortcuts unless $!loaded;
         '<!doctype html>' ~ $!html.HTML
     }
 
@@ -981,15 +973,14 @@ class Site {
         orwith  $!index    { @!pages[0] = $!index }
         else    { note "No pages or index found!" }
 
-        #| always enqueue & route Nav
+        #| always register & route Nav
         @!register.push: Nav.new;
 
         self.enqueue-all;
-        self.scss-run unless $!scss-off;
 
         for @!tools -> $tool {
             for @!pages -> $page {
-                $tool.defaults($page)
+                $tool.inject($page)
             }
         }
     }
@@ -1018,7 +1009,15 @@ class Site {
         }
     }
 
-    method serve( :$port=3000, :$host='localhost' ) {
+    #| run the SCSS compiler
+    #| vendor all default packages fixme
+    method build { self.scss-run unless $!scss-off }
+
+    #| build application and start server
+    method serve { $.build; $.start}
+
+    #| start the server (ie skip build)
+    method start( :$port=3000, :$host='localhost' ) {
         use Cro::HTTP::Log::File;
         use Cro::HTTP::Server;
 
@@ -1754,6 +1753,32 @@ role Markdown    does Tag {
     multi method HTML {
         $!result = Text::Markdown.new($!markdown).render unless $!result;
         $!result
+    }
+}
+
+
+=head2 Defaults
+
+=para role Defaults provides a central place to set the various website defaults across Head, Html and Site roles
+
+role Defaults {
+    my $loaded;
+
+    multi method defaults(Html:) {
+        note %config-yaml.raku;
+        self.attrs =
+            :lang<en>,
+            :data-theme<dark>,
+        ;
+    }
+
+    multi method defaults(Head:) {
+        self.metas.append: Meta.new: :charset<utf-8>;
+        self.metas.append: Meta.new: :name<viewport>, :content('width=device-width, initial-scale=1');
+        self.links.append: Link.new: :rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>;
+        self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
+        self.scripts.append: Script.new: :src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
+            :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>;
     }
 }
 
