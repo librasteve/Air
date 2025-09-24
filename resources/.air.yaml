@@ -1,9 +1,6 @@
-#some yaml
-
 Html:
-  note: "%config-yaml.raku"
   attrs:
-    lang: "fr"
+    lang: "en"
     data-theme: "dark"
 
 Head:
@@ -21,5 +18,5 @@ Head:
 
   scripts:
     - src: "https://unpkg.com/htmx.org@1.9.5"
-      crossorigin: "plomp"
+      crossorigin: "anonymous"
       integrity: "sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"

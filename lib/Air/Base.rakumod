@@ -134,7 +134,10 @@ Each feature of Air::Base is set out below:
 =end pod
 
 # TODO items
+#my loaded or has loaded
 #role Theme {...}
+
+use YAMLish;
 
 use Air::Functional;
 use Air::Component;
@@ -142,11 +145,7 @@ use Air::Form;
 
 my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>;
 
-use YAMLish;
-my %config-yaml := load-yaml(
-#    ".air.yaml".IO.slurp //
-    "$*HOME/.rair-config/.air.yaml".IO.slurp
-);
+
 role Defaults { ... }
 
 class Nav  { ... }
@@ -226,7 +225,7 @@ role Button does Tag[Regular]  {}
 =head3 role Head   does Tag[Regular] {...}
 
 role Head   does Tag[Regular]  {
-    also does Defaults;
+    also    does Defaults;
 
     =para Singleton pattern (ie. same Head for all pages)
 
@@ -236,7 +235,6 @@ role Head   does Tag[Regular]  {
         unless $instance {
             $instance = Head.bless;
             $instance.defaults;
-            note $instance.defaults;
         };
         $instance;
     }
@@ -326,7 +324,7 @@ role Body   does Tag[Regular]  {
 =head3 role Html   does Tag[Regular] {...}
 
 role Html   does Tag[Regular]  {
-    also does Defaults;
+    also    does Defaults;
 
     has $!loaded = 0;
 
@@ -1775,17 +1773,64 @@ role Markdown    does Tag {
 role Defaults {
     my $loaded;
 
-    multi method defaults(Html:) {
-        note %config-yaml.raku;
-        self.attrs =
-            :lang<en>,
-            :data-theme<dark>,
-        ;
+    has %.config-yaml;
+
+    submethod load {
+        my $file = '.air.yaml';
+
+        if $file.IO.e {
+            # place custom .air.yaml in same dir as script that calls `site.serve`
+            %!config-yaml := load-yaml($file.IO.slurp);
+        } else {
+            %!config-yaml := load-yaml("$*HOME/.rair-config/$file".IO.slurp);
+        }
     }
 
+    multi method defaults(Html:) {
+        self.load unless $loaded++;
+
+        note %!config-yaml<Html><attrs>.raku;
+
+        self.attrs = %!config-yaml<Html><attrs>;    #iamerejh
+    }
+
+#    Starting server. Point browser at localhost:3000. Ctrl-C to stop server
+#${:data-theme("dark"), :lang("en")}
+#[OK] 200 / - ::1
+#[OK] 200 /css/styles.css - ::1
+#[ERROR] 403 /.well-known/appspecific/com.chrome.devtools.json - ::1
+#Cannot write to a closed socket
+#[OK] 200 /css/styles.css.map - ::1
+#[OK] 200 /img/favicon.ico - ::1
+#[OK] 200 /css/styles.css.map - ::1
+#[OK] 200 / - ::1
+#[OK] 200 /css/styles.css - ::1
+#[ERROR] 403 /.well-known/appspecific/com.chrome.devtools.json - ::1
+#[OK] 200 /css/styles.css.map - ::1
+#[OK] 200 /css/styles.css.map - ::1
+#Any
+#Odd number of elements found where hash initializer expected:
+#Only saw: type object 'Any'
+#  in method defaults at /Users/stephenroe/.rakubrew/versions/moar-2025.06.1/share/perl6/site/sources/D1352A154A0E1635004AFD5EC202C4D8E0E4C6A1 (Air::Base) line 1783
+#  in method HTML at /Users/stephenroe/.rakubrew/versions/moar-2025.06.1/share/perl6/site/sources/D1352A154A0E1635004AFD5EC202C4D8E0E4C6A1 (Air::Base) line 337
+#  in method HTML at /Users/stephenroe/.rakubrew/versions/moar-2025.06.1/share/perl6/site/sources/D1352A154A0E1635004AFD5EC202C4D8E0E4C6A1 (Air::Base) line 859
+#  in method <anon> at /Users/st
+
     multi method defaults(Head:) {
-        self.metas.append: Meta.new: :charset<utf-8>;
-        self.metas.append: Meta.new: :name<viewport>, :content('width=device-width, initial-scale=1');
+        self.load unless $loaded++;
+
+        for %!config-yaml<Head><metas><> {    # note the decont
+            self.metas.append: Meta.new: |$_
+        }
+
+        note %!config-yaml<Head><links>.raku;
+
+        for %!config-yaml<Head><links><> {    # note the decont
+            self.links.append: Link.new: |$_
+        }
+
+#        self.metas.append: Meta.new: :charset<utf-8>;
+#        self.metas.append: Meta.new: :name<viewport>, :content('width=device-width, initial-scale=1');
         self.links.append: Link.new: :rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>;
         self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
         self.scripts.append: Script.new: :src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
