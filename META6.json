@@ -12,7 +12,7 @@
     "HTML::Escape:ver<0.0.1>",
     "Cro::HTTP:ver<0.8.11>:auth<zef:cro>:api<0>",
     "Cro::WebApp:ver<0.10.0>:auth<zef:cro>:api<0>",
-    "Cromponent:ver<0.0.14>:auth<zef:FCO>",
+    "Cromponent:ver<0.0.13>:auth<zef:FCO>",
     "Text::Markdown:ver<1.1.1>:auth<zef:JJMERELO>"
   ],
   "description": "Just build websites the right way.",
@@ -32,5 +32,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.28"
+  "version": "0.0.29"
 }
