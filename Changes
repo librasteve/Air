@@ -2,6 +2,12 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.29  2025-09-24T18:01:55+01:00
+    - revert Cromponent to 0.0.13
+
+0.0.28  2025-09-24T15:25:53+01:00
+    - pin deps
+
 0.0.27  2025-08-03T10:06:36+01:00
     - improve Table
 
