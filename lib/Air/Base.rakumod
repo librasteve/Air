@@ -901,6 +901,8 @@ class Site {
     has Page @.pages;
     #| index Page ( otherwise $!index = @!pages[0] )
     has Page $.index;
+    #| 404 page (otherwise bare 404 is thrown)
+    has Page $.html404;
     #| Register for route setup; default = [Nav.new]
     has      @.register;
     #| Tools for sitewide behaviours
@@ -924,11 +926,7 @@ class Site {
         self.bless: :$index, |%h;
     }
 
-    #| enqueued items will be rendered in order supplied
-    #| this is deterministic
-    #|  - each plugin can apply an internal order
-    #|  - registration is performed in list order
-    #| (please avoid interdependent js / css)
+    #| enqueued items are rendered in order, avoid interdependencies
     method enqueue-all {
         return if $loaded++;
 
@@ -1009,12 +1007,14 @@ class Site {
                 }
             }
 
-            #| setup static Cro routes
-            get ->               { content 'text/html', $.index.HTML }
-            get -> 'css', *@path { static 'static/css', @path }
-            get -> 'img', *@path { static 'static/img', @path }
-            get -> 'js',  *@path { static 'static/js',  @path }
-            get ->        *@path { static 'static',     @path }
+            #| index, static, 404 routes
+            get ->                  { content   'text/html',  $.index.HTML }
+            get -> 'css',    *@path { static    'static/css', @path }
+            get -> 'img',    *@path { static    'static/img', @path }
+            get -> 'js',     *@path { static    'static/js',  @path }
+            get -> 'static', *@path { static    'static',     @path }
+            get ->  *@rest { not-found 'text/html',  $.html404.HTML } with $.html404;
+
         }
     }
 
