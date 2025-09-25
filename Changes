@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.30  2025-09-25T14:48:27+01:00
+    - html 404
+
 0.0.29  2025-09-24T18:01:55+01:00
     - revert Cromponent to 0.0.13
 

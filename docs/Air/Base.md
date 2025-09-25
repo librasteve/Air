@@ -554,10 +554,6 @@ Page holder -or-
 
 index Page ( otherwise $!index = @!pages[0] )
 
-### has Page $.html404
-
-404 page (otherwise bare 404 is thrown)
-
 ### has Positional @.register
 
 Register for route setup; default = [Nav.new]
@@ -595,7 +591,7 @@ multi method new(
 method enqueue-all() returns Mu
 ```
 
-enqueued items are rendered in order, avoid interdependencies
+enqueued items will be rendered in order supplied this is deterministic - each plugin can apply an internal order - registration is performed in list order (please avoid interdependent js / css)
 
 Component Library
 -----------------
