@@ -892,6 +892,10 @@ class Page     does Component {
     }
 }
 
+=head3 subset Redirect of Pair where .key !~~ /\// && .value ~~ /^ \//;
+
+subset Redirect of Pair where .key !~~ /\// && .value ~~ /^ \//;
+
 #| Site is a holder for pages, performs setup
 #| of Cro routes and offers high level controls for style via Pico SASS.
 class Site {
@@ -907,6 +911,8 @@ class Site {
     has      @.register;
     #| Tools for sitewide behaviours
     has Tool @.tools      = [];
+    #| Redirects
+    has Redirect @.redirects  = [];
 
 
     #| use :scss-off to disable the SASS compiler run
@@ -1015,6 +1021,11 @@ class Site {
             get -> 'static', *@path { static    'static',     @path }
             get ->  *@rest { not-found 'text/html',  $.html404.HTML } with $.html404;
 
+            #| redirects
+            for @!redirects {
+                my ($old,$new) = .kv;
+                get -> $old, *@drop { redirect $new }
+            }
         }
     }
 
