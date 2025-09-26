@@ -1,36 +1,29 @@
 {
-  "auth": "zef:librasteve",
-  "authors": [
-    "librasteve"
-  ],
-  "build-depends": [
-  ],
-  "depends": [
-    "UUID::V4:ver<1.0.0>:auth<zef:masukomi>:api<1>",
-    "CSS::Writer:ver<0.2.10>:auth<zef:dwarring>",
-    "DateTime::Format:ver<0.1.5>:auth<zef:raku-community-modules>:api<1.0>",
-    "HTML::Escape:ver<0.0.1>",
-    "Cro::HTTP:ver<0.8.11>:auth<zef:cro>:api<0>",
-    "Cro::WebApp:ver<0.10.0>:auth<zef:cro>:api<0>",
-    "Cromponent:ver<0.0.13>:auth<zef:FCO>",
-    "Text::Markdown:ver<1.1.1>:auth<zef:JJMERELO>"
-  ],
-  "description": "Just build websites the right way.",
-  "license": "Artistic-2.0",
-  "name": "Air",
-  "provides": {
-    "Air": "lib/Air.rakumod",
-    "Air::Base": "lib/Air/Base.rakumod",
-    "Air::Component": "lib/Air/Component.rakumod",
-    "Air::Form": "lib/Air/Form.rakumod",
-    "Air::Functional": "lib/Air/Functional.rakumod"
-  },
-  "resources": [
-  ],
-  "source-url": "https://github.com/librasteve/Air.git",
-  "tags": [
-  ],
-  "test-depends": [
-  ],
-  "version": "0.0.31"
+    "name": "Air",
+    "description": "Just build websites the right way.",
+    "version": "0.0.31",
+    "authors": [
+        "librasteve"
+    ],
+    "auth": "zef:librasteve",
+    "depends": [
+        "UUID::V4:ver<1.0.0>:auth<zef:masukomi>:api<1>",
+        "CSS::Writer:ver<0.2.10>:auth<zef:dwarring>",
+        "DateTime::Format:ver<0.1.5>:auth<zef:raku-community-modules>:api<1.0>",
+        "HTML::Escape:ver<0.0.1>",
+        "Cro::HTTP:ver<0.8.11>:auth<zef:cro>:api<0>",
+        "Cro::WebApp:ver<0.10.0>:auth<zef:cro>:api<0>",
+        "Cromponent:ver<0.0.13>:auth<zef:FCO>",
+        "Text::Markdown:ver<1.1.1>:auth<zef:JJMERELO>"
+    ],
+    "build-depends": [],
+    "provides": {
+        "Air": "lib/Air.rakumod",
+        "Air::Base": "lib/Air/Base.rakumod",
+        "Air::Component": "lib/Air/Component.rakumod",
+        "Air::Form": "lib/Air/Form.rakumod",
+        "Air::Functional": "lib/Air/Functional.rakumod"
+    },
+    "license": "Artistic-2.0",
+    "source-url": "https://github.com/librasteve/Air.git"
 }
