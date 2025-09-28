@@ -1024,7 +1024,7 @@ class Site {
             #| redirects
             for @!redirects {
                 my ($old,$new) = .kv;
-                get -> $old, *@drop { redirect $new }
+                get -> Str $ where * eq $old, *@drop { redirect $new }
             }
         }
     }
