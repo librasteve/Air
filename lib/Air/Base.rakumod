@@ -145,11 +145,10 @@ use Air::Form;
 
 my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>;
 
-
-role Defaults { ... }
-
-class Nav  { ... }
-class Page { ... }
+# predeclarations
+role  Defaults {...}
+class Nav      {...}
+class Page     {...}
 
 =head2 Basic Tags
 
@@ -205,7 +204,7 @@ role Link   does Tag[Singular] {}
 =head3 role A      does Tag[Regular] {...}
 
 role A      does Tag[Regular]  {
-    #| defaults to target="_blank"
+    #| always sets target="_blank"
     multi method HTML {
         my %attrs = |%.attrs;
         %attrs<target> = '_blank' without %attrs<target>;
@@ -1771,70 +1770,50 @@ role Markdown    does Tag {
 =para role Defaults provides a central place to set the various website defaults across Head, Html and Site roles
 
 role Defaults {
-    my $loaded;
+    my %yaml;
+    my $yaml-loaded;
 
-    has %.config-yaml;
+    state $script-dir = $*CWD;
 
-    submethod load {
+    submethod read-yaml {
+        return if $yaml-loaded++;
+
         my $file = '.air.yaml';
 
-        if $file.IO.e {
+        if "$script-dir/$file".IO.e {
             # place custom .air.yaml in same dir as script that calls `site.serve`
-            %!config-yaml := load-yaml($file.IO.slurp);
+            note "Loading custom .air.yaml...";
+            %yaml := load-yaml("$script-dir/$file".IO.slurp);
         } else {
-            %!config-yaml := load-yaml("$*HOME/.rair-config/$file".IO.slurp);
+            note "Loading default .air.yaml...";
+            %yaml := load-yaml("$*HOME/.rair-config/$file".IO.slurp);
         }
     }
 
     multi method defaults(Html:) {
-        self.load unless $loaded++;
+        self.read-yaml;
 
-        note %!config-yaml<Html><attrs>.raku;
-
-        self.attrs = %!config-yaml<Html><attrs>;    #iamerejh
+        note "Html attrs: " ~ %yaml<Html><attrs>.raku;
+        self.attrs = %yaml<Html><attrs>;
     }
 
-#    Starting server. Point browser at localhost:3000. Ctrl-C to stop server
-#${:data-theme("dark"), :lang("en")}
-#[OK] 200 / - ::1
-#[OK] 200 /css/styles.css - ::1
-#[ERROR] 403 /.well-known/appspecific/com.chrome.devtools.json - ::1
-#Cannot write to a closed socket
-#[OK] 200 /css/styles.css.map - ::1
-#[OK] 200 /img/favicon.ico - ::1
-#[OK] 200 /css/styles.css.map - ::1
-#[OK] 200 / - ::1
-#[OK] 200 /css/styles.css - ::1
-#[ERROR] 403 /.well-known/appspecific/com.chrome.devtools.json - ::1
-#[OK] 200 /css/styles.css.map - ::1
-#[OK] 200 /css/styles.css.map - ::1
-#Any
-#Odd number of elements found where hash initializer expected:
-#Only saw: type object 'Any'
-#  in method defaults at /Users/stephenroe/.rakubrew/versions/moar-2025.06.1/share/perl6/site/sources/D1352A154A0E1635004AFD5EC202C4D8E0E4C6A1 (Air::Base) line 1783
-#  in method HTML at /Users/stephenroe/.rakubrew/versions/moar-2025.06.1/share/perl6/site/sources/D1352A154A0E1635004AFD5EC202C4D8E0E4C6A1 (Air::Base) line 337
-#  in method HTML at /Users/stephenroe/.rakubrew/versions/moar-2025.06.1/share/perl6/site/sources/D1352A154A0E1635004AFD5EC202C4D8E0E4C6A1 (Air::Base) line 859
-#  in method <anon> at /Users/st
-
     multi method defaults(Head:) {
-        self.load unless $loaded++;
+        self.read-yaml;
 
-        for %!config-yaml<Head><metas><> {    # note the decont
+        note "Head metas: " ~ |%yaml<Head><metas>.raku;
+        for %yaml<Head><metas><> {
             self.metas.append: Meta.new: |$_
         }
 
-        note %!config-yaml<Head><links>.raku;
-
-        for %!config-yaml<Head><links><> {    # note the decont
+        note "Head links: " ~ %yaml<Head><links>.raku;
+        for %yaml<Head><links><> {
             self.links.append: Link.new: |$_
         }
 
-#        self.metas.append: Meta.new: :charset<utf-8>;
-#        self.metas.append: Meta.new: :name<viewport>, :content('width=device-width, initial-scale=1');
-        self.links.append: Link.new: :rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>;
-        self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
-        self.scripts.append: Script.new: :src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
-            :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>;
+        note "Head scripts: " ~ %yaml<Head><scripts>.raku;
+        for %yaml<Head><scripts><> {
+            self.scripts.append: Script.new: |$_
+        }
     }
 }
 
