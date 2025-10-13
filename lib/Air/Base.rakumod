@@ -139,16 +139,22 @@ Each feature of Air::Base is set out below:
 
 use YAMLish;
 
-use Air::Functional;
+use Air::Functional :TEMPIN;   #fixme
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>;
+use Air::Base::Tags;
+
+#sub functions-air-base {<Site Page External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
+
+sub exports-air-base {<Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
 
 # predeclarations
 role  Defaults {...}
 class Nav      {...}
 class Page     {...}
+
+#[
 
 =head2 Basic Tags
 
@@ -158,14 +164,9 @@ class Page     {...}
 
 =para Combine these tags in the same way as the overall layout of an HTML webpage. Note that they hide complexity to expose only relevant information to the fore. Override them with your own roles and classes to implement your specific needs.
 
-=head3 role Safe   does Tag[Regular] {...}
 
-role Safe   does Tag[Regular]  {
-    #| avoids HTML escape
-    multi method HTML {
-        @.inners.join
-    }
-}
+
+#`[
 
 =head3 role Script does Tag[Regular] {...}
 
@@ -177,6 +178,7 @@ role Script does Tag[Regular]  {
         closer($.name)           ~ "\n"
     }
 }
+
 
 =head3 role Style  does Tag[Regular] {...}
 
@@ -201,6 +203,8 @@ role Title  does Tag[Regular]  {}
 
 role Link   does Tag[Singular] {}
 
+#]
+
 =head3 role A      does Tag[Regular] {...}
 
 role A      does Tag[Regular]  {
@@ -216,6 +220,16 @@ role A      does Tag[Regular]  {
 =head3 role Button does Tag[Regular] {}
 
 role Button does Tag[Regular]  {}
+
+=head3 role Safe   does Tag[Regular] {...}
+
+role Safe   does Tag[Regular]  {
+    #| avoids HTML escape
+    multi method HTML {
+        @.inners.join
+    }
+}
+#]
 
 =head2 Page Tags
 
@@ -417,7 +431,7 @@ role Time      does Tag[Regular] {
 
 =head3 role Spacer does Tag
 
-role Spacer    does Tag {
+role Spacer    does Tag[Regular] {
     has Str $.height = '1em';
 
     multi method HTML {
@@ -430,11 +444,11 @@ role Spacer    does Tag {
 
 =para Active tags that can be used anywhere to provide a nugget of UI behaviour, default should be a short word (or a single item) that can be used in Nav
 
-role Widget {}
+role Widget does Tag[Regular] {}
 
 =head3 role LightDark does Tag[Regular] does Widget {...}
 
-role LightDark does Tag does Widget {
+role LightDark does Widget {
     #| attribute 'show' may be set to 'icon'(default) or 'buttons'
     multi method HTML {
         my $show = self.attrs<show> // 'icon';
@@ -569,7 +583,7 @@ role Analytics does Tool {
 
 =head3 role External  does Tag[Regular] {...}
 
-role External  does Tag {
+role External  does Tag[Regular] {
     has Str $.label is rw = '';
     has %.others = {:target<_blank>, :rel<noopener noreferrer>};
 
@@ -581,7 +595,7 @@ role External  does Tag {
 
 =head3 role Internal  does Tag[Regular] {...}
 
-role Internal  does Tag {
+role Internal  does Tag[Regular] {
     has Str $.label is rw = '';
 
     multi method HTML {
@@ -1309,9 +1323,21 @@ role Flexbox   does Component {
     }
 }
 
-=head3 role Dashboard does Tag[Regular]
+=head3 role Dashboard does Component
 
-role Dashboard does Tag[Regular] {
+role Dashboard does Component {
+    has @.inners;
+    has %.attrs;
+
+    multi method new(*@inners, *%attrs) {
+        self.bless:  :@inners, |%attrs;
+    }
+
+    # this emits a dashboard tag
+    multi method HTML {
+        do-regular-tag( 'dashboard', @.inners, |%.attrs )
+    }
+
     method STYLE {
         Q:to/END/;
         dashboard {
@@ -1515,7 +1541,7 @@ role Tabs      does Component {
 
 =head3 role Dialog does Component
 
-# fixme
+# fixme not working yet
 role Dialog     does Component {
     method SCRIPT {
 q:to/END/;
@@ -1743,9 +1769,9 @@ role Lightbox     does Component {
 
 =head2 Other Tags
 
-=head3 role Markdown does Tag
+=head3 role Markdown does Component
 
-role Markdown    does Tag {
+role Markdown    does Component {
     use Text::Markdown;
 
     #| markdown to be converted
@@ -1823,16 +1849,38 @@ role Defaults {
 # viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 my package EXPORT::DEFAULT {
 
-    for @functions -> $name {
+    note exports-air-base;
+
+    for exports-air-base() -> $name {
 
         OUR::{'&' ~ $name.lc} :=
             sub (*@a, *%h) {
                 ::($name).new( |@a, |%h )
             }
+
+    }
+
+    note exports-air-base-tags;
+
+    for exports-air-base-tags() -> $name {
+
+        OUR::{'&' ~ $name.lc} :=
+            sub (*@a, *%h) {
+                ::($name).new( |@a, |%h )
+            }
+
     }
 }
 
-my package EXPORT::NONE { }
+sub EXPORT {
+    Map.new:
+        exports-air-base-tags.map: {$_ => ::($_)}
+}
+
+
+
+
+
 
 =begin pod
 =head1 AUTHOR

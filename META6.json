@@ -14,12 +14,14 @@
         "Cro::HTTP:ver<0.8.11>:auth<zef:cro>:api<0>",
         "Cro::WebApp:ver<0.10.0>:auth<zef:cro>:api<0>",
         "Cromponent:ver<0.0.13>:auth<zef:FCO>",
-        "Text::Markdown:ver<1.1.1>:auth<zef:JJMERELO>"
+        "Text::Markdown:ver<1.1.1>:auth<zef:JJMERELO>",
+        "YAMLish:ver<0.1.2>:auth<zef:leont>"
     ],
     "build-depends": [],
     "provides": {
         "Air": "lib/Air.rakumod",
         "Air::Base": "lib/Air/Base.rakumod",
+        "Air::Base::Tags": "lib/Air/Base/Tags.rakumod",
         "Air::Component": "lib/Air/Component.rakumod",
         "Air::Form": "lib/Air/Form.rakumod",
         "Air::Functional": "lib/Air/Functional.rakumod"
