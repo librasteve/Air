@@ -258,7 +258,7 @@ my package EXPORT::CRO {
 }
 
 
-my @exclude-base  = <script style meta link title a button section article aside time body main header content footer nav table grid dialog>;
+my @exclude-base  = <section article script style meta link title a button aside time body main header content footer nav table grid dialog>;
 
 my @regular-base  = @regular-tags.grep:  { $_ ∉ @exclude-base };
 my @singular-base = @singular-tags.grep: { $_ ∉ @exclude-base };
@@ -278,7 +278,7 @@ my package EXPORT::BASE {
 # ========================================================================
 
 
-my @exclude-tempin  = <script style meta title link a button section article>;
+my @exclude-tempin  = <script style meta title link a button>;
 
 my @regular-tempin  = @regular-tags.grep:  { $_ ∉ @exclude-tempin };
 my @singular-tempin = @singular-tags.grep: { $_ ∉ @exclude-tempin };

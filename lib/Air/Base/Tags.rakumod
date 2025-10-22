@@ -1,6 +1,6 @@
 unit module Tags;
 
-sub exports-air-base-tags is export {<Script Style Meta Title Link A Button Section Article Safe>}
+sub exports-air-base-tags is export {<Script Style Meta Title Link A Button Safe>}
 
 use Air::Functional :MANDATORY;
 
@@ -56,17 +56,20 @@ role Button  does Tag[Regular] is export {}
 
 =head3 role Section   does Tag[Regular] {}
 
-role Section does Tag[Regular] is export {}
+#role Section does Tag[Regular] is export {}
 
 =head3 role Article   does Tag[Regular] {}
 
-role Article   does Tag[Regular] {   #iamerejh
-    # Keep text ltr even when grid direction rtl
-    multi method HTML {
-        my %attrs  = |%.attrs, :style("direction:ltr;");
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
+#role Article   does Tag[Regular] {   #iamerejh
+#    # Keep text ltr even when grid direction rtl
+#    multi method HTML {
+#        my %attrs  = |%.attrs, :style("direction:ltr;");
+#        do-regular-tag( $.name, @.inners, |%attrs )
+#    }
+#}
+
+
+#---
 
 =head3 role Safe   does Tag[Regular] {...}
 
