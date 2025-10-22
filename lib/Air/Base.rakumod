@@ -145,91 +145,23 @@ use Air::Form;
 
 use Air::Base::Tags;
 
+#my $ay = A.new;
+#note $ay;
+#
+#my $ht = a :href<#>, 'yo';
+#note $ht.HTML;
+#die;
+
 #sub functions-air-base {<Site Page External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
 
-sub exports-air-base {<Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
+sub exports-air-base {<Safe Site Page External Internal Content Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
 
 # predeclarations
 role  Defaults {...}
 class Nav      {...}
 class Page     {...}
 
-#[
 
-=head2 Basic Tags
-
-=para Air::Functional converts all HTML tags into raku functions. Air::Base overrides a subset of these HTML tags, providing them both as raku roles and functions.
-
-=para The Air::Base tags each embed some code to provide behaviours. This can be simple - C<role Script {}> just marks JavaScript as exempt from HTML Escape. Or complex - C<role Body {}> has C<Header>, C<Main> and C<Footer> attributes with certain defaults and constructors.
-
-=para Combine these tags in the same way as the overall layout of an HTML webpage. Note that they hide complexity to expose only relevant information to the fore. Override them with your own roles and classes to implement your specific needs.
-
-
-
-#`[
-
-=head3 role Script does Tag[Regular] {...}
-
-role Script does Tag[Regular]  {
-    #| no html escape
-    multi method HTML {
-        opener($.name, |%.attrs) ~
-        ( @.inners.first // '' ) ~
-        closer($.name)           ~ "\n"
-    }
-}
-
-
-=head3 role Style  does Tag[Regular] {...}
-
-role Style  does Tag[Regular]  {
-    #| no html escape
-    multi method HTML {
-        opener($.name, |%.attrs)  ~
-        @.inners.first            ~
-        closer($.name)            ~ "\n"
-    }
-}
-
-=head3 role Meta   does Tag[Singular] {}
-
-role Meta   does Tag[Singular] {}
-
-=head3 role Title  does Tag[Regular]  {}
-
-role Title  does Tag[Regular]  {}
-
-=head3 role Link  does Tag[Regular]  {}
-
-role Link   does Tag[Singular] {}
-
-#]
-
-=head3 role A      does Tag[Regular] {...}
-
-role A      does Tag[Regular]  {
-    #| always sets target="_blank"
-    multi method HTML {
-        my %attrs = |%.attrs;
-        %attrs<target> = '_blank' without %attrs<target>;
-
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
-
-=head3 role Button does Tag[Regular] {}
-
-role Button does Tag[Regular]  {}
-
-=head3 role Safe   does Tag[Regular] {...}
-
-role Safe   does Tag[Regular]  {
-    #| avoids HTML escape
-    multi method HTML {
-        @.inners.join
-    }
-}
-#]
 
 =head2 Page Tags
 
@@ -363,26 +295,19 @@ role Html   does Tag[Regular]  {
 
 =head3 role Content   does Tag[Regular] {...}
 
-role Content   does Tag[Regular] {
-    multi method HTML {
-        my %attrs  = |%.attrs, :id<content>;
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
-
-=head3 role Section   does Tag[Regular] {}
-
-role Section   does Tag[Regular] {}
-
-=head3 role Article   does Tag[Regular] {}
-
-role Article   does Tag[Regular] {
-    # Keep text ltr even when grid direction rtl
-    multi method HTML {
-        my %attrs  = |%.attrs, :style("direction:ltr;");
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
+#=head3 role Section   does Tag[Regular] {}
+#
+#role Section   does Tag[Regular] {}
+#
+#=head3 role Article   does Tag[Regular] {}
+#
+#role Article   does Tag[Regular] {
+#    # Keep text ltr even when grid direction rtl
+#    multi method HTML {
+#        my %attrs  = |%.attrs, :style("direction:ltr;");
+#        do-regular-tag( $.name, @.inners, |%attrs )
+#    }
+#}
 
 =head3 role Aside     does Tag[Regular] {}
 
@@ -429,7 +354,16 @@ role Time      does Tag[Regular] {
     }
 }
 
-=head3 role Spacer does Tag
+=head3 role Content does Tag[Regular] {}
+
+role Content   does Tag[Regular] {
+    multi method HTML {
+        my %attrs  = |%.attrs, :id<content>;
+        do-regular-tag( $.name, @.inners, |%attrs )
+    }
+}
+
+=head3 role Spacer does Tag[Regular] {}
 
 role Spacer    does Tag[Regular] {
     has Str $.height = '1em';
@@ -588,7 +522,7 @@ role External  does Tag[Regular] {
     has %.others = {:target<_blank>, :rel<noopener noreferrer>};
 
     multi method HTML {
-        my %attrs = |self.others, |%.attrs;
+        my %attrs = |%.others, |%.attrs;
         do-regular-tag( 'a', [$.label], |%attrs )
     }
 }

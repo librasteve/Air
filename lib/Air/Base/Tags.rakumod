@@ -1,6 +1,6 @@
 unit module Tags;
 
-sub exports-air-base-tags is export {<Script Style Meta Title Link>}
+sub exports-air-base-tags is export {<Script Style Meta Title Link A Button Section Article Safe>}
 
 use Air::Functional :MANDATORY;
 
@@ -36,33 +36,37 @@ role Style  does Tag[Regular] is export  {
 
 =head3 role Meta   does Tag[Singular] {}
 
-role Meta   does Tag[Singular] is export {}
+role Meta    does Tag[Singular] is export {}
 
 =head3 role Title  does Tag[Regular]  {}
 
-role Title  does Tag[Regular] is export {}
+role Title   does Tag[Regular] is export {}
 
-=head3 role Link  does Tag[Regular]  {}
+=head3 role Link   does Tag[Regular]  {}
 
-role Link   does Tag[Singular] is export {}
+role Link    does Tag[Singular] is export {}
 
-#`[
+=head3 role A      does Tag[Regular] {}
 
-=head3 role A      does Tag[Regular] {...}
-
-role A      does Tag[Regular] is export  {
-    #| always sets target="_blank"
-    multi method HTML {
-        my %attrs = |%.attrs;
-        %attrs<target> = '_blank' without %attrs<target>;
-
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
+role A       does Tag[Regular] is export  {}
 
 =head3 role Button does Tag[Regular] {}
 
-role Button does Tag[Regular] is export {}
+role Button  does Tag[Regular] is export {}
+
+=head3 role Section   does Tag[Regular] {}
+
+role Section does Tag[Regular] is export {}
+
+=head3 role Article   does Tag[Regular] {}
+
+role Article   does Tag[Regular] {   #iamerejh
+    # Keep text ltr even when grid direction rtl
+    multi method HTML {
+        my %attrs  = |%.attrs, :style("direction:ltr;");
+        do-regular-tag( $.name, @.inners, |%attrs )
+    }
+}
 
 =head3 role Safe   does Tag[Regular] {...}
 
@@ -72,8 +76,6 @@ role Safe   does Tag[Regular] is export {
         @.inners.join
     }
 }
-
-#]
 
 ##### Functions Export #####
 
