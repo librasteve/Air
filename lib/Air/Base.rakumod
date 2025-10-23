@@ -143,7 +143,7 @@ use Air::Functional :TEMPIN;   #fixme
 use Air::Component;
 use Air::Form;
 
-use Air::Base::Tags;
+use Air::Base::Tags;/S
 
 #my $ay = A.new;
 #note $ay;
