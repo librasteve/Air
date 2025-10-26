@@ -278,7 +278,7 @@ my package EXPORT::BASE {
 # ========================================================================
 
 
-my @exclude-tempin  = <script style meta title link a button>;
+my @exclude-tempin  = <section article script style meta title link a button>;
 
 my @regular-tempin  = @regular-tags.grep:  { $_ ∉ @exclude-tempin };
 my @singular-tempin = @singular-tags.grep: { $_ ∉ @exclude-tempin };

@@ -143,18 +143,11 @@ use Air::Functional :TEMPIN;   #fixme
 use Air::Component;
 use Air::Form;
 
-use Air::Base::Tags;/S
-
-#my $ay = A.new;
-#note $ay;
-#
-#my $ht = a :href<#>, 'yo';
-#note $ht.HTML;
-#die;
+use Air::Base::Tags;
 
 #sub functions-air-base {<Site Page External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
 
-sub exports-air-base {<Section Article Safe Site Page External Internal Content Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
+sub exports-air-base {<Safe Site Page External Internal Content Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
 
 # predeclarations
 role  Defaults {...}
@@ -295,19 +288,19 @@ role Html   does Tag[Regular]  {
 
 =head3 role Content   does Tag[Regular] {...}
 
-=head3 role Section   does Tag[Regular] {}
-
-role Section   does Tag[Regular] {}
-
-=head3 role Article   does Tag[Regular] {}
-
-role Article   does Tag[Regular] {
-    # Keep text ltr even when grid direction rtl
-    multi method HTML {
-        my %attrs  = |%.attrs, :style("direction:ltr;");
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
+#=head3 role Section   does Tag[Regular] {}
+#
+#role Section   does Tag[Regular] {}
+#
+#=head3 role Article   does Tag[Regular] {}
+#
+#role Article   does Tag[Regular] {
+#    # Keep text ltr even when grid direction rtl
+#    multi method HTML {
+#        my %attrs  = |%.attrs, :style("direction:ltr;");
+#        do-regular-tag( $.name, @.inners, |%attrs )
+#    }
+#}
 
 =head3 role Aside     does Tag[Regular] {}
 
