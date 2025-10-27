@@ -1,7 +1,5 @@
 unit module Tags;
 
-sub exports-air-base-tags is export {<Aside Time Content Spacer Article Section Script Style Meta Title Link A Button Safe>}
-
 use Air::Functional :MANDATORY;
 
 =head2 Air::Base::Tags
@@ -18,7 +16,7 @@ use Air::Functional :MANDATORY;
 
 =head3 role Script does Tag[Regular] {...}
 
-role Script does Tag[Regular] is export {
+role Script does Tag[Regular] {
     #| no html escape
     multi method HTML {
         opener($.name, |%.attrs) ~
@@ -29,7 +27,7 @@ role Script does Tag[Regular] is export {
 
 =head3 role Style  does Tag[Regular] {...}
 
-role Style  does Tag[Regular] is export  {
+role Style  does Tag[Regular]  {
     #| no html escape
     multi method HTML {
         opener($.name, |%.attrs)  ~
@@ -40,15 +38,15 @@ role Style  does Tag[Regular] is export  {
 
 =head3 role Meta   does Tag[Singular] {}
 
-role Meta    does Tag[Singular] is export {}
+role Meta    does Tag[Singular] {}
 
 =head3 role Title  does Tag[Regular]  {}
 
-role Title   does Tag[Regular] is export {}
+role Title   does Tag[Regular] {}
 
 =head3 role Link   does Tag[Regular]  {}
 
-role Link    does Tag[Singular] is export {}
+role Link    does Tag[Singular] {}
 
 =head3 role A      does Tag[Regular] {}
 
@@ -56,19 +54,19 @@ role Link    does Tag[Singular] is export {}
 
 =para These are a mix of HTML Tags re-published (some with minor improvements) and of newly construed Air Tags for convenience. Generally they are chosen to align with the Pico CSS semantic tags in use.
 
-role A       does Tag[Regular] is export  {}
+role A       does Tag[Regular]  {}
 
 =head3 role Button does Tag[Regular] {}
 
-role Button  does Tag[Regular] is export {}
+role Button  does Tag[Regular] {}
 
 =head3 role Section   does Tag[Regular] {}
 
-role Section does Tag[Regular] is export {}
+role Section does Tag[Regular] {}
 
 =head3 role Article   does Tag[Regular] {}
 
-role Article does Tag[Regular] is export {
+role Article does Tag[Regular] {
     # Keep text ltr even when grid direction rtl
     multi method HTML {
         my %attrs = |%.attrs, :style("direction:ltr;");
@@ -78,7 +76,7 @@ role Article does Tag[Regular] is export {
 
 =head3 role Aside     does Tag[Regular] {}
 
-role Aside   does Tag[Regular] is export {
+role Aside   does Tag[Regular] {
     method STYLE {
         q:to/END/
         /* Custom styles for aside layout */
@@ -101,7 +99,7 @@ role Aside   does Tag[Regular] is export {
 
 =para In HTML the time tag is typically of the form E<lt> time datetime="2025-03-13" E<gt> 13 March, 2025 E<lt> /time E<gt> . In Air you can just go time(:datetime E<lt> 2025-02-27 E<gt> ); and raku will auto format and fill out the inner human readable text.
 
-role Time    does Tag[Regular] is export {
+role Time    does Tag[Regular] {
     use DateTime::Format;
 
     multi method HTML {
@@ -123,7 +121,7 @@ role Time    does Tag[Regular] is export {
 
 =head3 role Content does Tag[Regular] {}
 
-role Content does Tag[Regular] is export {
+role Content does Tag[Regular] {
     multi method HTML {
         my %attrs  = |%.attrs, :id<content>;
         do-regular-tag( $.name, @.inners, |%attrs )
@@ -132,7 +130,7 @@ role Content does Tag[Regular] is export {
 
 =head3 role Spacer does Tag[Regular] {}
 
-role Spacer  does Tag[Regular] is export {
+role Spacer  does Tag[Regular] {
     has Str $.height = '1em';
 
     multi method HTML {
@@ -146,7 +144,7 @@ role Spacer  does Tag[Regular] is export {
 
 =head3 role Safe   does Tag[Regular] {...}
 
-role Safe   does Tag[Regular] is export {
+role Safe   does Tag[Regular] {
     #| avoids HTML escape
     multi method HTML {
         @.inners.join
@@ -155,18 +153,28 @@ role Safe   does Tag[Regular] is export {
 
 ##### Functions Export #####
 
-#| put in all the @components as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
+my constant @exports-air-base-tags =
+  A,
+  Aside,
+  Article,
+  Button,
+  Content,
+  Link,
+  Meta,
+  Safe,
+  Script,
+  Section,
+  Spacer,
+  Style,
+  Time,
+  Title,
+;
+
+#| put in all the @components as functions sub name(|c) {Name.new(|c)}
 # viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 
 my package EXPORT::DEFAULT {
-
-    for exports-air-base-tags() -> $name {
-
-        OUR::{'&' ~ $name.lc} :=
-            sub (*@a, *%h) {
-                ::($name).new( |@a, |%h )
-            }
-
+    for @exports-air-base-tags -> $class {
+        OUR::{'&' ~ $class.^shortname.lc} := my sub (|c) { $class.new(|c) }
     }
 }
-
