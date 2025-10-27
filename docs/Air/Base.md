@@ -146,64 +146,23 @@ Key features shown are:
 DESCRIPTION
 ===========
 
-Each feature of Air::Base is set out below:
+In general, items defined in Air::Base are exported as both roles or classes (title case) and as subroutines (lower case).
 
-Basic Tags
-----------
+So, after `use`ing the relevant module you can code in OO or functional style:
 
-Air::Functional converts all HTML tags into raku functions. Air::Base overrides a subset of these HTML tags, providing them both as raku roles and functions.
+``` my $t = Title.new: 'sometext'; ```
 
-The Air::Base tags each embed some code to provide behaviours. This can be simple - `role Script {}` just marks JavaScript as exempt from HTML Escape. Or complex - `role Body {}` has `Header`, `Main` and `Footer` attributes with certain defaults and constructors.
+Is identical to writing:
 
-Combine these tags in the same way as the overall layout of an HTML webpage. Note that they hide complexity to expose only relevant information to the fore. Override them with your own roles and classes to implement your specific needs.
+``` my $t = title 'sometext'; ```
 
-### role Safe does Tag[Regular] {...}
+Air::Base is implemented as a set of modules:
 
-### method HTML
+  * [Air::Base::Tags](Air/Base/Tags.md) - HTML, Semantic & Safe Tags
 
-```raku
-method HTML() returns Mu
-```
+{...}
 
-avoids HTML escape
-
-### role Script does Tag[Regular] {...}
-
-### method HTML
-
-```raku
-method HTML() returns Mu
-```
-
-no html escape
-
-### role Style does Tag[Regular] {...}
-
-### method HTML
-
-```raku
-method HTML() returns Mu
-```
-
-no html escape
-
-### role Meta does Tag[Singular] {}
-
-### role Title does Tag[Regular] {}
-
-### role Link does Tag[Regular] {}
-
-### role A does Tag[Regular] {...}
-
-### method HTML
-
-```raku
-method HTML() returns Mu
-```
-
-defaults to target="_blank"
-
-### role Button does Tag[Regular] {}
+All items are re-exported by the top level module, so you can just `use Air::Base;` near the top of your code.
 
 Page Tags
 ---------
@@ -214,37 +173,29 @@ A subset of Air::Functional basic HTML tags, provided as roles, that are slightl
 
 Singleton pattern (ie. same Head for all pages)
 
-### has Title $.title
+### has Tags::Title $.title
 
 title
 
-### has Meta $.description
+### has Tags::Meta $.description
 
 description
 
-### has Positional[Meta] @.metas
+### has Positional[Tags::Meta] @.metas
 
 metas
 
-### has Positional[Script] @.scripts
+### has Positional[Tags::Script] @.scripts
 
 scripts
 
-### has Positional[Link] @.links
+### has Positional[Tags::Link] @.links
 
 links
 
-### has Positional[Style] @.styles
+### has Positional[Tags::Style] @.styles
 
 style
-
-### method defaults
-
-```raku
-method defaults() returns Mu
-```
-
-set up common defaults (called on instantiation)
 
 ### method HTML
 
@@ -260,7 +211,7 @@ method HTML() returns Mu
 
 nav
 
-### has Safe $.tagline
+### has Tags::Safe $.tagline
 
 tagline
 
@@ -285,7 +236,7 @@ main
 
 footer
 
-### has Positional[Script] @.scripts
+### has Positional[Tags::Script] @.scripts
 
 scripts
 
@@ -298,35 +249,6 @@ head
 ### has Body $.body
 
 body
-
-### has Associative[Air::Functional::Attr(Any)] %.lang
-
-default :lang<en>
-
-### has Associative[Air::Functional::Attr(Any)] %.mode
-
-default :data-theme<dark>
-
-Semantic Tags
--------------
-
-These are re-published with minor adjustments and align with Pico CSS semantic tags
-
-### role Content does Tag[Regular] {...}
-
-### role Section does Tag[Regular] {}
-
-### role Article does Tag[Regular] {}
-
-### role Aside does Tag[Regular] {}
-
-### role Time does Tag[Regular] {...}
-
-In HTML the time tag is typically of the form < time datetime="2025-03-13" > 13 March, 2025 < /time > . In Air you can just go time(:datetime < 2025-02-27 > ); and raku will auto format and fill out the inner human readable text.
-
-Optionally specify mode => [time | datetime], mode => date is default
-
-### role Spacer does Tag
 
 Widgets
 -------
@@ -477,10 +399,10 @@ shortcut self.html.body.footer
 
 build page DOM by calling Air tags
 
-### method defaults
+### method shortcuts
 
 ```raku
-method defaults() returns Mu
+method shortcuts() returns Mu
 ```
 
 set all provided shortcuts on first use
@@ -541,6 +463,8 @@ method HTML() returns Mu
 
 issue page
 
+### subset Redirect of Pair where .key !~~ /\// && .value ~~ /^ \//;
+
 class Site
 ----------
 
@@ -565,6 +489,10 @@ Register for route setup; default = [Nav.new]
 ### has Positional[Tool] @.tools
 
 Tools for sitewide behaviours
+
+### has Positional[Redirect] @.redirects
+
+Redirects
 
 ### has Bool $.scss-off
 
@@ -596,6 +524,33 @@ method enqueue-all() returns Mu
 ```
 
 enqueued items are rendered in order, avoid interdependencies
+
+### method build
+
+```raku
+method build() returns Mu
+```
+
+run the SCSS compiler vendor all default packages fixme
+
+### method serve
+
+```raku
+method serve() returns Mu
+```
+
+build application and start server
+
+### method start
+
+```raku
+method start(
+    :$port = 3000,
+    :$host = "localhost"
+) returns Mu
+```
+
+start the server (ie skip build)
 
 Component Library
 -----------------
@@ -681,7 +636,7 @@ method new(
 
 .new positional takes @items
 
-### role Dashboard does Tag[Regular]
+### role Dashboard does Component
 
 ### role Box does Component
 
@@ -705,7 +660,7 @@ Tabs take two attrs for menu alignment The default is to align="left" and to not
 
 ### has Str $.adapt-menu
 
-$.adapt-menu <Nil left right center> sets the value for small viewport
+$.adapt-menu <'' left right center> sets the value for small viewport
 
 ### has Positional[TabItem] @.items
 
@@ -760,7 +715,7 @@ ok to call .new with @inners as Positional
 Other Tags
 ----------
 
-### role Markdown does Tag
+### role Markdown does Component
 
 ### has Str $.markdown
 
@@ -776,6 +731,11 @@ method new(
 ```
 
 .new positional takes Str $code
+
+Defaults
+--------
+
+role Defaults provides a central place to set the various website defaults across Head, Html and Site roles
 
 package EXPORT::DEFAULT
 -----------------------

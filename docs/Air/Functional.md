@@ -118,7 +118,11 @@ Tag Rendering
 role Tag [TagType Singular|Regular] {} - basis for Air functions
 ----------------------------------------------------------------
 
-### has Associative[Air::Functional::Attr(Any)] %.attrs
+### has Str $.name
+
+tag name is the unqualified (ie the last) part of the class name in lower case
+
+### has Associative[Air::Functional::Attr] %.attrs
 
 can be provided with attrs
 

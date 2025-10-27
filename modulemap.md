@@ -17,10 +17,11 @@
         - role Button      does Tag[Regular]
         - role Section     does Tag[Regular]
         - role Article     does Tag[Regular]
+        - role Content     does Tag[Regular]
         - role Aside       does Tag[Regular]
         - role Time        does Tag[Regular]
+        - role Spacer      does Tag[Regular]
         - role Safe        does Tag[Regular]
-        - role Spacer      does Tag[Regular]  - make a component
     - Components.rakumod
         - use Base::Tags
         - role Table       does Component
@@ -46,7 +47,6 @@
         - use Base::Tags
         - use Base::Tools
         - use Base::Widgets
-        - role Content     does Tag[Regular]
         - role External    does Tag[Regular]
         - role Internal    does Tag[Regular]
         - class Nav        does Component
@@ -73,3 +73,7 @@ Progress
   - Functional.rakumod
     - 261 add names   (exclude-base)            lc
     - 281 add names   (exclude-tempin)          lc
+
+Snagging
+
+check rakudoc md link on GH

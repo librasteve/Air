@@ -286,7 +286,7 @@ show something in 'note $x.raku'
 
 
 
-Component is for non-Red classes
+Component
 
 ### has UInt $!id
 
@@ -318,7 +318,7 @@ adapt component to perform LOAD, UPDATE, DELETE, ADD action(s) called by role Si
 
 
 
-Component::Red is for Red models
+Component::Red
 
 ### method make-methods
 

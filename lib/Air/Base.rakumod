@@ -130,7 +130,28 @@ Key features shown are:
 
 =head1 DESCRIPTION
 
-Each feature of Air::Base is set out below:
+In general, items defined in Air::Base are exported as both roles or classes (title case) and as subroutines (lower case).
+
+So, after `use`ing the relevant module you can code in OO or functional style:
+
+```
+my $t = Title.new: 'sometext';
+```
+
+Is identical to writing:
+
+```
+my $t = title 'sometext';
+```
+
+Air::Base is implemented as a set of modules:
+
+=item [Air::Base::Tags](Air/Base/Tags.md)  - HTML, Semantic & Safe Tags
+
+{...}
+
+
+All items are re-exported by the top level module, so you can just `use Air::Base;` near the top of your code.
 =end pod
 
 # TODO items
@@ -147,13 +168,12 @@ use Air::Base::Tags;
 
 #sub functions-air-base {<Site Page External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
 
-sub exports-air-base {<Safe Site Page External Internal Content Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
+sub exports-air-base {<Site Page External Internal Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
 
 # predeclarations
 role  Defaults {...}
 class Nav      {...}
 class Page     {...}
-
 
 
 =head2 Page Tags
@@ -281,90 +301,6 @@ role Html   does Tag[Regular]  {
     }
 }
 
-
-=head2 Semantic Tags
-
-=para These are re-published with minor adjustments and align with Pico CSS semantic tags
-
-=head3 role Content   does Tag[Regular] {...}
-
-#=head3 role Section   does Tag[Regular] {}
-#
-#role Section   does Tag[Regular] {}
-#
-#=head3 role Article   does Tag[Regular] {}
-#
-#role Article   does Tag[Regular] {
-#    # Keep text ltr even when grid direction rtl
-#    multi method HTML {
-#        my %attrs  = |%.attrs, :style("direction:ltr;");
-#        do-regular-tag( $.name, @.inners, |%attrs )
-#    }
-#}
-
-=head3 role Aside     does Tag[Regular] {}
-
-role Aside     does Tag[Regular] {
-    method STYLE {
-        q:to/END/
-        /* Custom styles for aside layout */
-        main {
-            display: grid;
-            grid-template-columns: 3fr 1fr;
-            gap: 20px;
-        }
-        aside {
-            background-color: aliceblue;
-            opacity: 0.9;
-            padding: 20px;
-            border-radius: 5px;
-        }
-        END
-    }
-}
-
-=head3 role Time      does Tag[Regular] {...}
-
-=para In HTML the time tag is typically of the form E<lt> time datetime="2025-03-13" E<gt> 13 March, 2025 E<lt> /time E<gt> . In Air you can just go time(:datetime E<lt> 2025-02-27 E<gt> ); and raku will auto format and fill out the inner human readable text.
-
-role Time      does Tag[Regular] {
-    use DateTime::Format;
-
-    multi method HTML {
-        my $dt = DateTime.new(%.attrs<datetime>);
-
-        =para Optionally specify mode => [time | datetime], mode => date is default
-
-        sub inner {
-            given %.attrs<mode> {
-                when     'time' { strftime('%l:%M%P', $dt) }
-                when 'datetime' { strftime('%l:%M%P on %B %d, %Y', $dt) }
-                default         { strftime('%B %d, %Y', $dt) }
-            }
-        }
-
-        do-regular-tag( $.name, [inner], |%.attrs )
-    }
-}
-
-=head3 role Content does Tag[Regular] {}
-
-role Content   does Tag[Regular] {
-    multi method HTML {
-        my %attrs  = |%.attrs, :id<content>;
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
-
-=head3 role Spacer does Tag[Regular] {}
-
-role Spacer    does Tag[Regular] {
-    has Str $.height = '1em';
-
-    multi method HTML {
-        do-regular-tag( 'div', :style("min-height:$!height;") )
-    }
-}
 
 
 =head2 Widgets
@@ -1347,8 +1283,8 @@ role Tabs      does Component {
     #| The default is to align="left" and to not adapt to media width
     #| $.align-menu <left right center> sets the overall preference
     has Str $.align-menu = 'left';
-    #| $.adapt-menu <Nil left right center> sets the value for small viewport
-    has Str $.adapt-menu;
+    #| $.adapt-menu <'' left right center> sets the value for small viewport
+    has Str $.adapt-menu = '';
 
     #| list of tab sections
     has TabItem @.items;
