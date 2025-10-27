@@ -60,7 +60,7 @@ role Section does Tag[Regular] is export {}
 
 =head3 role Article   does Tag[Regular] {}
 
-role Article   does Tag[Regular] {
+role Article   does Tag[Regular] is export {
     # Keep text ltr even when grid direction rtl
     multi method HTML {
         my %attrs = |%.attrs, :style("direction:ltr;");
