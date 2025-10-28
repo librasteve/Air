@@ -77,3 +77,11 @@ Progress
 Snagging
 
 check rakudoc md link on GH
+
+per limzmat rewrite export loop to 
+
+for @exports-air-base-tags -> $class {
+    my $name := $class.^shortname;
+    OUR::{'&' ~ $name.lc} := my sub (|c) { $class.new(|c);
+    OUR::{$name} := $class;
+}
