@@ -146,7 +146,7 @@ my $t = title 'sometext';
 
 Air::Base is implemented as a set of modules:
 
-=item [Air::Base::Tags](Air/Base/Tags.md)  - HTML, Semantic & Safe Tags
+=item [Air::Base::Tags](Base/Tags.md)  - HTML, Semantic & Safe Tags
 
 {...}
 

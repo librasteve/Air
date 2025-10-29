@@ -15,9 +15,9 @@
         - role Link        does Tag[Singular]
         - role A           does Tag[Regular]
         - role Button      does Tag[Regular]
+        - role Content     does Tag[Regular]
         - role Section     does Tag[Regular]
         - role Article     does Tag[Regular]
-        - role Content     does Tag[Regular]
         - role Aside       does Tag[Regular]
         - role Time        does Tag[Regular]
         - role Spacer      does Tag[Regular]
@@ -76,4 +76,4 @@ Progress
 
 Snagging
 
-check rakudoc md link on GH
+- 

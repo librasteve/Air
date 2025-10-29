@@ -158,7 +158,7 @@ Is identical to writing:
 
 Air::Base is implemented as a set of modules:
 
-  * [Air::Base::Tags](Air/Base/Tags.md) - HTML, Semantic & Safe Tags
+  * [Air::Base::Tags](Base/Tags.md) - HTML, Semantic & Safe Tags
 
 {...}
 

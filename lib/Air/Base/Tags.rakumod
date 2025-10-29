@@ -1,6 +1,6 @@
 unit module Tags;
 
-sub exports-air-base-tags is export {<Aside Time Content Spacer Article Section Script Style Meta Title Link A Button Safe>}
+sub exports-air-base-tags is export {<Script Style Meta Title Link A Button Content Section Article Aside Time Spacer Safe>}
 
 use Air::Functional :MANDATORY;
 
@@ -12,13 +12,13 @@ use Air::Functional :MANDATORY;
 
 =para Combine these tags in the same way as the overall layout of an HTML webpage. Note that they hide complexity to expose only relevant information to the fore. Override them with your own roles and classes to implement your specific needs.
 
-=head2 Utility Tags
+=head2 Header Tags
 
 =para These HTML Tags are re-published for Air::Base since we need to have roles declared for types anyway. Some have a few minor "improvements" via the setting of attribute defaults.
 
 =head3 role Script does Tag[Regular] {...}
 
-role Script does Tag[Regular] is export {
+role Script  does Tag[Regular] is export {
     #| no html escape
     multi method HTML {
         opener($.name, |%.attrs) ~
@@ -29,7 +29,7 @@ role Script does Tag[Regular] is export {
 
 =head3 role Style  does Tag[Regular] {...}
 
-role Style  does Tag[Regular] is export  {
+role Style   does Tag[Regular] is export  {
     #| no html escape
     multi method HTML {
         opener($.name, |%.attrs)  ~
@@ -50,17 +50,26 @@ role Title   does Tag[Regular] is export {}
 
 role Link    does Tag[Singular] is export {}
 
-=head3 role A      does Tag[Regular] {}
-
 =head2 Semantic Tags
 
 =para These are a mix of HTML Tags re-published (some with minor improvements) and of newly construed Air Tags for convenience. Generally they are chosen to align with the Pico CSS semantic tags in use.
+
+=head3 role A      does Tag[Regular] {}
 
 role A       does Tag[Regular] is export  {}
 
 =head3 role Button does Tag[Regular] {}
 
 role Button  does Tag[Regular] is export {}
+
+=head3 role Content does Tag[Regular] {}
+
+role Content does Tag[Regular] is export {
+    multi method HTML {
+        my %attrs  = |%.attrs, :id<content>;
+        do-regular-tag( $.name, @.inners, |%attrs )
+    }
+}
 
 =head3 role Section   does Tag[Regular] {}
 
@@ -121,15 +130,6 @@ role Time    does Tag[Regular] is export {
     }
 }
 
-=head3 role Content does Tag[Regular] {}
-
-role Content does Tag[Regular] is export {
-    multi method HTML {
-        my %attrs  = |%.attrs, :id<content>;
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
-
 =head3 role Spacer does Tag[Regular] {}
 
 role Spacer  does Tag[Regular] is export {
@@ -146,8 +146,7 @@ role Spacer  does Tag[Regular] is export {
 
 =head3 role Safe   does Tag[Regular] {...}
 
-role Safe   does Tag[Regular] is export {
-    #| avoids HTML escape
+role Safe    does Tag[Regular] is export {
     multi method HTML {
         @.inners.join
     }
