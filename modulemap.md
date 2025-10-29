@@ -76,4 +76,12 @@ Progress
 
 Snagging
 
-- 
+- lizmat code for Tags.rakumod etc.
+
+```
+for @exports-air-base-tags -> $class {
+    my $name := $class.^shortname;
+    OUR::{'&' ~ $name.lc} := my sub (|c) { $class.new(|c);
+    OUR::{$name} := $class;
+}
+```
