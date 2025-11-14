@@ -278,7 +278,7 @@ my package EXPORT::BASE {
 # ========================================================================
 
 
-my @exclude-tempin  = <section article script style meta title link a button aside time content>;
+my @exclude-tempin  = <section article script style meta title link a button aside time content table grid flexbox dashboard box tab tabs dialog lightbox markdown>;
 
 my @regular-tempin  = @regular-tags.grep:  { $_ ∉ @exclude-tempin };
 my @singular-tempin = @singular-tags.grep: { $_ ∉ @exclude-tempin };
@@ -290,6 +290,25 @@ my package EXPORT::TEMPIN {
     }
 
     for @singular-tempin -> $tag {
+        OUR::{'&' ~ $tag} := sub (*%h) { do-singular-tag( "$tag", |%h ) }
+    }
+}
+
+# ========================================================================
+
+
+my @exclude-tempin2  = <section article script style meta title link a button aside time content>;
+
+my @regular-tempin2  = @regular-tags.grep:  { $_ ∉ @exclude-tempin2 };
+my @singular-tempin2 = @singular-tags.grep: { $_ ∉ @exclude-tempin2 };
+
+
+my package EXPORT::TEMPIN2 {
+    for @regular-tempin2 -> $tag {
+        OUR::{'&' ~ $tag} := sub (*@inners, *%h) { do-regular-tag( "$tag", @inners, |%h ) }
+    }
+
+    for @singular-tempin2 -> $tag {
         OUR::{'&' ~ $tag} := sub (*%h) { do-singular-tag( "$tag", |%h ) }
     }
 }

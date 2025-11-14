@@ -1,7 +1,7 @@
 
 - Base.rakumod
   - use Base::Tags
-  - use Base::Components
+  - use Base::Elements
   - use Base::Page
   - use Base::Site
   - use Base::Tools
@@ -22,7 +22,7 @@
         - role Time        does Tag[Regular]
         - role Spacer      does Tag[Regular]
         - role Safe        does Tag[Regular]
-    - Components.rakumod
+    - Elements.rakumod
         - use Base::Tags
         - role Table       does Component
         - role Grid        does Component
@@ -64,10 +64,10 @@
         - class Site
 
 
-Progress
+Process
   - cp role / class Base.rakumod => Base/Tags.rakumod
   - Base.rakumod  
-    - 157 rm names    (exports-air-base)        tc
+    - 172 rm names    (exports-air-base)        tc
   - Base/Tags.rakumod
     - 3   add names   (exports-air-base-tags)   tc
   - Functional.rakumod
