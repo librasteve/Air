@@ -635,7 +635,7 @@ role Lightbox   does Component is export {
     }
 }
 
-=head2 Content Elements
+=head2 Other Elements
 
 =head3 role Markdown does Component is export
 

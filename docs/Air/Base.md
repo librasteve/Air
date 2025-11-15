@@ -162,6 +162,8 @@ Air::Base is implemented as a set of modules:
 
   * [Air::Base::Elements](Base/Elements.md) - Layout, Active & Markdown Elements
 
+  * [Air::Base::Tools](Base/Tools.md) - Tools for sitewide deployment
+
 {...}
 
 All items are re-exported by the top level module, so you can just `use Air::Base;` near the top of your code.
@@ -266,21 +268,6 @@ method HTML() returns Mu
 ```
 
 attribute 'show' may be set to 'icon'(default) or 'buttons'
-
-Tools
------
-
-Tools are provided to the site tag to provide a nugget of side-wide behaviour, services method defaults are distributed to all pages on server start
-
-### role Analytics does Tool {...}
-
-### has Provider $.provider
-
-may be [Umami] - others TBD
-
-### has Str $.key
-
-website ID from provider
 
 Site Tags
 ---------
@@ -466,7 +453,7 @@ index Page ( otherwise $!index = @!pages[0] )
 
 Register for route setup; default = [Nav.new]
 
-### has Positional[Tool] @.tools
+### has Positional[Tools::Tool] @.tools
 
 Tools for sitewide behaviours
 

@@ -21,8 +21,9 @@
     "provides": {
         "Air": "lib/Air.rakumod",
         "Air::Base": "lib/Air/Base.rakumod",
-        "Air::Base::Tags": "lib/Air/Base/Tags.rakumod",
         "Air::Base::Elements": "lib/Air/Base/Elements.rakumod",
+        "Air::Base::Tags": "lib/Air/Base/Tags.rakumod",
+        "Air::Base::Tools": "lib/Air/Base/Tools.rakumod",
         "Air::Component": "lib/Air/Component.rakumod",
         "Air::Form": "lib/Air/Form.rakumod",
         "Air::Functional": "lib/Air/Functional.rakumod"

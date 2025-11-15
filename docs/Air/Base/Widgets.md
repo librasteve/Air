@@ -166,8 +166,8 @@ method new(
 
 ok to call .new with @inners as Positional
 
-Content Elements
-----------------
+Other Elements
+--------------
 
 ### role Markdown does Component is export
 

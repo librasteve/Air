@@ -148,6 +148,7 @@ Air::Base is implemented as a set of modules:
 
 =item [Air::Base::Tags](Base/Tags.md)  - HTML, Semantic & Safe Tags
 =item [Air::Base::Elements](Base/Elements.md)  - Layout, Active & Markdown Elements
+=item [Air::Base::Tools](Base/Tools.md)  - Tools for sitewide deployment
 
 
 {...}
@@ -168,10 +169,11 @@ use Air::Form;
 
 use Air::Base::Tags;
 use Air::Base::Elements;
+use Air::Base::Tools;
 
 #sub functions-air-base {<Site Page External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
 
-sub exports-air-base {<Site Page External Internal Nav LightDark Body Header Main Footer>}
+sub exports-air-base {<Site Page External Internal Nav Background LightDark Body Header Main Footer>}
 
 # predeclarations
 role  Defaults {...}
@@ -413,34 +415,6 @@ role LightDark does Widget {
     }
 }
 
-=head2 Tools
-
-=para Tools are provided to the site tag to provide a nugget of side-wide behaviour, services method defaults are distributed to all pages on server start
-
-role Tool {}
-
-=head3 role Analytics does Tool {...}
-
-enum Provider is export <Umami>;
-
-role Analytics does Tool {
-    #| may be [Umami] - others TBD
-    has Provider $.provider;
-    #| website ID from provider
-    has Str      $.key;
-
-    multi method inject($page) {
-        given $!provider {
-            when Umami {
-                $page.html.head.scripts.append:
-                    Script.new: :defer,
-                        :src<https://cloud.umami.is/script.js>,
-                        :data-website-id($!key);
-            }
-        }
-    }
-}
-
 =head2 Site Tags
 
 =para These are the central elements of Air::Base
@@ -624,53 +598,6 @@ class Nav      does Component {
         END
     }
 }
-
-#=head3 role Background  does Component
-#
-#role Background does Component {
-#    #| top of background image (in px)
-#    has $.top = 140;
-#    #| height of background image (in px)
-#    has $.height = 320;
-#    #| url of background image
-#    has $.url = 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Butterfly_bottom_PSF_transparent.gif';
-#    #| opacity of background image
-#    has $.opacity = 0.1;
-#    #| rotate angle of background image (in deg)
-#    has $.rotate = -9;
-#
-#    method STYLE {
-#        my $scss = q:to/END/;
-#        #background {
-#            position: fixed;
-#            top: %TOP%px;
-#            left: 0;
-#            width: 100vw;
-#            height: %HEIGHT%px;
-#            background: url('%URL%');
-#            opacity: %OPACITY%;
-#            filter: grayscale(100%);
-#            transform: rotate(%ROTATE%deg);
-#            background-repeat: no-repeat;
-#            background-position: center center;
-#            z-index: -1;
-#            pointer-events: none;
-#            padding: 20px;
-#        }
-#        END
-#
-#        $scss ~~ s:g/'%TOP%'/$!top/;
-#        $scss ~~ s:g/'%HEIGHT%'/$!height/;
-#        $scss ~~ s:g/'%URL%'/$!url/;
-#        $scss ~~ s:g/'%OPACITY%'/$!opacity/;
-#        $scss ~~ s:g/'%ROTATE%'/$!rotate/;
-#        $scss
-#    }
-#
-#    method HTML {
-#        do-regular-tag( 'div', :id<background> )
-#    }
-#}
 
 #| Page does Component in order to support
 #| multiple page instances with distinct content and attributes.
@@ -1067,8 +994,6 @@ role Defaults {
 # viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 my package EXPORT::DEFAULT {
 
-    note exports-air-base;
-
     for exports-air-base() -> $name {
 
         OUR::{'&' ~ $name.lc} :=
@@ -1077,8 +1002,6 @@ my package EXPORT::DEFAULT {
             }
 
     }
-
-#    note exports-air-base-tags;
 
     for exports-air-base-tags() -> $name {
 
@@ -1089,9 +1012,18 @@ my package EXPORT::DEFAULT {
 
     }
 
-    note exports-air-base-elements;
-
     for exports-air-base-elements() -> $name {
+
+        OUR::{'&' ~ $name.lc} :=
+            sub (*@a, *%h) {
+                ::($name).new( |@a, |%h )
+            }
+
+    }
+
+#    note exports-air-base-tools;
+
+    for exports-air-base-tools() -> $name {
 
         OUR::{'&' ~ $name.lc} :=
             sub (*@a, *%h) {
@@ -1102,7 +1034,11 @@ my package EXPORT::DEFAULT {
 }
 
 sub EXPORT {
-    note my @combined = [|exports-air-base-tags(), |exports-air-base-elements()];
+    note my @combined = [
+        |exports-air-base-tags(),
+        |exports-air-base-elements(),
+        |exports-air-base-tools(),
+    ];
     Map.new:
         @combined.map: {$_ => ::($_)}
 }
