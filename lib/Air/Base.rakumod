@@ -149,10 +149,7 @@ Air::Base is implemented as a set of modules:
 =item [Air::Base::Tags](Base/Tags.md)  - HTML, Semantic & Safe Tags
 =item [Air::Base::Elements](Base/Elements.md)  - Layout, Active & Markdown Elements
 =item [Air::Base::Tools](Base/Tools.md)  - Tools for sitewide deployment
-
-
-{...}
-
+=item [Air::Base::Widgets](Base/Widgets.md)  - Widgets use anywhere, esp Nav
 
 All items are re-exported by the top level module, so you can just `use Air::Base;` near the top of your code.
 =end pod
@@ -170,16 +167,14 @@ use Air::Form;
 use Air::Base::Tags;
 use Air::Base::Elements;
 use Air::Base::Tools;
+use Air::Base::Widgets;
 
-#sub functions-air-base {<Site Page External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>}
-
-sub exports-air-base {<Site Page External Internal Nav Background LightDark Body Header Main Footer>}
+sub exports-air-base {<Site Page External Internal Nav Body Header Main Footer>}
 
 # predeclarations
 role  Defaults {...}
 class Nav      {...}
 class Page     {...}
-
 
 =head2 Page Tags
 
@@ -187,7 +182,7 @@ class Page     {...}
 
 =head3 role Head   does Tag[Regular] {...}
 
-role Head   does Tag[Regular]  {
+role Head       does Tag[Regular]  {
     also    does Defaults;
 
     =para Singleton pattern (ie. same Head for all pages)
@@ -230,7 +225,7 @@ role Head   does Tag[Regular]  {
 
 =head3 role Header does Tag[Regular] {...}
 
-role Header does Tag[Regular]  {
+role Header     does Tag[Regular]  {
     #| nav
     has Nav  $.nav is rw;
     #| tagline
@@ -246,7 +241,7 @@ role Header does Tag[Regular]  {
 
 =head3 role Main   does Tag[Regular] {...}
 
-role Main   does Tag[Regular]  {
+role Main       does Tag[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
         do-regular-tag( $.name, @.inners, |%attrs )
@@ -255,7 +250,7 @@ role Main   does Tag[Regular]  {
 
 =head3 role Footer does Tag[Regular] {...}
 
-role Footer does Tag[Regular]  {
+role Footer     does Tag[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
         do-regular-tag( $.name, @.inners, |%attrs )
@@ -264,7 +259,7 @@ role Footer does Tag[Regular]  {
 
 =head 3 role Body   does Tag[Regular] {...}
 
-role Body   does Tag[Regular]  {
+role Body       does Tag[Regular]  {
     #| header
     has Header $.header is rw .= new;
     #| main
@@ -286,7 +281,7 @@ role Body   does Tag[Regular]  {
 
 =head3 role Html   does Tag[Regular] {...}
 
-role Html   does Tag[Regular]  {
+role Html      does Tag[Regular]  {
     also    does Defaults;
 
     has $!loaded = 0;
@@ -306,118 +301,9 @@ role Html   does Tag[Regular]  {
     }
 }
 
+=head2 Nav, Page and Site
 
-
-=head2 Widgets
-
-=para Active tags that can be used anywhere to provide a nugget of UI behaviour, default should be a short word (or a single item) that can be used in Nav
-
-role Widget does Tag[Regular] {}
-
-=head3 role LightDark does Tag[Regular] does Widget {...}
-
-role LightDark does Widget {
-    #| attribute 'show' may be set to 'icon'(default) or 'buttons'
-    multi method HTML {
-        my $show = self.attrs<show> // 'icon';
-        given $show {
-            when 'buttons' { Safe.new: self.buttons }
-            when 'icon'    { Safe.new: self.icon    }
-        }
-    }
-
-    method buttons {
-        Q|
-        <div role="group">
-            <button class="contrast"  id="themeToggle">Toggle</button>
-            <button                   id="themeLight" >Light</button>
-            <button class="secondary" id="themeDark"  >Dark</button>
-            <button class="outline"   id="themeSystem">System</button>
-        </div>
-        <script>
-        |
-
-        ~ self.common ~
-
-        Q|
-            // Attach to a button click
-            document.getElementById("themeToggle").addEventListener("click", () => setTheme("toggle"));
-            document.getElementById("themeDark").addEventListener("click", () => setTheme("dark"));
-            document.getElementById("themeLight").addEventListener("click", () => setTheme("light"));
-            document.getElementById("themeSystem").addEventListener("click", () => setTheme("system"));
-        </script>
-        |;
-    }
-
-    method icon {
-        Q|
-        <a style="font-variant-emoji: text" id ="sunIcon">&#9728;</a>
-        <a style="font-variant-emoji: text" id ="moonIcon">&#9790;</a>
-        <script>
-            // Function to show/hide icons
-            function updateIcons(theme) {
-                if (theme === "dark") {
-                    sunIcon.style.display = "none"; // Hide sun
-                    moonIcon.style.display = "block"; // Show moon
-                } else {
-                    sunIcon.style.display = "block"; // Show sun
-                    moonIcon.style.display = "none"; // Hide moon
-                }
-            }
-        |
-
-        ~ self.common ~
-
-        Q|
-            const sunIcon = document.getElementById("sunIcon");
-            const moonIcon = document.getElementById("moonIcon");
-
-            // Attach to a icon click
-            document.getElementById("sunIcon").addEventListener("click", () => setTheme("dark"));
-            document.getElementById("moonIcon").addEventListener("click", () => setTheme("light"));
-        </script>
-        |;
-    }
-
-    method common {
-        Q:to/END/
-            function setTheme(mode) {
-                const htmlElement = document.documentElement;
-                let newTheme = mode;
-
-                if (mode === "toggle") {
-                    const currentTheme = htmlElement.getAttribute("data-theme") || "light";
-                    newTheme = currentTheme === "dark" ? "light" : "dark";
-                } else if (mode === "system") {
-                    newTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-                }
-
-                htmlElement.setAttribute("data-theme", newTheme);
-                localStorage.setItem("theme", newTheme); // Save theme to localStorage
-                updateIcons(newTheme);
-            }
-
-            // select theme on page load
-            document.addEventListener("DOMContentLoaded", () => {
-                const savedTheme = localStorage.getItem("theme");
-                const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                const initialTheme = savedTheme ?? (systemPrefersDark ? "dark" : "light");
-
-                updateIcons(initialTheme);
-                document.documentElement.setAttribute("data-theme", initialTheme);
-            });
-
-            // Listen for system dark mode changes and update the theme dynamically
-            window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-                setTheme("system"); // Follow system setting
-            });
-        END
-    }
-}
-
-=head2 Site Tags
-
-=para These are the central elements of Air::Base
+=para These are the central parts of Air::Base
 
 =para First we set up the NavItems = Internal | External | Content | Page
 
@@ -1021,9 +907,16 @@ my package EXPORT::DEFAULT {
 
     }
 
-#    note exports-air-base-tools;
-
     for exports-air-base-tools() -> $name {
+
+        OUR::{'&' ~ $name.lc} :=
+            sub (*@a, *%h) {
+                ::($name).new( |@a, |%h )
+            }
+
+    }
+
+    for exports-air-base-widgets() -> $name {
 
         OUR::{'&' ~ $name.lc} :=
             sub (*@a, *%h) {
@@ -1038,21 +931,16 @@ sub EXPORT {
         |exports-air-base-tags(),
         |exports-air-base-elements(),
         |exports-air-base-tools(),
+        |exports-air-base-widgets(),
     ];
     Map.new:
         @combined.map: {$_ => ::($_)}
 }
 
-
-
-
-
-
 =begin pod
 =head1 AUTHOR
 
 Steve Roe <librasteve@furnival.net>
-
 
 =head1 COPYRIGHT AND LICENSE
 

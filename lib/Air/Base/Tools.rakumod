@@ -3,7 +3,6 @@ unit module Tools;
 sub exports-air-base-tools is export {<Tool Provider Analytics>}
 
 use Air::Functional :TEMPIN2;
-use Air::Component;
 use Air::Base::Tags;
 
 =head2 Air::Base::Tools

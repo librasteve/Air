@@ -164,7 +164,7 @@ Air::Base is implemented as a set of modules:
 
   * [Air::Base::Tools](Base/Tools.md) - Tools for sitewide deployment
 
-{...}
+  * [Air::Base::Widgets](Base/Widgets.md) - Widgets use anywhere, esp Nav
 
 All items are re-exported by the top level module, so you can just `use Air::Base;` near the top of your code.
 
@@ -254,25 +254,10 @@ head
 
 body
 
-Widgets
--------
+Nav, Page and Site
+------------------
 
-Active tags that can be used anywhere to provide a nugget of UI behaviour, default should be a short word (or a single item) that can be used in Nav
-
-### role LightDark does Tag[Regular] does Widget {...}
-
-### method HTML
-
-```raku
-method HTML() returns Mu
-```
-
-attribute 'show' may be set to 'icon'(default) or 'buttons'
-
-Site Tags
----------
-
-These are the central elements of Air::Base
+These are the central parts of Air::Base
 
 First we set up the NavItems = Internal | External | Content | Page
 
@@ -299,7 +284,7 @@ logo
 
 NavItems
 
-### has Positional[Widget] @.widgets
+### has Positional[Widgets::Widget] @.widgets
 
 Widgets
 
