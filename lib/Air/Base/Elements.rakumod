@@ -1,6 +1,6 @@
 unit module Elements;
 
-sub exports-air-base-elements is export {<Table Grid Flexbox Dashboard Box Tab Tabs Dialog Lightbox Markdown>}
+sub exports-air-base-elements is export {<Table Grid Flexbox Dashboard Box Tab Tabs Dialog Lightbox Markdown Background>}
 
 use Air::Functional :TEMPIN2;
 use Air::Component;
@@ -16,7 +16,7 @@ use Air::Base::Tags;
 
 =head3 role Table does Component is export
 
-role Table     does Component is export {
+role Table      does Component is export {
 
     =para Attrs thead, tbody and tfoot can each be a 1D [values] or 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for single- and multi-row thead and tfoot.
 
@@ -87,7 +87,7 @@ role Table     does Component is export {
 
 =head3 role Grid does Component is export
 
-role Grid      does Component is export {
+role Grid       does Component is export {
     #| list of items to populate grid
     has @.items;
 
@@ -144,7 +144,7 @@ role Grid      does Component is export {
 
 =head3 role Flexbox does Component is export
 
-role Flexbox   does Component is export {
+role Flexbox    does Component is export {
     #| list of items to populate grid,
     has @.items;
     #| flex-direction (default row)
@@ -191,7 +191,7 @@ role Flexbox   does Component is export {
 
 =head3 role Dashboard does Component is export
 
-role Dashboard does Component is export {
+role Dashboard  does Component is export {
     has @.inners;
     has %.attrs;
 
@@ -217,7 +217,7 @@ role Dashboard does Component is export {
 
 =head3 role Box does Component is export
 
-role Box       does Component is export {
+role Box        does Component is export {
     #| specify sequential order of box
     has Int $.order;# is required;
 
@@ -258,7 +258,7 @@ role Box       does Component is export {
 
 =head3 role Tab does Tag[Regular] {...}
 
-role Tab       does Component is export {
+role Tab        does Component is export {
     has @.inners;
     has %.attrs;
 
@@ -279,7 +279,7 @@ subset TabItem of Pair where .value ~~ Tab;
 =head3 role Tabs does Component is export
 
 #| Tabs does Component is export to control multiple tabs
-role Tabs      does Component is export {
+role Tabs       does Component is export {
     has $!loaded = 0;
 
     #| Tabs take two attrs for menu alignment
@@ -520,7 +520,7 @@ END
 
 =head3 role Lightbox does Component is export
 
-role Lightbox     does Component is export {
+role Lightbox   does Component is export {
     has $!loaded;
 
     #| unique lightbox label
@@ -639,7 +639,7 @@ role Lightbox     does Component is export {
 
 =head3 role Markdown does Component is export
 
-role Markdown    does Component is export {
+role Markdown   does Component is export {
     use Text::Markdown;
 
     #| markdown to be converted
@@ -655,6 +655,53 @@ role Markdown    does Component is export {
     multi method HTML {
         $!result = Text::Markdown.new($!markdown).render unless $!result;
         $!result
+    }
+}
+
+=head3 role Background  does Component
+
+role Background does Component is export {
+    #| top of background image (in px)
+    has $.top = 140;
+    #| height of background image (in px)
+    has $.height = 320;
+    #| url of background image
+    has $.url = 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Butterfly_bottom_PSF_transparent.gif';
+    #| opacity of background image
+    has $.opacity = 0.1;
+    #| rotate angle of background image (in deg)
+    has $.rotate = -9;
+
+    method STYLE {
+        my $scss = q:to/END/;
+        #background {
+            position: fixed;
+            top: %TOP%px;
+            left: 0;
+            width: 100vw;
+            height: %HEIGHT%px;
+            background: url('%URL%');
+            opacity: %OPACITY%;
+            filter: grayscale(100%);
+            transform: rotate(%ROTATE%deg);
+            background-repeat: no-repeat;
+            background-position: center center;
+            z-index: -1;
+            pointer-events: none;
+            padding: 20px;
+        }
+        END
+
+        $scss ~~ s:g/'%TOP%'/$!top/;
+        $scss ~~ s:g/'%HEIGHT%'/$!height/;
+        $scss ~~ s:g/'%URL%'/$!url/;
+        $scss ~~ s:g/'%OPACITY%'/$!opacity/;
+        $scss ~~ s:g/'%ROTATE%'/$!rotate/;
+        $scss
+    }
+
+    method HTML {
+        do-regular-tag( 'div', :id<background> )
     }
 }
 

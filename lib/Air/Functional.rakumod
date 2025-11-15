@@ -278,11 +278,10 @@ my package EXPORT::BASE {
 # ========================================================================
 
 
-my @exclude-tempin  = <section article script style meta title link a button aside time content table grid flexbox dashboard box tab tabs dialog lightbox markdown>;
+my @exclude-tempin  = <section article script style meta title link a button aside time content table grid flexbox dashboard box tab tabs dialog lightbox markdown background>;
 
 my @regular-tempin  = @regular-tags.grep:  { $_ ∉ @exclude-tempin };
 my @singular-tempin = @singular-tags.grep: { $_ ∉ @exclude-tempin };
-
 
 my package EXPORT::TEMPIN {
     for @regular-tempin -> $tag {
@@ -301,7 +300,6 @@ my @exclude-tempin2  = <section article script style meta title link a button as
 
 my @regular-tempin2  = @regular-tags.grep:  { $_ ∉ @exclude-tempin2 };
 my @singular-tempin2 = @singular-tags.grep: { $_ ∉ @exclude-tempin2 };
-
 
 my package EXPORT::TEMPIN2 {
     for @regular-tempin2 -> $tag {

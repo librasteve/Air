@@ -340,28 +340,6 @@ method HTML() returns Mu
 
 applies Style and Script for Hamburger reactive menu
 
-### role Background does Component
-
-### has Mu $.top
-
-top of background image (in px)
-
-### has Mu $.height
-
-height of background image (in px)
-
-### has Mu $.url
-
-url of background image
-
-### has Mu $.opacity
-
-opacity of background image
-
-### has Mu $.rotate
-
-rotate angle of background image (in deg)
-
 class Page
 ----------
 
