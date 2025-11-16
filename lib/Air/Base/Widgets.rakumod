@@ -2,7 +2,7 @@ unit module Widgets;
 
 sub exports-air-base-widgets is export {<Widget LightDark>}
 
-use Air::Functional :TEMPIN2;
+use Air::Functional :BASE-TAGS;
 use Air::Base::Tags;
 
 =head2 Air::Base::Widgets

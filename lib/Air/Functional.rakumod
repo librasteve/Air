@@ -257,8 +257,7 @@ my package EXPORT::CRO {
     }
 }
 
-
-my @exclude-base  = <section article script style meta link title a button aside time body main header content footer nav table grid dialog>;
+my @exclude-base  = <script style meta title link a button section content article aside time table dialog body main header footer nav dl dd dt>;
 
 my @regular-base  = @regular-tags.grep:  { $_ ∉ @exclude-base };
 my @singular-base = @singular-tags.grep: { $_ ∉ @exclude-base };
@@ -277,13 +276,12 @@ my package EXPORT::BASE {
 
 # ========================================================================
 
-
-my @exclude-tempin  = <section article script style meta title link a button aside time content table grid flexbox dashboard box tab tabs dialog lightbox markdown background>;
+my @exclude-tempin  = <script style meta title link a button section content article aside time table dialog>;
 
 my @regular-tempin  = @regular-tags.grep:  { $_ ∉ @exclude-tempin };
 my @singular-tempin = @singular-tags.grep: { $_ ∉ @exclude-tempin };
 
-my package EXPORT::TEMPIN {
+my package EXPORT::BASE-ELEMENTS {
     for @regular-tempin -> $tag {
         OUR::{'&' ~ $tag} := sub (*@inners, *%h) { do-regular-tag( "$tag", @inners, |%h ) }
     }
@@ -295,18 +293,17 @@ my package EXPORT::TEMPIN {
 
 # ========================================================================
 
+my @exclude-base-tags  = <script style meta title link a button section content article aside time>;
 
-my @exclude-tempin2  = <section article script style meta title link a button aside time content>;
+my @regular-base-tags  = @regular-tags.grep:  { $_ ∉ @exclude-base-tags };
+my @singular-base-tags = @singular-tags.grep: { $_ ∉ @exclude-base-tags };
 
-my @regular-tempin2  = @regular-tags.grep:  { $_ ∉ @exclude-tempin2 };
-my @singular-tempin2 = @singular-tags.grep: { $_ ∉ @exclude-tempin2 };
-
-my package EXPORT::TEMPIN2 {
-    for @regular-tempin2 -> $tag {
+my package EXPORT::BASE-TAGS {
+    for @regular-base-tags -> $tag {
         OUR::{'&' ~ $tag} := sub (*@inners, *%h) { do-regular-tag( "$tag", @inners, |%h ) }
     }
 
-    for @singular-tempin2 -> $tag {
+    for @singular-base-tags -> $tag {
         OUR::{'&' ~ $tag} := sub (*%h) { do-singular-tag( "$tag", |%h ) }
     }
 }

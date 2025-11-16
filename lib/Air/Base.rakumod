@@ -160,7 +160,7 @@ All items are re-exported by the top level module, so you can just `use Air::Bas
 
 use YAMLish;
 
-use Air::Functional :TEMPIN;   #fixme
+use Air::Functional :BASE-ELEMENTS;
 use Air::Component;
 use Air::Form;
 
@@ -900,7 +900,7 @@ my package EXPORT::DEFAULT {
 }
 
 sub EXPORT {
-    note my @combined = [
+    my @combined = [
         |exports-air-base-tags(),
         |exports-air-base-elements(),
         |exports-air-base-tools(),

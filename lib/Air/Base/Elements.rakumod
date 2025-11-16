@@ -2,7 +2,7 @@ unit module Elements;
 
 sub exports-air-base-elements is export {<Table Grid Flexbox Dashboard Box Tab Tabs Dialog Lightbox Markdown Background>}
 
-use Air::Functional :TEMPIN2;
+use Air::Functional :BASE-TAGS;
 use Air::Component;
 use Air::Base::Tags;
 

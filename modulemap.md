@@ -1,5 +1,6 @@
 - Base/
     - Tags.rakumod
+        - use Air::Functional :MANDATORY
         - role Script      does Tag[Regular]
         - role Style       does Tag[Regular]
         - role Meta        does Tag[Singular]
@@ -17,7 +18,9 @@
         - role Spacer      does Tag[Regular]
         - role Safe        does Tag[Regular]
     - Elements.rakumod
-        - use Base::Tags
+        - use Air::Functional :BASE-TAGS
+        - use Air::Component
+        - use Air::Base::Tags
         - role Table       does Component
         - role Grid        does Component
         - role Flexbox     does Component
@@ -30,16 +33,23 @@
         - role Markdown    does Component
         - role Background  does Component
     - Tools.rakumod
+        - use Air::Functional :BASE-TAGS;
+        - use Air::Base::Tags;
         - role Tool
         - role Analytics   does Tool
     - Widgets.rakumod
+        - use Air::Functional :BASE-TAGS
+        - use Air::Base::Tags;
         - role Widget      does Tag[Regular]
         - role LightDark   does Widget
 - Base.rakumod
-    - use Base::Tags
-    - use Base::Elements;
-    - use Base::Tools
-    - use Base::Widgets
+    - use Air::Functional :BASE-ELEMENTS
+    - use Air::Component
+    - use Air::Form
+    - use Air::Base::Tags
+    - use Air::Base::Elements
+    - use Air::Base::Tools
+    - use Air::Base::Widgets
     - role Head        does Tag[Regular]
     - role Header      does Tag[Regular]
     - role Main        does Tag[Regular]
@@ -50,17 +60,3 @@
     - class Page       does Component
     - class Site
     - role Defaults
-
-Snagging
-
-- lizmat code for Tags.rakumod etc.
-
-```
-for @exports-air-base-tags -> $class {
-    my $name := $class.^shortname;
-    OUR::{'&' ~ $name.lc} := my sub (|c) { $class.new(|c);
-    OUR::{$name} := $class;
-}
-```
-
-- clean out TEMPINs
