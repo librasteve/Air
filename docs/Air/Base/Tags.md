@@ -38,16 +38,25 @@ no html escape
 
 ### role Link does Tag[Regular] {}
 
+NavItem Tags
+------------
+
+The are newly construed Air Tags that are used in the Nav class.
+
+### role External does Tag[Regular] {...}
+
+### role Internal does Tag[Regular] {...}
+
+### role Content does Tag[Regular] {}
+
 Semantic Tags
 -------------
 
-These are a mix of HTML Tags re-published (some with minor improvements) and of newly construed Air Tags for convenience. Generally they are chosen to align with the Pico CSS semantic tags in use.
+These are a mix of HTML Tags re-published (some with minor improvements) and of newly construed Air Tags for convenience. Generally they align with the Pico CSS semantic tags in use.
 
 ### role A does Tag[Regular] {}
 
 ### role Button does Tag[Regular] {}
-
-### role Content does Tag[Regular] {}
 
 ### role Section does Tag[Regular] {}
 

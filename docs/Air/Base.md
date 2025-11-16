@@ -156,7 +156,7 @@ Is identical to writing:
 
 ``` my $t = title 'sometext'; ```
 
-Air::Base is implemented as a set of modules:
+The Air::Base library is implemented over a set of Raku modules, which are then used in the main Base module and re-exported as both classes and functions:
 
   * [Air::Base::Tags](Base/Tags.md) - HTML, Semantic & Safe Tags
 
@@ -259,18 +259,12 @@ Nav, Page and Site
 
 These are the central parts of Air::Base
 
-First we set up the NavItems = Internal | External | Content | Page
-
-### role External does Tag[Regular] {...}
-
-### role Internal does Tag[Regular] {...}
-
 ### subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
 class Nav
 ---------
 
-Nav does Component in order to support multiple nav instances with distinct NavItem and Widget attributes
+Nav does Component to do multiple instances with distinct NavItem and Widget attrs
 
 ### has Str $.hx-target
 
@@ -315,7 +309,7 @@ applies Style and Script for Hamburger reactive menu
 class Page
 ----------
 
-Page does Component in order to support multiple page instances with distinct content and attributes.
+Page does Component to do multiple instances with distinct content and attrs
 
 ### has Int $.REFRESH
 
@@ -420,7 +414,7 @@ issue page
 class Site
 ----------
 
-Site is a holder for pages, performs setup of Cro routes and offers high level controls for style via Pico SASS.
+Site is a holder for pages, performs setup of Cro routes, gathers styles and scripts, and runs SASS
 
 ### has Positional[Page] @.pages
 

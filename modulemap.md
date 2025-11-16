@@ -1,11 +1,3 @@
-
-- Base.rakumod
-  - use Base::Tags
-  - use Base::Elements
-  - use Base::Page
-  - use Base::Site
-  - use Base::Tools
-  - ...
 - Base/
     - Tags.rakumod
         - role Script      does Tag[Regular]
@@ -13,6 +5,8 @@
         - role Meta        does Tag[Singular]
         - role Title       does Tag[Regular]
         - role Link        does Tag[Singular]
+        - role External    does Tag[Regular]
+        - role Internal    does Tag[Regular]
         - role A           does Tag[Regular]
         - role Button      does Tag[Regular]
         - role Content     does Tag[Regular]
@@ -41,38 +35,21 @@
     - Widgets.rakumod
         - role Widget      does Tag[Regular]
         - role LightDark   does Widget
-    - Defaults.rakumod
-        - role Defaults
-    - Nav.rakumod
-        - use Base::Tags
-        - use Base::Tools
-        - use Base::Widgets
-        - role External    does Tag[Regular]
-        - role Internal    does Tag[Regular]
-        - class Nav        does Component
-    - Page.rakumod
-        - ...
-        - role Head        does Tag[Regular]
-        - role Header      does Tag[Regular]
-        - role Main        does Tag[Regular]
-        - role Footer      does Tag[Regular]
-        - role Body        does Tag[Regular]
-        - role Html        does Tag[Regular]
-        - class Page       does Component
-    - Site.rakumod
-        - ...
-        - class Site
-
-
-Process
-  - cp role / class Base.rakumod => Base/Tags.rakumod
-  - Base.rakumod  
-    - 172 rm names    (exports-air-base)        tc
-  - Base/Tags.rakumod
-    - 3   add names   (exports-air-base-tags)   tc
-  - Functional.rakumod
-    - 261 add names   (exclude-base)            lc
-    - 281 add names   (exclude-tempin)          lc
+- Base.rakumod
+    - use Base::Tags
+    - use Base::Elements;
+    - use Base::Tools
+    - use Base::Widgets
+    - role Head        does Tag[Regular]
+    - role Header      does Tag[Regular]
+    - role Main        does Tag[Regular]
+    - role Footer      does Tag[Regular]
+    - role Body        does Tag[Regular]
+    - role Html        does Tag[Regular]
+    - class Nav        does Component
+    - class Page       does Component
+    - class Site
+    - role Defaults
 
 Snagging
 

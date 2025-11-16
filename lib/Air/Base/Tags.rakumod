@@ -1,6 +1,6 @@
 unit module Tags;
 
-sub exports-air-base-tags is export {<Script Style Meta Title Link A Button Content Section Article Aside Time Spacer Safe>}
+sub exports-air-base-tags is export {<Script Style Meta Title Link Internal External Content A Button Section Article Aside Time Spacer Safe>}
 
 use Air::Functional :MANDATORY;
 
@@ -50,17 +50,31 @@ role Title   does Tag[Regular] is export {}
 
 role Link    does Tag[Singular] is export {}
 
-=head2 Semantic Tags
+=head2 NavItem Tags
 
-=para These are a mix of HTML Tags re-published (some with minor improvements) and of newly construed Air Tags for convenience. Generally they are chosen to align with the Pico CSS semantic tags in use.
+=para The are newly construed Air Tags that are used in the Nav class.
 
-=head3 role A      does Tag[Regular] {}
+=head3 role External  does Tag[Regular] {...}
 
-role A       does Tag[Regular] is export  {}
+role External does Tag[Regular] is export {
+    has Str $.label is rw = '';
+    has %.others = {:target<_blank>, :rel<noopener noreferrer>};
 
-=head3 role Button does Tag[Regular] {}
+    multi method HTML {
+        my %attrs = |%.others, |%.attrs;
+        do-regular-tag( 'a', [$.label], |%attrs )
+    }
+}
 
-role Button  does Tag[Regular] is export {}
+=head3 role Internal  does Tag[Regular] {...}
+
+role Internal does Tag[Regular] is export {
+    has Str $.label is rw = '';
+
+    multi method HTML {
+        do-regular-tag( 'a', [$.label], |%.attrs )
+    }
+}
 
 =head3 role Content does Tag[Regular] {}
 
@@ -70,6 +84,18 @@ role Content does Tag[Regular] is export {
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
+
+=head2 Semantic Tags
+
+=para These are a mix of HTML Tags re-published (some with minor improvements) and of newly construed Air Tags for convenience. Generally they align with the Pico CSS semantic tags in use.
+
+=head3 role A      does Tag[Regular] {}
+
+role A       does Tag[Regular] is export  {}
+
+=head3 role Button does Tag[Regular] {}
+
+role Button  does Tag[Regular] is export {}
 
 =head3 role Section   does Tag[Regular] {}
 

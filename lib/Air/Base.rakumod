@@ -144,7 +144,7 @@ Is identical to writing:
 my $t = title 'sometext';
 ```
 
-Air::Base is implemented as a set of modules:
+The Air::Base library is implemented over a set of Raku modules, which are then used in the main Base module and re-exported as both classes and functions:
 
 =item [Air::Base::Tags](Base/Tags.md)  - HTML, Semantic & Safe Tags
 =item [Air::Base::Elements](Base/Elements.md)  - Layout, Active & Markdown Elements
@@ -169,7 +169,7 @@ use Air::Base::Elements;
 use Air::Base::Tools;
 use Air::Base::Widgets;
 
-sub exports-air-base {<Site Page External Internal Nav Body Header Main Footer>}
+sub exports-air-base {<Site Page Nav Body Header Main Footer>}
 
 # predeclarations
 role  Defaults {...}
@@ -305,36 +305,11 @@ role Html      does Tag[Regular]  {
 
 =para These are the central parts of Air::Base
 
-=para First we set up the NavItems = Internal | External | Content | Page
-
-=head3 role External  does Tag[Regular] {...}
-
-role External  does Tag[Regular] {
-    has Str $.label is rw = '';
-    has %.others = {:target<_blank>, :rel<noopener noreferrer>};
-
-    multi method HTML {
-        my %attrs = |%.others, |%.attrs;
-        do-regular-tag( 'a', [$.label], |%attrs )
-    }
-}
-
-=head3 role Internal  does Tag[Regular] {...}
-
-role Internal  does Tag[Regular] {
-    has Str $.label is rw = '';
-
-    multi method HTML {
-        do-regular-tag( 'a', [$.label], |%.attrs )
-    }
-}
-
 =head3 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-#| Nav does Component in order to support multiple nav instances
-#| with distinct NavItem and Widget attributes
+#| Nav does Component to do multiple instances with distinct NavItem and Widget attrs
 class Nav      does Component {
     has $!routed = 0;
 
@@ -485,8 +460,7 @@ class Nav      does Component {
     }
 }
 
-#| Page does Component in order to support
-#| multiple page instances with distinct content and attributes.
+#| Page does Component to do multiple instances with distinct content and attrs
 class Page     does Component {
     has $!loaded;
 
@@ -578,8 +552,7 @@ class Page     does Component {
 
 subset Redirect of Pair where .key !~~ /\// && .value ~~ /^ \//;
 
-#| Site is a holder for pages, performs setup
-#| of Cro routes and offers high level controls for style via Pico SASS.
+#| Site is a holder for pages, performs setup of Cro routes, gathers styles and scripts, and runs SASS
 class Site {
     my $loaded;
 
