@@ -28,6 +28,8 @@ jobs:
         run: zef install --/test UUID::V4 CSS::Writer
       - name: Install Dependencies
         run: zef install --/test --test-depends --deps-only .
+     - name: Install Module
+        run: zef install --/test .
       - name: Install App::Prove6
         run: zef install --/test App::Prove6
       - name: Run Tests
