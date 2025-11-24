@@ -29,6 +29,9 @@
         "Air::Form": "lib/Air/Form.rakumod",
         "Air::Functional": "lib/Air/Functional.rakumod"
     },
+    "resources": [
+        ".air.yaml"
+    ],
     "license": "Artistic-2.0",
     "source-url": "https://github.com/librasteve/Air.git"
 }
