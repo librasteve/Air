@@ -148,7 +148,7 @@ The Air::Base library is implemented over a set of Raku modules, which are then 
 
 =item [Air::Base::Tags](Base/Tags.md)  - HTML, Semantic & Safe Tags
 =item [Air::Base::Elements](Base/Elements.md)  - Layout, Active & Markdown Elements
-=item [Air::Base::Tools](Base/Tools.md)  - Tools for sitewide deployment
+=item [Air::Base::Tools](Base/Tools.md)  - Tools for site-wide deployment
 =item [Air::Base::Widgets](Base/Widgets.md)  - Widgets use anywhere, esp Nav
 
 All items are re-exported by the top level module, so you can just `use Air::Base;` near the top of your code.

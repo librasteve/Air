@@ -162,7 +162,7 @@ The Air::Base library is implemented over a set of Raku modules, which are then 
 
   * [Air::Base::Elements](Base/Elements.md) - Layout, Active & Markdown Elements
 
-  * [Air::Base::Tools](Base/Tools.md) - Tools for sitewide deployment
+  * [Air::Base::Tools](Base/Tools.md) - Tools for site-wide deployment
 
   * [Air::Base::Widgets](Base/Widgets.md) - Widgets use anywhere, esp Nav
 
@@ -506,7 +506,15 @@ role Defaults provides a central place to set the various website defaults acros
 package EXPORT::DEFAULT
 -----------------------
 
-put in all the @components as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
+gather all the base and child module classes and roles put in all the @combined-exports as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
+
+### sub EXPORT
+
+```raku
+sub EXPORT() returns Mu
+```
+
+also just re-export them as vanilla classes and roles
 
 AUTHOR
 ======
