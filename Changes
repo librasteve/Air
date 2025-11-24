@@ -2,6 +2,10 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.0.34  2025-11-24T18:32:28Z
+    - add defaults file
+    - refactor Base.rakumod code
+
 0.0.32  2025-09-28T17:25:52+01:00
     - better redirects
 
