@@ -183,7 +183,7 @@ class Page     {...}
 =head3 role Head   does Tag[Regular] {...}
 
 role Head       does Tag[Regular]  {
-    also    does Defaults;
+    also        does Defaults;
 
     =para Singleton pattern (ie. same Head for all pages)
 
@@ -282,7 +282,7 @@ role Body       does Tag[Regular]  {
 =head3 role Html   does Tag[Regular] {...}
 
 role Html      does Tag[Regular]  {
-    also    does Defaults;
+    also       does Defaults;
 
     has $!loaded = 0;
 
@@ -847,13 +847,22 @@ role Defaults {
     }
 }
 
-##### Functions Export #####
+##### Functions & Class/Role Exports #####
 
-#| put in all the @components as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
+#| gather all the base and child module classes and roles
+my @combined-exports = [
+    |exports-air-base,
+    |exports-air-base-tags,
+    |exports-air-base-elements,
+    |exports-air-base-tools,
+    |exports-air-base-widgets,
+];
+
+#| put in all the @combined-exports as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
 # viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 my package EXPORT::DEFAULT {
 
-    for exports-air-base() -> $name {
+    for @combined-exports -> $name {
 
         OUR::{'&' ~ $name.lc} :=
             sub (*@a, *%h) {
@@ -862,52 +871,12 @@ my package EXPORT::DEFAULT {
 
     }
 
-    for exports-air-base-tags() -> $name {
-
-        OUR::{'&' ~ $name.lc} :=
-            sub (*@a, *%h) {
-                ::($name).new( |@a, |%h )
-            }
-
-    }
-
-    for exports-air-base-elements() -> $name {
-
-        OUR::{'&' ~ $name.lc} :=
-            sub (*@a, *%h) {
-                ::($name).new( |@a, |%h )
-            }
-
-    }
-
-    for exports-air-base-tools() -> $name {
-
-        OUR::{'&' ~ $name.lc} :=
-            sub (*@a, *%h) {
-                ::($name).new( |@a, |%h )
-            }
-
-    }
-
-    for exports-air-base-widgets() -> $name {
-
-        OUR::{'&' ~ $name.lc} :=
-            sub (*@a, *%h) {
-                ::($name).new( |@a, |%h )
-            }
-
-    }
 }
 
+#| also just re-export them as vanilla classes and roles
 sub EXPORT {
-    my @combined = [
-        |exports-air-base-tags(),
-        |exports-air-base-elements(),
-        |exports-air-base-tools(),
-        |exports-air-base-widgets(),
-    ];
     Map.new:
-        @combined.map: {$_ => ::($_)}
+        @combined-exports.map: {$_ => ::($_)}
 }
 
 =begin pod
