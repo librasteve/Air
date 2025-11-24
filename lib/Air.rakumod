@@ -86,10 +86,10 @@ Reusability is promoted by the structure of the libraries - individuals and team
 
 Air is comprised of four core libraries:
 
-=item Air::Functional - wraps HTML tags as functions
-=item Air::Base - a set of handy prebuilt components
-=item Air::Component - make your own components
-=item Air::Form - declarative forms
+=item [Air::Functional](Air/Functional.md) - wraps HTML tags as functions
+=item [Air::Base](Air/Base.md) - a set of handy prebuilt components
+=item [Air::Component](Air/Component.md) - make your own components
+=item [Air::Form](Air/Form.md) - declarative forms
 
 Air also has a plugin system, for example:
 =item Air::Plugin::Hilite - code highlighter

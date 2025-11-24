@@ -146,64 +146,27 @@ Key features shown are:
 DESCRIPTION
 ===========
 
-Each feature of Air::Base is set out below:
+In general, items defined in Air::Base are exported as both roles or classes (title case) and as subroutines (lower case).
 
-Basic Tags
-----------
+So, after `use`ing the relevant module you can code in OO or functional style:
 
-Air::Functional converts all HTML tags into raku functions. Air::Base overrides a subset of these HTML tags, providing them both as raku roles and functions.
+``` my $t = Title.new: 'sometext'; ```
 
-The Air::Base tags each embed some code to provide behaviours. This can be simple - `role Script {}` just marks JavaScript as exempt from HTML Escape. Or complex - `role Body {}` has `Header`, `Main` and `Footer` attributes with certain defaults and constructors.
+Is identical to writing:
 
-Combine these tags in the same way as the overall layout of an HTML webpage. Note that they hide complexity to expose only relevant information to the fore. Override them with your own roles and classes to implement your specific needs.
+``` my $t = title 'sometext'; ```
 
-### role Safe does Tag[Regular] {...}
+The Air::Base library is implemented over a set of Raku modules, which are then used in the main Base module and re-exported as both classes and functions:
 
-### method HTML
+  * [Air::Base::Tags](Base/Tags.md) - HTML, Semantic & Safe Tags
 
-```raku
-method HTML() returns Mu
-```
+  * [Air::Base::Elements](Base/Elements.md) - Layout, Active & Markdown Elements
 
-avoids HTML escape
+  * [Air::Base::Tools](Base/Tools.md) - Tools for site-wide deployment
 
-### role Script does Tag[Regular] {...}
+  * [Air::Base::Widgets](Base/Widgets.md) - Widgets use anywhere, esp Nav
 
-### method HTML
-
-```raku
-method HTML() returns Mu
-```
-
-no html escape
-
-### role Style does Tag[Regular] {...}
-
-### method HTML
-
-```raku
-method HTML() returns Mu
-```
-
-no html escape
-
-### role Meta does Tag[Singular] {}
-
-### role Title does Tag[Regular] {}
-
-### role Link does Tag[Regular] {}
-
-### role A does Tag[Regular] {...}
-
-### method HTML
-
-```raku
-method HTML() returns Mu
-```
-
-defaults to target="_blank"
-
-### role Button does Tag[Regular] {}
+All items are re-exported by the top level module, so you can just `use Air::Base;` near the top of your code.
 
 Page Tags
 ---------
@@ -214,37 +177,29 @@ A subset of Air::Functional basic HTML tags, provided as roles, that are slightl
 
 Singleton pattern (ie. same Head for all pages)
 
-### has Title $.title
+### has Tags::Title $.title
 
 title
 
-### has Meta $.description
+### has Tags::Meta $.description
 
 description
 
-### has Positional[Meta] @.metas
+### has Positional[Tags::Meta] @.metas
 
 metas
 
-### has Positional[Script] @.scripts
+### has Positional[Tags::Script] @.scripts
 
 scripts
 
-### has Positional[Link] @.links
+### has Positional[Tags::Link] @.links
 
 links
 
-### has Positional[Style] @.styles
+### has Positional[Tags::Style] @.styles
 
 style
-
-### method defaults
-
-```raku
-method defaults() returns Mu
-```
-
-set up common defaults (called on instantiation)
 
 ### method HTML
 
@@ -260,7 +215,7 @@ method HTML() returns Mu
 
 nav
 
-### has Safe $.tagline
+### has Tags::Safe $.tagline
 
 tagline
 
@@ -285,7 +240,7 @@ main
 
 footer
 
-### has Positional[Script] @.scripts
+### has Positional[Tags::Script] @.scripts
 
 scripts
 
@@ -299,82 +254,17 @@ head
 
 body
 
-### has Associative[Air::Functional::Attr(Any)] %.lang
+Nav, Page and Site
+------------------
 
-default :lang<en>
-
-### has Associative[Air::Functional::Attr(Any)] %.mode
-
-default :data-theme<dark>
-
-Semantic Tags
--------------
-
-These are re-published with minor adjustments and align with Pico CSS semantic tags
-
-### role Content does Tag[Regular] {...}
-
-### role Section does Tag[Regular] {}
-
-### role Article does Tag[Regular] {}
-
-### role Aside does Tag[Regular] {}
-
-### role Time does Tag[Regular] {...}
-
-In HTML the time tag is typically of the form < time datetime="2025-03-13" > 13 March, 2025 < /time > . In Air you can just go time(:datetime < 2025-02-27 > ); and raku will auto format and fill out the inner human readable text.
-
-Optionally specify mode => [time | datetime], mode => date is default
-
-### role Spacer does Tag
-
-Widgets
--------
-
-Active tags that can be used anywhere to provide a nugget of UI behaviour, default should be a short word (or a single item) that can be used in Nav
-
-### role LightDark does Tag[Regular] does Widget {...}
-
-### method HTML
-
-```raku
-method HTML() returns Mu
-```
-
-attribute 'show' may be set to 'icon'(default) or 'buttons'
-
-Tools
------
-
-Tools are provided to the site tag to provide a nugget of side-wide behaviour, services method defaults are distributed to all pages on server start
-
-### role Analytics does Tool {...}
-
-### has Provider $.provider
-
-may be [Umami] - others TBD
-
-### has Str $.key
-
-website ID from provider
-
-Site Tags
----------
-
-These are the central elements of Air::Base
-
-First we set up the NavItems = Internal | External | Content | Page
-
-### role External does Tag[Regular] {...}
-
-### role Internal does Tag[Regular] {...}
+These are the central parts of Air::Base
 
 ### subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
 class Nav
 ---------
 
-Nav does Component in order to support multiple nav instances with distinct NavItem and Widget attributes
+Nav does Component to do multiple instances with distinct NavItem and Widget attrs
 
 ### has Str $.hx-target
 
@@ -388,7 +278,7 @@ logo
 
 NavItems
 
-### has Positional[Widget] @.widgets
+### has Positional[Widgets::Widget] @.widgets
 
 Widgets
 
@@ -416,32 +306,10 @@ method HTML() returns Mu
 
 applies Style and Script for Hamburger reactive menu
 
-### role Background does Component
-
-### has Mu $.top
-
-top of background image (in px)
-
-### has Mu $.height
-
-height of background image (in px)
-
-### has Mu $.url
-
-url of background image
-
-### has Mu $.opacity
-
-opacity of background image
-
-### has Mu $.rotate
-
-rotate angle of background image (in deg)
-
 class Page
 ----------
 
-Page does Component in order to support multiple page instances with distinct content and attributes.
+Page does Component to do multiple instances with distinct content and attrs
 
 ### has Int $.REFRESH
 
@@ -477,10 +345,10 @@ shortcut self.html.body.footer
 
 build page DOM by calling Air tags
 
-### method defaults
+### method shortcuts
 
 ```raku
-method defaults() returns Mu
+method shortcuts() returns Mu
 ```
 
 set all provided shortcuts on first use
@@ -541,10 +409,12 @@ method HTML() returns Mu
 
 issue page
 
+### subset Redirect of Pair where .key !~~ /\// && .value ~~ /^ \//;
+
 class Site
 ----------
 
-Site is a holder for pages, performs setup of Cro routes and offers high level controls for style via Pico SASS.
+Site is a holder for pages, performs setup of Cro routes, gathers styles and scripts, and runs SASS
 
 ### has Positional[Page] @.pages
 
@@ -562,9 +432,13 @@ index Page ( otherwise $!index = @!pages[0] )
 
 Register for route setup; default = [Nav.new]
 
-### has Positional[Tool] @.tools
+### has Positional[Tools::Tool] @.tools
 
 Tools for sitewide behaviours
+
+### has Positional[Redirect] @.redirects
+
+Redirects
 
 ### has Bool $.scss-off
 
@@ -597,190 +471,77 @@ method enqueue-all() returns Mu
 
 enqueued items are rendered in order, avoid interdependencies
 
-Component Library
------------------
-
-The Air roadmap is to provide a full set of pre-styled tags as defined in the Pico [docs](https://picocss.com/docs). Did we say that Air::Base implements Pico CSS?
-
-### role Table does Tag
-
-Attrs thead, tbody and tfoot can each be a 1D [values] or 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for single- and multi-row thead and tfoot.
-
-Table applies col and row header tags <th></th> as required for Pico styles.
-
-### has Mu $.tbody
-
-optional (ie tbody-attrs only is ok)
-
-### has Associative %.tbody-attrs
-
-explicitly specify attrs on tbody
-
-### has Mu $.thead
-
-optional
-
-### has Mu $.tfoot
-
-optional
-
-### has Mu $.class
-
-class for table
-
-### method new
+### method build
 
 ```raku
-method new(
-    *@tbody,
-    *%h
+method build() returns Mu
+```
+
+run the SCSS compiler vendor all default packages fixme
+
+### method serve
+
+```raku
+method serve() returns Mu
+```
+
+build application and start server
+
+### method start
+
+```raku
+method start(
+    :$port = 3000,
+    :$host = "localhost"
 ) returns Mu
 ```
 
-.new positional takes tbody unless passed as attr
+start the server (ie skip build)
 
-### role Grid does Component
+Defaults
+--------
 
-### has Positional @.items
+role Defaults provides a central place to set the various website defaults across Head, Html and Site roles
 
-list of items to populate grid
+On installation, the file `~/.rair-config/.air.yaml` is placed in the home directory (ie copied from `resources/.air.yaml`. By default, role Defaults loads the information specified in this file intio the appropriate part of each page:
 
-### method new
+    Html:
+      attrs:
+        lang: "en"
+        data-theme: "dark"
 
-```raku
-method new(
-    *@items,
-    *%h
-) returns Mu
-```
+    Head:
+      metas:
+        - charset: "utf-8"
+        - name: "viewport"
+          content: "width=device-width, initial-scale=1"
 
-.new positional takes @items
+      links:
+        - rel: "icon"
+          href: "/img/favicon.ico"
+          type: "image/x-icon"
+        - rel: "stylesheet"
+          href: "/css/styles.css"
 
-### role Flexbox does Component
+      scripts:
+        - src: "https://unpkg.com/htmx.org@1.9.5"
+          crossorigin: "anonymous"
+          integrity: "sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
 
-### has Positional @.items
-
-list of items to populate grid,
-
-### has Mu $.direction
-
-flex-direction (default row)
-
-### has Mu $.gap
-
-gap between items in em (default 1)
-
-### method new
-
-```raku
-method new(
-    *@items,
-    *%h
-) returns Mu
-```
-
-.new positional takes @items
-
-### role Dashboard does Tag[Regular]
-
-### role Box does Component
-
-### has Int $.order
-
-specify sequential order of box
-
-### role Tab does Tag[Regular] {...}
-
-### subset TabItem of Pair where .value ~~ Tab;
-
-### role Tabs does Component
-
-
-
-Tabs does Component to control multiple tabs
-
-### has Str $.align-menu
-
-Tabs take two attrs for menu alignment The default is to align="left" and to not adapt to media width $.align-menu <left right center> sets the overall preference
-
-### has Str $.adapt-menu
-
-$.adapt-menu <Nil left right center> sets the value for small viewport
-
-### has Positional[TabItem] @.items
-
-list of tab sections
-
-### method new
-
-```raku
-method new(
-    *@items,
-    *%h
-) returns Mu
-```
-
-.new positional takes @items
-
-### method make-routes
-
-```raku
-method make-routes() returns Mu
-```
-
-makes routes for Tabs must be called from within a Cro route block
-
-### role Dialog does Component
-
-### role Lightbox does Component
-
-### has Str $.label
-
-unique lightbox label
-
-### has Associative %.attrs
-
-can be provided with attrs
-
-### has Positional @.inners
-
-can be provided with inners
-
-### method new
-
-```raku
-method new(
-    *@inners,
-    *%attrs
-) returns Mu
-```
-
-ok to call .new with @inners as Positional
-
-Other Tags
-----------
-
-### role Markdown does Tag
-
-### has Str $.markdown
-
-markdown to be converted
-
-### method new
-
-```raku
-method new(
-    Str $markdown,
-    *%h
-) returns Mu
-```
-
-.new positional takes Str $code
+These values can be customised as follows: copy this file from `~/.rair-config/.air.yaml` to `bin/.air.yaml` where `bin` is the dir where you run your website script (see Air::Examples for a working version). Note that, until we add Air::Theme support, many of the Air features and examples are HTMX centric, so only remove this if you are confident. Other fields (such as the site url and admin email) will be added here as the codebase evolves. Also, this is the basis for vendoring support to be implemented in a future release.
 
 package EXPORT::DEFAULT
 -----------------------
 
-put in all the @components as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
+gather all the base and child module classes and roles put in all the @combined-exports as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
+
+### sub EXPORT
+
+```raku
+sub EXPORT() returns Mu
+```
+
+also just re-export them as vanilla classes and roles
 
 AUTHOR
 ======

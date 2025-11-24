@@ -267,7 +267,7 @@ role Form does Cro::WebApp::Form does Taggable {
 
     method init {
         self.do-form-styles;
-#        self.do-form-scripts;
+        self.?do-form-scripts;
         self.do-form-defaults;
         self.?do-form-attrs;
         self.do-form-tmpl;
@@ -301,7 +301,7 @@ role Form does Cro::WebApp::Form does Taggable {
     #| called when used as a Taggable, returns self.empty
     multi method HTML(--> Markup()) {
         parse-template($formtmp)
-            andthen .render( {form => self.empty} ).&adjust(self.form-url)
+            andthen .render( {form => self.empty} ).&adjust(self.form-url);
     }
 
     #| when passed a $form field set, returns populated form

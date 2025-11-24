@@ -17,7 +17,7 @@ Breathing life into the raku **hArc stack** (HTMX, Air, Red, Cro).
 
 **Air** is basically a set of libraries that produce HTML code and serve it with Cro.
 
-The result is a concise, legible and easy-to-maintain website codebase.
+The aim is a concise, legible and easy-to-maintain website codebase.
 
 GETTING STARTED
 ===============

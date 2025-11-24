@@ -93,23 +93,24 @@ constant @singular-tags = <area base br col embed hr img input link meta param s
 =head2 HTML Escape
 
 #| Explicitly HTML::Escape inner text
-sub escape(Str:D() $s --> Str) is export {
+sub escape(Str:D() $s --> Str) is export(:MANDATORY) {
     escape-html($s)
 }
 
 #| also a shortcut ^ prefix
-multi prefix:<^>(Str:D() $s --> Str) is export {
+multi prefix:<^>(Str:D() $s --> Str) is export(:MANDATORY) {
     escape-html($s)
 }
 
 =head2 Tag Rendering
 
-role   Tag            is export(:MANDATORY) {...}
-enum   TagType        is export(:MANDATORY) <Singular Regular>;
+role   Tag             is export(:MANDATORY) {...}
+enum   TagType         is export(:MANDATORY) <Singular Regular>;
 
 =head3 role Attr is Str {} - type for Attribute values, use Attr() for coercion
 
-role   Attr     is Str is export(:MANDATORY) {}
+#role   Attr     is Str is export(:MANDATORY) {}
+subset Attr     where Str | Int;
 
 =head3 subset Inner where Str | Tag | Taggable | Markup - type union for Inner elements
 
@@ -120,10 +121,11 @@ subset Inner    where Str | Tag | Taggable | Markup;
 =head2 role Tag [TagType Singular|Regular] {} - basis for Air functions
 
 role   Tag[TagType $tag-type?] is export(:MANDATORY) {
-    has Str    $.name = ::?CLASS.^name.lc;
+    #| tag name is the unqualified (ie the last) part of the class name in lower case
+    has Str    $.name = ::?CLASS.^name.split('::').tail.lc;
 
     #| can be provided with attrs
-    has Attr() %.attrs is rw;
+    has Attr   %.attrs is rw;
 
     #| can be provided with inners
     has Inner  @.inners;
@@ -157,7 +159,7 @@ role   Tag[TagType $tag-type?] is export(:MANDATORY) {
 =para This level is where users want to mess around with the parts of a tag for customizations
 
 #| convert from raku Pair syntax to HTML tag attributes
-sub attrs(%h --> Str) is export {
+sub attrs(%h --> Str) is export(:MANDATORY) {
     #| Discard attrs with False or undefined values
     my @discards = %h.keys.grep: {
         %h{$_} === False     ||
@@ -175,7 +177,7 @@ sub attrs(%h --> Str) is export {
 }
 
 #| open a custom tag
-sub opener($tag, *%h -->Str) is export {
+sub opener($tag, *%h -->Str) is export(:MANDATORY) {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ '>'
 }
 
@@ -193,7 +195,7 @@ multi sub render-tag(Str()    $inner) {
 }
 
 #| convert from an inner list to HTML tag inner string
-sub inner(@inners --> Str()) is export {
+sub inner(@inners --> Str()) is export(:MANDATORY) {
     given @inners {
         when * == 0 {   ''   }
         when * == 1 { .first.&render-tag }
@@ -202,7 +204,7 @@ sub inner(@inners --> Str()) is export {
 }
 
 #| close a custom tag (unset :!nl to suppress the newline)
-sub closer($tag, :$nl --> Str) is export {
+sub closer($tag, :$nl --> Str) is export(:MANDATORY) {
     ($nl ?? "\n" !! '') ~ '</' ~ $tag ~ '>'
 }
 
@@ -211,13 +213,13 @@ sub closer($tag, :$nl --> Str) is export {
 =para This level is for general use from custom tags that behave like regular/singular tags
 
 #| do a regular tag (ie a tag with @inners)
-sub do-regular-tag(Str $tag, *@inners, *%h --> Markup() ) is export(:MANDATORY)  {
+sub do-regular-tag(Str $tag, *@inners, *%h --> Markup()) is export(:MANDATORY)  {
     my $nl = @inners >= 2;
     opener($tag, |%h) ~ inner(@inners) ~ closer($tag, :$nl)
 }
 
 #| do a singular tag (ie a tag without @inners)
-sub do-singular-tag(Str $tag, *%h --> Markup() ) is export(:MANDATORY)  {
+sub do-singular-tag(Str $tag, *%h --> Markup()) is export(:MANDATORY)  {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ ' />'
 }
 
@@ -255,8 +257,7 @@ my package EXPORT::CRO {
     }
 }
 
-
-my @exclude-base  = <section article aside time a button body main header content footer nav table grid dialog>;
+my @exclude-base  = <script style meta title link a button section content article aside time table dialog body main header footer nav dl dd dt>;
 
 my @regular-base  = @regular-tags.grep:  { $_ ∉ @exclude-base };
 my @singular-base = @singular-tags.grep: { $_ ∉ @exclude-base };
@@ -269,6 +270,40 @@ my package EXPORT::BASE {
     }
 
     for @singular-base -> $tag {
+        OUR::{'&' ~ $tag} := sub (*%h) { do-singular-tag( "$tag", |%h ) }
+    }
+}
+
+# ========================================================================
+
+my @exclude-tempin  = <script style meta title link a button section content article aside time table dialog>;
+
+my @regular-tempin  = @regular-tags.grep:  { $_ ∉ @exclude-tempin };
+my @singular-tempin = @singular-tags.grep: { $_ ∉ @exclude-tempin };
+
+my package EXPORT::BASE-ELEMENTS {
+    for @regular-tempin -> $tag {
+        OUR::{'&' ~ $tag} := sub (*@inners, *%h) { do-regular-tag( "$tag", @inners, |%h ) }
+    }
+
+    for @singular-tempin -> $tag {
+        OUR::{'&' ~ $tag} := sub (*%h) { do-singular-tag( "$tag", |%h ) }
+    }
+}
+
+# ========================================================================
+
+my @exclude-base-tags  = <script style meta title link a button section content article aside time>;
+
+my @regular-base-tags  = @regular-tags.grep:  { $_ ∉ @exclude-base-tags };
+my @singular-base-tags = @singular-tags.grep: { $_ ∉ @exclude-base-tags };
+
+my package EXPORT::BASE-TAGS {
+    for @regular-base-tags -> $tag {
+        OUR::{'&' ~ $tag} := sub (*@inners, *%h) { do-regular-tag( "$tag", @inners, |%h ) }
+    }
+
+    for @singular-base-tags -> $tag {
         OUR::{'&' ~ $tag} := sub (*%h) { do-singular-tag( "$tag", |%h ) }
     }
 }

@@ -256,7 +256,7 @@ role Component::Common does Taggable {
     method gist { self.url-path }
 }
 
-#| Component is for non-Red classes
+#| Component
 role Component[
     :C(:CREATE(:A(:$ADD))),
     :R(:READ(:L(:$LOAD))) = True,
@@ -321,7 +321,7 @@ role Component[
     }
 }
 
-#| Component::Red is for Red models
+#| Component::Red
 role Component::Red[
     :C(:CREATE(:A(:$ADD))),
     :R(:READ(:L(:$LOAD))) = True,

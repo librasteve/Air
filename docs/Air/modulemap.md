@@ -1,0 +1,62 @@
+- Base/
+    - Tags.rakumod
+        - use Air::Functional :MANDATORY
+        - role Script      does Tag[Regular]
+        - role Style       does Tag[Regular]
+        - role Meta        does Tag[Singular]
+        - role Title       does Tag[Regular]
+        - role Link        does Tag[Singular]
+        - role External    does Tag[Regular]
+        - role Internal    does Tag[Regular]
+        - role A           does Tag[Regular]
+        - role Button      does Tag[Regular]
+        - role Content     does Tag[Regular]
+        - role Section     does Tag[Regular]
+        - role Article     does Tag[Regular]
+        - role Aside       does Tag[Regular]
+        - role Time        does Tag[Regular]
+        - role Spacer      does Tag[Regular]
+        - role Safe        does Tag[Regular]
+    - Elements.rakumod
+        - use Air::Functional :BASE-TAGS
+        - use Air::Component
+        - use Air::Base::Tags
+        - role Table       does Component
+        - role Grid        does Component
+        - role Flexbox     does Component
+        - role Dashboard   does Component
+        - role Box         does Component
+        - role Tab         does Component
+        - role Tabs        does Component
+        - role Dialog      does Component
+        - role Lightbox    does Component
+        - role Markdown    does Component
+        - role Background  does Component
+    - Tools.rakumod
+        - use Air::Functional :BASE-TAGS;
+        - use Air::Base::Tags;
+        - role Tool
+        - role Analytics   does Tool
+    - Widgets.rakumod
+        - use Air::Functional :BASE-TAGS
+        - use Air::Base::Tags;
+        - role Widget      does Tag[Regular]
+        - role LightDark   does Widget
+- Base.rakumod
+    - use Air::Functional :BASE-ELEMENTS
+    - use Air::Component
+    - use Air::Form
+    - use Air::Base::Tags
+    - use Air::Base::Elements
+    - use Air::Base::Tools
+    - use Air::Base::Widgets
+    - role Head        does Tag[Regular]
+    - role Header      does Tag[Regular]
+    - role Main        does Tag[Regular]
+    - role Footer      does Tag[Regular]
+    - role Body        does Tag[Regular]
+    - role Html        does Tag[Regular]
+    - class Nav        does Component
+    - class Page       does Component
+    - class Site
+    - role Defaults

@@ -130,87 +130,51 @@ Key features shown are:
 
 =head1 DESCRIPTION
 
-Each feature of Air::Base is set out below:
+In general, items defined in Air::Base are exported as both roles or classes (title case) and as subroutines (lower case).
+
+So, after `use`ing the relevant module you can code in OO or functional style:
+
+```
+my $t = Title.new: 'sometext';
+```
+
+Is identical to writing:
+
+```
+my $t = title 'sometext';
+```
+
+The Air::Base library is implemented over a set of Raku modules, which are then used in the main Base module and re-exported as both classes and functions:
+
+=item [Air::Base::Tags](Base/Tags.md)  - HTML, Semantic & Safe Tags
+=item [Air::Base::Elements](Base/Elements.md)  - Layout, Active & Markdown Elements
+=item [Air::Base::Tools](Base/Tools.md)  - Tools for site-wide deployment
+=item [Air::Base::Widgets](Base/Widgets.md)  - Widgets use anywhere, esp Nav
+
+All items are re-exported by the top level module, so you can just `use Air::Base;` near the top of your code.
 =end pod
 
 # TODO items
+#my loaded or has loaded - make consistent
 #role Theme {...}
 
-use Air::Functional;
+use YAMLish;
+
+use Air::Functional :BASE-ELEMENTS;
 use Air::Component;
 use Air::Form;
 
-my @functions = <Safe Site Page A Button External Internal Content Section Article Aside Time Spacer Nav Background LightDark Body Header Main Footer Table Grid Flexbox Dashboard Box Tab Tabs Markdown Dialog Lightbox>;
+use Air::Base::Tags;
+use Air::Base::Elements;
+use Air::Base::Tools;
+use Air::Base::Widgets;
 
-=head2 Basic Tags
+sub exports-air-base {<Site Page Nav Body Header Main Footer>}
 
-=para Air::Functional converts all HTML tags into raku functions. Air::Base overrides a subset of these HTML tags, providing them both as raku roles and functions.
-
-=para The Air::Base tags each embed some code to provide behaviours. This can be simple - C<role Script {}> just marks JavaScript as exempt from HTML Escape. Or complex - C<role Body {}> has C<Header>, C<Main> and C<Footer> attributes with certain defaults and constructors.
-
-=para Combine these tags in the same way as the overall layout of an HTML webpage. Note that they hide complexity to expose only relevant information to the fore. Override them with your own roles and classes to implement your specific needs.
-
-class Nav  { ... }
-class Page { ... }
-
-=head3 role Safe   does Tag[Regular] {...}
-
-role Safe   does Tag[Regular]  {
-    #| avoids HTML escape
-    multi method HTML {
-        @.inners.join
-    }
-}
-
-=head3 role Script does Tag[Regular] {...}
-
-role Script does Tag[Regular]  {
-    #| no html escape
-    multi method HTML {
-        opener($.name, |%.attrs) ~
-        ( @.inners.first // '' ) ~
-        closer($.name)           ~ "\n"
-    }
-}
-
-=head3 role Style  does Tag[Regular] {...}
-
-role Style  does Tag[Regular]  {
-    #| no html escape
-    multi method HTML {
-        opener($.name, |%.attrs)  ~
-        @.inners.first            ~
-        closer($.name)            ~ "\n"
-    }
-}
-
-=head3 role Meta   does Tag[Singular] {}
-
-role Meta   does Tag[Singular] {}
-
-=head3 role Title  does Tag[Regular]  {}
-
-role Title  does Tag[Regular]  {}
-
-=head3 role Link  does Tag[Regular]  {}
-
-role Link   does Tag[Singular] {}
-
-=head3 role A      does Tag[Regular] {...}
-
-role A      does Tag[Regular]  {
-    #| defaults to target="_blank"
-    multi method HTML {
-        my %attrs = |%.attrs;
-        %attrs<target> = '_blank' without %attrs<target>;
-
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
-
-=head3 role Button does Tag[Regular] {}
-
-role Button does Tag[Regular]  {}
+# predeclarations
+role  Defaults {...}
+class Nav      {...}
+class Page     {...}
 
 =head2 Page Tags
 
@@ -218,7 +182,8 @@ role Button does Tag[Regular]  {}
 
 =head3 role Head   does Tag[Regular] {...}
 
-role Head   does Tag[Regular]  {
+role Head       does Tag[Regular]  {
+    also        does Defaults;
 
     =para Singleton pattern (ie. same Head for all pages)
 
@@ -245,16 +210,6 @@ role Head   does Tag[Regular]  {
     #| style
     has Style  @.styles;
 
-    #| set up common defaults (called on instantiation)
-    method defaults {
-        self.metas.append: Meta.new: :charset<utf-8>;
-        self.metas.append: Meta.new: :name<viewport>, :content('width=device-width, initial-scale=1');
-        self.links.append: Link.new: :rel<icon>, :href</img/favicon.ico>, :type<image/x-icon>;
-        self.links.append: Link.new: :rel<stylesheet>, :href</css/styles.css>;
-        self.scripts.append: Script.new: :src<https://unpkg.com/htmx.org@1.9.5>, :crossorigin<anonymous>,
-                :integrity<sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO>;
-    }
-
     #| .HTML method calls .HTML on all inners
     multi method HTML {
         opener($.name, |%.attrs)          ~
@@ -270,7 +225,7 @@ role Head   does Tag[Regular]  {
 
 =head3 role Header does Tag[Regular] {...}
 
-role Header does Tag[Regular]  {
+role Header     does Tag[Regular]  {
     #| nav
     has Nav  $.nav is rw;
     #| tagline
@@ -286,7 +241,7 @@ role Header does Tag[Regular]  {
 
 =head3 role Main   does Tag[Regular] {...}
 
-role Main   does Tag[Regular]  {
+role Main       does Tag[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
         do-regular-tag( $.name, @.inners, |%attrs )
@@ -295,7 +250,7 @@ role Main   does Tag[Regular]  {
 
 =head3 role Footer does Tag[Regular] {...}
 
-role Footer does Tag[Regular]  {
+role Footer     does Tag[Regular]  {
     multi method HTML {
         my %attrs = |%.attrs, :class<container>;
         do-regular-tag( $.name, @.inners, |%attrs )
@@ -304,7 +259,7 @@ role Footer does Tag[Regular]  {
 
 =head 3 role Body   does Tag[Regular] {...}
 
-role Body   does Tag[Regular]  {
+role Body       does Tag[Regular]  {
     #| header
     has Header $.header is rw .= new;
     #| main
@@ -326,22 +281,15 @@ role Body   does Tag[Regular]  {
 
 =head3 role Html   does Tag[Regular] {...}
 
-role Html   does Tag[Regular]  {
+role Html      does Tag[Regular]  {
+    also       does Defaults;
+
     has $!loaded = 0;
 
     #| head
     has Head   $.head .= instance;
     #| body
     has Body   $.body is rw .= new;
-
-    #| default :lang<en>
-    has Attr() %.lang is rw = :lang<en>;
-    #| default :data-theme<dark>
-    has Attr() %.mode is rw = :data-theme<dark>;
-
-    method defaults {
-        self.attrs = |%!lang, |%!mode, |%.attrs;
-    }
 
     multi method HTML {
         self.defaults unless $!loaded++;
@@ -353,259 +301,15 @@ role Html   does Tag[Regular]  {
     }
 }
 
+=head2 Nav, Page and Site
 
-=head2 Semantic Tags
-
-=para These are re-published with minor adjustments and align with Pico CSS semantic tags
-
-=head3 role Content   does Tag[Regular] {...}
-
-role Content   does Tag[Regular] {
-    multi method HTML {
-        my %attrs  = |%.attrs, :id<content>;
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
-
-=head3 role Section   does Tag[Regular] {}
-
-role Section   does Tag[Regular] {}
-
-=head3 role Article   does Tag[Regular] {}
-
-role Article   does Tag[Regular] {
-    # Keep text ltr even when grid direction rtl
-    multi method HTML {
-        my %attrs  = |%.attrs, :style("direction:ltr;");
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
-
-=head3 role Aside     does Tag[Regular] {}
-
-role Aside     does Tag[Regular] {
-    method STYLE {
-        q:to/END/
-        /* Custom styles for aside layout */
-        main {
-            display: grid;
-            grid-template-columns: 3fr 1fr;
-            gap: 20px;
-        }
-        aside {
-            background-color: aliceblue;
-            opacity: 0.9;
-            padding: 20px;
-            border-radius: 5px;
-        }
-        END
-    }
-}
-
-=head3 role Time      does Tag[Regular] {...}
-
-=para In HTML the time tag is typically of the form E<lt> time datetime="2025-03-13" E<gt> 13 March, 2025 E<lt> /time E<gt> . In Air you can just go time(:datetime E<lt> 2025-02-27 E<gt> ); and raku will auto format and fill out the inner human readable text.
-
-role Time      does Tag[Regular] {
-    use DateTime::Format;
-
-    multi method HTML {
-        my $dt = DateTime.new(%.attrs<datetime>);
-
-        =para Optionally specify mode => [time | datetime], mode => date is default
-
-        sub inner {
-            given %.attrs<mode> {
-                when     'time' { strftime('%l:%M%P', $dt) }
-                when 'datetime' { strftime('%l:%M%P on %B %d, %Y', $dt) }
-                default         { strftime('%B %d, %Y', $dt) }
-            }
-        }
-
-        do-regular-tag( $.name, [inner], |%.attrs )
-    }
-}
-
-=head3 role Spacer does Tag
-
-role Spacer    does Tag {
-    has Str $.height = '1em';
-
-    multi method HTML {
-        do-regular-tag( 'div', :style("min-height:$!height;") )
-    }
-}
-
-
-=head2 Widgets
-
-=para Active tags that can be used anywhere to provide a nugget of UI behaviour, default should be a short word (or a single item) that can be used in Nav
-
-role Widget {}
-
-=head3 role LightDark does Tag[Regular] does Widget {...}
-
-role LightDark does Tag does Widget {
-    #| attribute 'show' may be set to 'icon'(default) or 'buttons'
-    multi method HTML {
-        my $show = self.attrs<show> // 'icon';
-        given $show {
-            when 'buttons' { Safe.new: self.buttons }
-            when 'icon'    { Safe.new: self.icon    }
-        }
-    }
-
-    method buttons {
-        Q|
-        <div role="group">
-            <button class="contrast"  id="themeToggle">Toggle</button>
-            <button                   id="themeLight" >Light</button>
-            <button class="secondary" id="themeDark"  >Dark</button>
-            <button class="outline"   id="themeSystem">System</button>
-        </div>
-        <script>
-        |
-
-        ~ self.common ~
-
-        Q|
-            // Attach to a button click
-            document.getElementById("themeToggle").addEventListener("click", () => setTheme("toggle"));
-            document.getElementById("themeDark").addEventListener("click", () => setTheme("dark"));
-            document.getElementById("themeLight").addEventListener("click", () => setTheme("light"));
-            document.getElementById("themeSystem").addEventListener("click", () => setTheme("system"));
-        </script>
-        |;
-    }
-
-    method icon {
-        Q|
-        <a style="font-variant-emoji: text" id ="sunIcon">&#9728;</a>
-        <a style="font-variant-emoji: text" id ="moonIcon">&#9790;</a>
-        <script>
-            // Function to show/hide icons
-            function updateIcons(theme) {
-                if (theme === "dark") {
-                    sunIcon.style.display = "none"; // Hide sun
-                    moonIcon.style.display = "block"; // Show moon
-                } else {
-                    sunIcon.style.display = "block"; // Show sun
-                    moonIcon.style.display = "none"; // Hide moon
-                }
-            }
-        |
-
-        ~ self.common ~
-
-        Q|
-            const sunIcon = document.getElementById("sunIcon");
-            const moonIcon = document.getElementById("moonIcon");
-
-            // Attach to a icon click
-            document.getElementById("sunIcon").addEventListener("click", () => setTheme("dark"));
-            document.getElementById("moonIcon").addEventListener("click", () => setTheme("light"));
-        </script>
-        |;
-    }
-
-    method common {
-        Q:to/END/
-            function setTheme(mode) {
-                const htmlElement = document.documentElement;
-                let newTheme = mode;
-
-                if (mode === "toggle") {
-                    const currentTheme = htmlElement.getAttribute("data-theme") || "light";
-                    newTheme = currentTheme === "dark" ? "light" : "dark";
-                } else if (mode === "system") {
-                    newTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-                }
-
-                htmlElement.setAttribute("data-theme", newTheme);
-                localStorage.setItem("theme", newTheme); // Save theme to localStorage
-                updateIcons(newTheme);
-            }
-
-            // select theme on page load
-            document.addEventListener("DOMContentLoaded", () => {
-                const savedTheme = localStorage.getItem("theme");
-                const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                const initialTheme = savedTheme ?? (systemPrefersDark ? "dark" : "light");
-
-                updateIcons(initialTheme);
-                document.documentElement.setAttribute("data-theme", initialTheme);
-            });
-
-            // Listen for system dark mode changes and update the theme dynamically
-            window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-                setTheme("system"); // Follow system setting
-            });
-        END
-    }
-}
-
-=head2 Tools
-
-=para Tools are provided to the site tag to provide a nugget of side-wide behaviour, services method defaults are distributed to all pages on server start
-
-role Tool {}
-
-=head3 role Analytics does Tool {...}
-
-enum Provider is export <Umami>;
-
-role Analytics does Tool {
-    #| may be [Umami] - others TBD
-    has Provider $.provider;
-    #| website ID from provider
-    has Str      $.key;
-
-    multi method defaults($page) {
-        given $!provider {
-            when Umami {
-                $page.html.head.scripts.append:
-                    Script.new: :defer,
-                        :src<https://cloud.umami.is/script.js>,
-                        :data-website-id($!key);
-            }
-        }
-    }
-}
-
-=head2 Site Tags
-
-=para These are the central elements of Air::Base
-
-=para First we set up the NavItems = Internal | External | Content | Page
-
-=head3 role External  does Tag[Regular] {...}
-
-role External  does Tag {
-    has Str $.label is rw = '';
-    has %.others = {:target<_blank>, :rel<noopener noreferrer>};
-
-    multi method HTML {
-        my %attrs = |self.others, |%.attrs;
-        do-regular-tag( 'a', [$.label], |%attrs )
-    }
-}
-
-=head3 role Internal  does Tag[Regular] {...}
-
-role Internal  does Tag {
-    has Str $.label is rw = '';
-
-    multi method HTML {
-        do-regular-tag( 'a', [$.label], |%.attrs )
-    }
-}
+=para These are the central parts of Air::Base
 
 =head3 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-#| Nav does Component in order to support multiple nav instances
-#| with distinct NavItem and Widget attributes
+#| Nav does Component to do multiple instances with distinct NavItem and Widget attrs
 class Nav      does Component {
     has $!routed = 0;
 
@@ -756,55 +460,7 @@ class Nav      does Component {
     }
 }
 
-=head3 role Background  does Component
-
-role Background does Component {
-    #| top of background image (in px)
-    has $.top = 140;
-    #| height of background image (in px)
-    has $.height = 320;
-    #| url of background image
-    has $.url = 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Butterfly_bottom_PSF_transparent.gif';
-    #| opacity of background image
-    has $.opacity = 0.1;
-    #| rotate angle of background image (in deg)
-    has $.rotate = -9;
-
-    method STYLE {
-        my $scss = q:to/END/;
-        #background {
-            position: fixed;
-            top: %TOP%px;
-            left: 0;
-            width: 100vw;
-            height: %HEIGHT%px;
-            background: url('%URL%');
-            opacity: %OPACITY%;
-            filter: grayscale(100%);
-            transform: rotate(%ROTATE%deg);
-            background-repeat: no-repeat;
-            background-position: center center;
-            z-index: -1;
-            pointer-events: none;
-            padding: 20px;
-        }
-        END
-
-        $scss ~~ s:g/'%TOP%'/$!top/;
-        $scss ~~ s:g/'%HEIGHT%'/$!height/;
-        $scss ~~ s:g/'%URL%'/$!url/;
-        $scss ~~ s:g/'%OPACITY%'/$!opacity/;
-        $scss ~~ s:g/'%ROTATE%'/$!rotate/;
-        $scss
-    }
-
-    method HTML {
-        do-regular-tag( 'div', :id<background> )
-    }
-}
-
-#| Page does Component in order to support
-#| multiple page instances with distinct content and attributes.
+#| Page does Component to do multiple instances with distinct content and attrs
 class Page     does Component {
     has $!loaded;
 
@@ -830,8 +486,8 @@ class Page     does Component {
     has Html    $.html .= new;
 
     #| set all provided shortcuts on first use
-    method defaults {
-        unless $!loaded++ {
+    method shortcuts {
+#        unless $!loaded++ {
             self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
             self.html.head.title = Title.new: $.title                   with $.title;
 
@@ -843,7 +499,7 @@ class Page     does Component {
 
             self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
-        }
+#        }
     }
 
     #| .new positional with main only
@@ -865,7 +521,7 @@ class Page     does Component {
 
     #| issue page
     method HTML {
-        self.defaults unless $!loaded;
+        self.shortcuts unless $!loaded;
         '<!doctype html>' ~ $!html.HTML
     }
 
@@ -896,8 +552,7 @@ class Page     does Component {
 
 subset Redirect of Pair where .key !~~ /\// && .value ~~ /^ \//;
 
-#| Site is a holder for pages, performs setup
-#| of Cro routes and offers high level controls for style via Pico SASS.
+#| Site is a holder for pages, performs setup of Cro routes, gathers styles and scripts, and runs SASS
 class Site {
     my $loaded;
 
@@ -985,15 +640,14 @@ class Site {
         orwith  $!index    { @!pages[0] = $!index }
         else    { note "No pages or index found!" }
 
-        #| always enqueue & route Nav
+        #| always register & route Nav
         @!register.push: Nav.new;
 
         self.enqueue-all;
-        self.scss-run unless $!scss-off;
 
         for @!tools -> $tool {
             for @!pages -> $page {
-                $tool.defaults($page)
+                $tool.inject($page)
             }
         }
     }
@@ -1029,7 +683,15 @@ class Site {
         }
     }
 
-    method serve( :$port=3000, :$host='localhost' ) {
+    #| run the SCSS compiler
+    #| vendor all default packages fixme
+    method build { self.scss-run unless $!scss-off }
+
+    #| build application and start server
+    method serve { $.build; $.start}
+
+    #| start the server (ie skip build)
+    method start( :$port=3000, :$host='localhost' ) {
         use Cro::HTTP::Log::File;
         use Cro::HTTP::Server;
 
@@ -1133,663 +795,123 @@ class Site {
     }
 }
 
+=head2 Defaults
 
-=head2 Component Library
+=para role Defaults provides a central place to set the various website defaults across Head, Html and Site roles
 
-=para  The Air roadmap is to provide a full set of pre-styled tags as defined in the Pico L<docs|https://picocss.com/docs>. Did we say that Air::Base implements Pico CSS?
+=para On installation, the file `~/.rair-config/.air.yaml` is placed in the home directory (ie copied from `resources/.air.yaml`. By default, role Defaults loads the information specified in this file intio the appropriate part of each page:
 
-=head3 role Table does Tag
+=begin code
+Html:
+  attrs:
+    lang: "en"
+    data-theme: "dark"
 
-role Table     does Component {
+Head:
+  metas:
+    - charset: "utf-8"
+    - name: "viewport"
+      content: "width=device-width, initial-scale=1"
 
-    =para Attrs thead, tbody and tfoot can each be a 1D [values] or 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for single- and multi-row thead and tfoot.
+  links:
+    - rel: "icon"
+      href: "/img/favicon.ico"
+      type: "image/x-icon"
+    - rel: "stylesheet"
+      href: "/css/styles.css"
 
-    =para Table applies col and row header tags <th></th> as required for Pico styles.
+  scripts:
+    - src: "https://unpkg.com/htmx.org@1.9.5"
+      crossorigin: "anonymous"
+      integrity: "sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
+=end code
 
-    #| optional (ie tbody-attrs only is ok)
-    has $.tbody is rw;
-    #| explicitly specify attrs on tbody
-    has %.tbody-attrs;
-    #| optional
-    has $.thead;
-    #| optional
-    has $.tfoot;
-    #| class for table
-    has $.class;
+=para These values can be customised as follows: copy this file from `~/.rair-config/.air.yaml` to `bin/.air.yaml` where `bin` is the dir where you run your website script (see Air::Examples for a working version). Note that, until we add Air::Theme support, many of the Air features and examples are HTMX centric, so only remove this if you are confident. Other fields (such as the site url and admin email) will be added here as the codebase evolves. Also, this is the basis for vendoring support to be implemented in a future release.
 
-    #| .new positional takes tbody unless passed as attr
-    multi method new(*@tbody, *%h) {
-        if %h<tbody> {
-            self.bless: |%h
+role Defaults {
+    my %yaml;
+    my $yaml-loaded;
+
+    state $script-dir = $*CWD;
+
+    submethod read-yaml {
+        return if $yaml-loaded++;
+
+        my $file = '.air.yaml';
+
+        if "$script-dir/$file".IO.e {
+            # place custom .air.yaml in same dir as script that calls `site.serve`
+            note "Loading custom .air.yaml...";
+            %yaml := load-yaml("$script-dir/$file".IO.slurp);
         } else {
-            self.bless: :@tbody, |%h
+            note "Loading default .air.yaml...";
+            %yaml := load-yaml("$*HOME/.rair-config/$file".IO.slurp);
         }
     }
 
-    sub do-row(@row, :$head) {
-        tr do for @row.kv -> $col, $cell {
-            given    	$col, $head {
-                when   	  *,    *.so  { th $cell, :scope<col> }
-                when   	  0,    *     { th $cell, :scope<row> }
-                default               { td $cell }
-            }
-        }
+    multi method defaults(Html:) {
+        self.read-yaml;
+
+        note "Html attrs: " ~ %yaml<Html><attrs>.raku;
+        self.attrs = %yaml<Html><attrs>;
     }
 
-    # parts as objects - single tbody
-    multi sub do-part($part where Tag|Taggable|Markup) {
-        $part
-    }
-    # parts as objects - list of eg tr's
-    multi sub do-part(@part where .all ~~ Tag|Taggable|Markup) {
-        |@part
-    }
-    # parts as values - 2D array
-    multi sub do-part(@part where .all ~~ Positional, :$head) {
-        if @part.elems == 1 {   # got a 2D with one element
-            nextwith @part[0]
-        }
-        do for @part -> @row {
-            do-row(@row, :$head)
-        }
-    }
-    # parts as values - 1D array
-    multi sub do-part(@part, :$head) {
-        do-row(@part, :$head)
-    }
+    multi method defaults(Head:) {
+        self.read-yaml;
 
+        note "Head metas: " ~ |%yaml<Head><metas>.raku;
+        for %yaml<Head><metas><> {
+            self.metas.append: Meta.new: |$_
+        }
 
-    multi method HTML {
-        table |%(:$!class if $!class), [
-            thead do-part($.thead, :head) with $.thead;
-            tbody |%.tbody-attrs,
-                  do-part($.tbody) with $.tbody;
-            tfoot do-part($.tfoot) with $.tfoot;
-        ]
+        note "Head links: " ~ %yaml<Head><links>.raku;
+        for %yaml<Head><links><> {
+            self.links.append: Link.new: |$_
+        }
+
+        note "Head scripts: " ~ %yaml<Head><scripts>.raku;
+        for %yaml<Head><scripts><> {
+            self.scripts.append: Script.new: |$_
+        }
     }
 }
 
-=head3 role Grid does Component
-
-role Grid      does Component {
-    #| list of items to populate grid
-    has @.items;
-
-    has $.cols = 1;
-    has $.grid-template-columns = "repeat($!cols, 1fr)";
-    has $.rows = 1;
-    has $.grid-template-rows    = "repeat($!rows, 1fr)";
-    has $.gap = 0;
-    has $.direction = 'ltr';
-
-
-    #| .new positional takes @items
-    multi method new(*@items, *%h) {
-        self.bless:  :@items, |%h;
-    }
-
-    # optional grid style from https://cssgrid-generator.netlify.app/
-    # fixme load Grid.new as standard (like Nav.new)
-    method style {
-        my $str = q:to/END/;
-        <style>
-            #%HTML-ID% {
-                display: grid;
-                grid-template-columns: %GTC%;
-                grid-template-rows: %GTR%;
-                gap: %GAP%em;
-                direction: %DIR%;
-            }
-
-            @media (max-width: 1024px) {
-                #%HTML-ID% {
-                    display: flex;
-                    flex-direction: column-reverse;
-
-                    gap: 1px;
-                }
-            }
-        </style>
-        END
-
-        $str ~~ s:g/'%HTML-ID%'/$.html-id/;
-        $str ~~ s:g/'%GTC%'/$!grid-template-columns/;
-        $str ~~ s:g/'%GTR%'/$!grid-template-rows/;
-        $str ~~ s:g/'%GAP%'/$!gap/;
-        $str ~~ s:g/'%DIR%'/$!direction/;
-        $str
-	}
-
-    multi method HTML {
-        $.style ~
-        div :id($.html-id), @!items;
-    }
-}
-
-=head3 role Flexbox does Component
-
-role Flexbox   does Component {
-    #| list of items to populate grid,
-    has @.items;
-    #| flex-direction (default row)
-    has $.direction = 'row';
-    #| gap between items in em (default 1)
-    has $.gap = 1;
-
-    #| .new positional takes @items
-    multi method new(*@items, *%h) {
-        self.bless:  :@items, |%h;
-    }
-
-    method style {
-        my $str = q:to/END/;
-        <style>
-            #%HTML-ID% {
-                display: flex;
-                flex-direction: %DIRECTION%; /* column row */
-                justify-content: center;  /* centers horizontally */
-                gap: %GAP%em;
-            }
-
-            /* Responsive layout - makes a one column layout instead of a two-column layout */
-            @media (max-width: 768px) {
-                #%HTML-ID% {
-                    flex-direction: column;
-                    gap: 0;
-                }
-            }
-        </style>
-        END
-
-        $str ~~ s:g/'%HTML-ID%'/$.html-id/;
-        $str ~~ s:g/'%DIRECTION%'/$!direction/;
-        $str ~~ s:g/'%GAP%'/$!gap/;
-        $str
-    }
-
-    multi method HTML {
-        $.style ~
-        div :id($.html-id), @!items;
-    }
-}
-
-=head3 role Dashboard does Tag[Regular]
-
-role Dashboard does Tag[Regular] {
-    method STYLE {
-        Q:to/END/;
-        dashboard {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 1rem;
-        }
-        END
-    }
-}
-
-=head3 role Box does Component
-
-role Box       does Component {
-    #| specify sequential order of box
-    has Int $.order;# is required;
-
-    has @.inners;
-    has %.attrs;
-
-    multi method new(*@inners, *%attrs) {
-        self.bless:  :@inners, |%attrs;
-    }
-
-    # this emits an article tag with pico style
-    # Keep text ltr even when grid direction rtl
-    multi method HTML {
-        my %attrs  = |%.attrs, :style("direction:ltr;");
-
-        if $.order {
-            %attrs  = |%.attrs, :style("order: $.order;");
-        }
-
-        do-regular-tag( 'article', @.inners, |%attrs )
-    }
-
-    method STYLE {
-        Q:to/END/;
-        dashboard > article {
-          display: flex;
-          align-items: center;
-          flex-direction: column;
-
-          /* Responsive sizing */
-          flex: 1 1 600px;
-          //min-width: 600px;
-          max-width: 800px;
-        }
-        END
-    }
-}
-
-=head3 role Tab does Tag[Regular] {...}
-
-role Tab       does Component {
-    has @.inners;
-    has %.attrs;
-
-    multi method new(*@inners, *%attrs) {
-        self.bless:  :@inners, |%attrs;
-    }
-
-    method HTML {
-        my %attrs = |%.attrs, :class<tab>, :align<left>;
-        do-regular-tag( 'div', @.inners, |%attrs )
-    }
-}
-
-=head3 subset TabItem of Pair where .value ~~ Tab;
-
-subset TabItem of Pair where .value ~~ Tab;
-
-=head3 role Tabs does Component
-
-#| Tabs does Component to control multiple tabs
-role Tabs      does Component {
-    has $!loaded = 0;
-
-    #| Tabs take two attrs for menu alignment
-    #| The default is to align="left" and to not adapt to media width
-    #| $.align-menu <left right center> sets the overall preference
-    has Str $.align-menu = 'left';
-    #| $.adapt-menu <Nil left right center> sets the value for small viewport
-    has Str $.adapt-menu;
-
-    #| list of tab sections
-    has TabItem @.items;
-
-    #| .new positional takes @items
-    multi method new(*@items, *%h) {
-        self.bless:  :@items, |%h;
-    }
-
-    #| makes routes for Tabs
-    #| must be called from within a Cro route block
-    method make-routes() {
-        return if $!loaded++;
-        do for self.items.map: *.kv -> ($name, $target) {
-            given $target {
-                my &new-method = method {$target.?HTML};
-                trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
-                self.^add_method($name, &new-method);
-            }
-        }
-    }
-
-    method tab-content { $.html-id ~ '-content' }
-
-    #viz. https://chatgpt.com/share/68708997-9b18-8009-8e44-14e127fc4e8f
-    method tab-items {
-
-        my $i = 1; my %attrs;
-        do for @.items.map: *.kv -> ($name, $target) {
-
-            given $target {
-                %attrs<class> = ($i==1) ?? 'active' !!'';
-
-                li |%attrs,
-                a(
-                    :hx-get("$.url-path/$name"),
-                    :hx-target("#$.tab-content"),
-                    :data-value($i++),
-                    Safe.new: $name,
-                )
-            }
-
-        }
-    }
-
-    method HTML {
-        method load-path  { $.url-path ~ '/' ~ @.items[0].key }
-
-        div :class<tabs>, [
-            nav :class<tab-menu>,
-                ul :class<tab-links>, self.tab-items;
-            div :id($.tab-content), @.items[0].value;
-        ]
-    }
-
-    method STYLE {
-        my $css = q:to/END/;
-        .tab-menu {
-            display: block;
-            justify-content: %ALIGN-MENU%;
-        }
-        .tab-links {
-            display: block;
-        }
-        .tab-links > li.active > a {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 768px) {
-            .tab-menu {
-                text-align: %ADAPT-MENU%;
-            }
-            .tab-links > * {
-                padding-top: 0;
-                padding-bottom:1em;
-            }
-        }
-        END
-
-        $.adapt-menu = $.adapt-menu ?? 'center' !! $.align-menu;
-
-        $css ~~ s:g/'%ALIGN-MENU%'/$.align-menu/;
-        $css ~~ s:g/'%ADAPT-MENU%'/$.adapt-menu/;
-        $css
-    }
-
-    method SCRIPT {
-        q:to/END/;
-        function setupTabLinks() {
-            const links = document.querySelectorAll('.tab-links > *');
-            const hiddenInput = document.getElementById('selectedOption');
-            const display = document.getElementById('selectedDisplay');
-
-            links.forEach(link => {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault();
-
-                    links.forEach(l => l.classList.remove('active'));
-
-                    this.classList.add('active');
-
-                    const value = this.getAttribute('data-value');
-                    if (hiddenInput) hiddenInput.value = value;
-                    if (display) display.textContent = `Selected: ${this.textContent}`;
-                });
-            });
-        }
-
-        // Run on initial load
-        document.addEventListener('DOMContentLoaded', setupTabLinks);
-
-        // Re-run after HTMX swaps in new content
-        document.body.addEventListener('htmx:afterSwap', setupTabLinks);
-        END
-    }
-}
-
-=head3 role Dialog does Component
-
-# fixme
-role Dialog     does Component {
-    method SCRIPT {
-q:to/END/;
-/*
-* Modal
-*
-* Pico.css - https://picocss.com
-* Copyright 2019-2024 - Licensed under MIT
-*/
-
-// Config
-const isOpenClass = "modal-is-open";
-const openingClass = "modal-is-opening";
-const closingClass = "modal-is-closing";
-const scrollbarWidthCssVar = "--pico-scrollbar-width";
-const animationDuration = 1000; // ms
-let visibleModal = null;
-
-// Toggle modal
-const toggleModal = (event) => {
-  event.preventDefault();
-  const modal = document.getElementById(event.currentTarget.dataset.target);
-  if (!modal) return;
-  modal && (modal.open ? closeModal(modal) : openModal(modal));
-};
-
-// Open modal
-const openModal = (modal) => {
-  const { documentElement: html } = document;
-  const scrollbarWidth = getScrollbarWidth();
-  if (scrollbarWidth) {
-    html.style.setProperty(scrollbarWidthCssVar, `${scrollbarWidth}px`);
-  }
-  html.classList.add(isOpenClass, openingClass);
-  setTimeout(() => {
-    visibleModal = modal;
-    html.classList.remove(openingClass);
-  }, animationDuration);
-  modal.showModal();
-};
-
-// Close modal
-const closeModal = (modal) => {
-  visibleModal = null;
-  const { documentElement: html } = document;
-  html.classList.add(closingClass);
-  setTimeout(() => {
-    html.classList.remove(closingClass, isOpenClass);
-    html.style.removeProperty(scrollbarWidthCssVar);
-    modal.close();
-  }, animationDuration);
-};
-
-// Close with a click outside
-document.addEventListener("click", (event) => {
-  if (visibleModal === null) return;
-  const modalContent = visibleModal.querySelector("article");
-  const isClickInside = modalContent.contains(event.target);
-  !isClickInside && closeModal(visibleModal);
-});
-
-// Close with Esc key
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && visibleModal) {
-    closeModal(visibleModal);
-  }
-});
-
-// Get scrollbar width
-const getScrollbarWidth = () => {
-  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-  return scrollbarWidth;
-};
-
-// Is scrollbar visible
-const isScrollbarVisible = () => {
-  return document.body.scrollHeight > screen.height;
-};
-END
-    }
-
-    method HTML {
-        div [
-        Safe.new: '<button class="contrast" data-target="modal-example" onclick="toggleModal(event)">Launch demo modal</button>';
-        Safe.new: q:to/MODAL/;
-            <dialog id="modal-example">
-                <article>
-                <header>
-                <button aria-label="Close" rel="prev" data-target="modal-example" onclick="toggleModal(event)"></button>
-                  <h3>Confirm your action!</h3>
-                </header>
-                <p>
-                  Cras sit amet maximus risus. Pellentesque sodales odio sit amet augue finibus
-                  pellentesque. Nullam finibus risus non semper euismod.
-                </p>
-                <footer>
-                  <button role="button" class="secondary" data-target="modal-example" onclick="toggleModal(event)">
-                    Cancel</button><button autofocus="" data-target="modal-example" onclick="toggleModal(event)">
-                    Confirm
-                  </button>
-                </footer>
-              </article>
-            </dialog>
-            MODAL
-        ]
-    }
-}
-
-=head3 role Lightbox does Component
-
-role Lightbox     does Component {
-    has $!loaded;
-
-    #| unique lightbox label
-    has Str    $.label = 'open';
-    has Button $.button;
-
-    #| can be provided with attrs
-    has %.attrs is rw;
-
-    #| can be provided with inners
-    has @.inners;
-
-    #| ok to call .new with @inners as Positional
-    multi method new(*@inners, *%attrs) {
-        self.bless:  :@inners, :%attrs
-    }
-
-    method HTML {
-        if @!inners[0] ~~ Button && ! $!loaded++ {
-            $!button = @!inners.shift;
-        }
-
-        div [
-            if $!button {
-                a :href<#>, :class<open-link>, :data-target("#$.html-id"), $!button;
-            } else {
-                a :href<#>, :class<open-link>, :data-target("#$.html-id"), $!label;
-            }
-
-            div :class<lightbox-overlay>, :id($.html-id), [
-                div :class<lightbox-content>, [
-                    span :class<close-btn>, Safe.new: '&times';
-                    do-regular-tag( 'div', @.inners, |%.attrs )
-                ];
-            ];
-        ];
-    }
-
-    method STYLE {
-        q:to/END/;
-        .lightbox-overlay {
-          position: fixed;
-          top: 0; left: 0;
-          width: 100%; height: 100%;
-          background: rgba(0, 0, 0, 0.8);
-          display: none;
-          align-items: center;
-          justify-content: center;
-          z-index: 900;
-        }
-
-        .lightbox-overlay.active {
-          display: flex;
-        }
-
-        .lightbox-content {
-          background: grey;
-          width: 70vw;
-          position: relative;
-          border-radius: 10px;
-          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-          padding: 1rem;
-        }
-
-        .close-btn {
-          position: absolute;
-          top: 10px;
-          right: 15px;
-          font-size: 24px;
-          color: #333;
-          cursor: pointer;
-        }
-        END
-    }
-
-    method SCRIPT {
-        q:to/END/;
-        // Open specific lightbox
-        document.querySelectorAll('.open-link').forEach(link => {
-          link.addEventListener('click', e => {
-            e.preventDefault();
-            const target = document.querySelector(link.dataset.target);
-            if (target) target.classList.add('active');
-          });
-        });
-
-        // Close when clicking the X or outside the content
-        document.querySelectorAll('.lightbox-overlay').forEach(lightbox => {
-          const content = lightbox.querySelector('.lightbox-content');
-          const closeBtn = lightbox.querySelector('.close-btn');
-
-          closeBtn.addEventListener('click', () => {
-            lightbox.classList.remove('active');
-          });
-
-          lightbox.addEventListener('click', e => {
-            if (!content.contains(e.target)) {
-              lightbox.classList.remove('active');
-            }
-          });
-        });
-
-        // Close any open lightbox on Escape
-        document.addEventListener('keydown', e => {
-          if (e.key === 'Escape') {
-            document.querySelectorAll('.lightbox-overlay.active').forEach(lb => {
-              lb.classList.remove('active');
-            });
-          }
-        });
-        END
-    }
-}
-
-=head2 Other Tags
-
-=head3 role Markdown does Tag
-
-role Markdown    does Tag {
-    use Text::Markdown;
-
-    #| markdown to be converted
-    has Str $.markdown;
-    # cache the result
-    has Markup() $!result;
-
-    #| .new positional takes Str $code
-    multi method new(Str $markdown, *%h) {
-        self.bless: :$markdown, |%h;
-    }
-
-    multi method HTML {
-        $!result = Text::Markdown.new($!markdown).render unless $!result;
-        $!result
-    }
-}
-
-##### Functions Export #####
-
-#| put in all the @components as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
+##### Functions & Class/Role Exports #####
+
+#| gather all the base and child module classes and roles
+my @combined-exports = [
+    |exports-air-base,
+    |exports-air-base-tags,
+    |exports-air-base-elements,
+    |exports-air-base-tools,
+    |exports-air-base-widgets,
+];
+
+#| put in all the @combined-exports as functions sub name( * @a, * %h) {Name.new(|@a,|%h)}
 # viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 my package EXPORT::DEFAULT {
 
-    for @functions -> $name {
+    for @combined-exports -> $name {
 
         OUR::{'&' ~ $name.lc} :=
             sub (*@a, *%h) {
                 ::($name).new( |@a, |%h )
             }
+
     }
+
 }
 
-my package EXPORT::NONE { }
+#| also just re-export them as vanilla classes and roles
+sub EXPORT {
+    Map.new:
+        @combined-exports.map: {$_ => ::($_)}
+}
 
 =begin pod
 =head1 AUTHOR
 
 Steve Roe <librasteve@furnival.net>
-
 
 =head1 COPYRIGHT AND LICENSE
 
