@@ -503,6 +503,33 @@ Defaults
 
 role Defaults provides a central place to set the various website defaults across Head, Html and Site roles
 
+On installation, the file `~/.rair-config/.air.yaml` is placed in the home directory (ie copied from `resources/.air.yaml`. By default, role Defaults loads the information specified in this file intio the appropriate part of each page:
+
+    Html:
+      attrs:
+        lang: "en"
+        data-theme: "dark"
+
+    Head:
+      metas:
+        - charset: "utf-8"
+        - name: "viewport"
+          content: "width=device-width, initial-scale=1"
+
+      links:
+        - rel: "icon"
+          href: "/img/favicon.ico"
+          type: "image/x-icon"
+        - rel: "stylesheet"
+          href: "/css/styles.css"
+
+      scripts:
+        - src: "https://unpkg.com/htmx.org@1.9.5"
+          crossorigin: "anonymous"
+          integrity: "sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
+
+These values can be customised as follows: copy this file from `~/.rair-config/.air.yaml` to `bin/.air.yaml` where `bin` is the dir where you run your website script (see Air::Examples for a working version). Note that, until we add Air::Theme support, many of the Air features and examples are HTMX centric, so only remove this if you are confident. Other fields (such as the site url and admin email) will be added here as the codebase evolves. Also, this is the basis for vendoring support to be implemented in a future release.
+
 package EXPORT::DEFAULT
 -----------------------
 
