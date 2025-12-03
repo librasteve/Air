@@ -667,19 +667,25 @@ class Site {
                 }
             }
 
-            #| index, static, 404 routes
+            #| index & static
             get ->                  { content   'text/html',  $.index.HTML }
             get -> 'css',    *@path { static    'static/css', @path }
             get -> 'img',    *@path { static    'static/img', @path }
             get -> 'js',     *@path { static    'static/js',  @path }
             get -> 'static', *@path { static    'static',     @path }
-            get ->  *@rest { not-found 'text/html',  $.html404.HTML } with $.html404;
 
-            #| redirects
-            for @!redirects {
-                my ($old,$new) = .kv;
-                get -> Str $ where * eq $old, *@drop { redirect $new }
+            #| 404 routes
+            with $!html404 {
+                note "adding 404";
+                get ->  *@rest { not-found 'text/html',  $.html404.HTML };
             }
+        }
+
+        #| redirect routes (cro delegate interpolates values)
+        for @!redirects {
+            my ($old, $new) = .kv;
+            note "adding redirect $old => $new";
+            delegate "$old" => route { get -> { note "$old -> $new"; redirect $new } };
         }
     }
 
