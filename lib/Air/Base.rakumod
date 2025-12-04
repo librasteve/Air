@@ -679,13 +679,13 @@ class Site {
                 note "adding 404";
                 get ->  *@rest { not-found 'text/html',  $.html404.HTML };
             }
-        }
 
-        #| redirect routes (cro delegate interpolates values)
-        for @!redirects {
-            my ($old, $new) = .kv;
-            note "adding redirect $old => $new";
-            delegate "$old" => route { get -> { note "$old -> $new"; redirect $new } };
+            #| redirect routes
+            for @!redirects {
+                my ($old, $new) = .kv;
+                note "adding redirect $old => $new";
+                delegate "$old" => route { get -> { redirect $new } };
+            }
         }
     }
 
