@@ -1,9 +1,12 @@
 Revision history for Air
 
 {{$NEXT}}
+
+0.1.0  2025-12-05T16:46:23Z
     - Redirects use cro delegate
     - .air.yaml to resources/
     - Text::Markdown -> Markdown::Grammar
+    - inject Analytics only once
 
 0.0.34  2025-11-24T18:32:28Z
     - add defaults file
