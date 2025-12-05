@@ -157,6 +157,7 @@ All items are re-exported by the top level module, so you can just `use Air::Bas
 # TODO items
 #my loaded or has loaded - make consistent
 #role Theme {...}
+#provide for different title, description in head for wach page
 
 use YAMLish;
 
@@ -182,10 +183,10 @@ class Page     {...}
 
 =head3 role Head   does Tag[Regular] {...}
 
+=para Singleton pattern (Air issues the same Head for all pages)
+
 role Head       does Tag[Regular]  {
     also        does Defaults;
-
-    =para Singleton pattern (ie. same Head for all pages)
 
     my Head $instance;
     multi method new {note "Please use Head.instance rather than Head.new!\n"; self.instance}
@@ -643,13 +644,11 @@ class Site {
         #| always register & route Nav
         @!register.push: Nav.new;
 
+        #| gather all the registrant exports
         self.enqueue-all;
 
-        for @!tools -> $tool {
-            for @!pages -> $page {
-                $tool.inject($page)
-            }
-        }
+        #| inject all the tools
+        .inject($!index) for @!tools;
     }
 
     method routes {

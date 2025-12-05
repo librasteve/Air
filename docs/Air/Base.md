@@ -175,7 +175,7 @@ A subset of Air::Functional basic HTML tags, provided as roles, that are slightl
 
 ### role Head does Tag[Regular] {...}
 
-Singleton pattern (ie. same Head for all pages)
+Singleton pattern (Air issues the same Head for all pages)
 
 ### has Tags::Title $.title
 
@@ -470,6 +470,14 @@ method enqueue-all() returns Mu
 ```
 
 enqueued items are rendered in order, avoid interdependencies
+
+### method routes
+
+```raku
+method routes() returns Mu
+```
+
+always register & route Nav gather all the registrant exports inject all the tools
 
 ### method build
 
