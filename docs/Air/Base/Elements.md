@@ -175,6 +175,10 @@ Content Elements
 
 markdown to be converted
 
+### has Air::Functional::Markup(Any) $!result
+
+cache the result
+
 ### method new
 
 ```raku

@@ -644,7 +644,7 @@ role Markdown   does Component is export {
 
     #| markdown to be converted
     has Str $.markdown;
-    # cache the result
+    #| cache the result
     has Markup() $!result;
 
     #| .new positional takes Str $code
