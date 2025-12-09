@@ -640,7 +640,7 @@ role Lightbox   does Component is export {
 =head3 role Markdown does Component is export
 
 role Markdown   does Component is export {
-    use Markdown::Grammar;
+    use Text::Markdown;
 
     #| markdown to be converted
     has Str $.markdown;
@@ -653,7 +653,7 @@ role Markdown   does Component is export {
     }
 
     multi method HTML {
-        $!result = $!markdown.&from-markdown(:to<html>) unless $!result;
+        $!result = Text::Markdown.new($!markdown).render unless $!result;
         $!result
     }
 }
