@@ -666,14 +666,15 @@ role Background does Component is export {
     #| height of background image (in px)
     has $.height = 320;
     #| url of background image
-    has $.url = 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Butterfly_bottom_PSF_transparent.gif';
+#    has $.src = 'img/Butterfly_bottom_PSF_transparent.gif';
+    has $.src = '';
     #| opacity of background image
     has $.opacity = 0.1;
     #| rotate angle of background image (in deg)
-    has $.rotate = -9;
+    has $.rotate = 0;
 
-    method STYLE {
-        my $scss = q:to/END/;
+    method style {
+        my $res = q:to/END/;
         #background {
             position: fixed;
             top: %TOP%px;
@@ -692,16 +693,20 @@ role Background does Component is export {
         }
         END
 
-        $scss ~~ s:g/'%TOP%'/$!top/;
-        $scss ~~ s:g/'%HEIGHT%'/$!height/;
-        $scss ~~ s:g/'%URL%'/$!url/;
-        $scss ~~ s:g/'%OPACITY%'/$!opacity/;
-        $scss ~~ s:g/'%ROTATE%'/$!rotate/;
-        $scss
+        $res ~~ s:g/'%TOP%'    /$.top/;
+        $res ~~ s:g/'%HEIGHT%' /$.height/;
+        $res ~~ s:g/'%URL%'    /$.src/;
+        $res ~~ s:g/'%OPACITY%'/$.opacity/;
+        $res ~~ s:g/'%ROTATE%' /$.rotate/;
+
+        Style.new: $res
     }
 
     method HTML {
-        do-regular-tag( 'div', :id<background> )
+        span [
+            $.style;
+            do-regular-tag( 'div', :id<background> );
+        ]
     }
 }
 

@@ -1,6 +1,8 @@
 Revision history for Air
 
 {{$NEXT}}
+    - Background style dynamic
+    - add Tag attr merge
 
 0.1.1  2025-12-09T20:15:00Z
     - Text::Markdown <- Markdown::Grammar

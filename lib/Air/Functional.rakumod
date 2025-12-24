@@ -176,6 +176,20 @@ sub attrs(%h --> Str) is export(:MANDATORY) {
     @attrs ?? ' ' ~ @attrs.join(' ') !! '';
 }
 
+#| merge two attr hashes so that two styles are Str concatenated
+sub merge(%a, %b --> Hash) is export(:MANDATORY) {
+    my %result = %a;
+
+    for %b.kv -> $k, $v {
+        %result{$k} =
+            %result{$k}:exists
+            ?? (%result{$k} ~ ';' ~ $v)
+            !! $v;
+    }
+
+    %result
+}
+
 #| open a custom tag
 sub opener($tag, *%h -->Str) is export(:MANDATORY) {
     "\n" ~ '<' ~ $tag ~ attrs(%h) ~ '>'

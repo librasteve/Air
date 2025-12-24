@@ -106,7 +106,7 @@ role Section does Tag[Regular] is export {}
 role Article does Tag[Regular] is export {
     # Keep text ltr even when grid direction rtl
     multi method HTML {
-        my %attrs = |%.attrs, :style("direction:ltr;");
+        my %attrs = merge(%.attrs, {:style("direction:ltr;")});
         do-regular-tag( $.name, @.inners, |%attrs )
     }
 }

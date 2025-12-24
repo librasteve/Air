@@ -7,9 +7,6 @@ plan 1;
 
 my $main = main [
 
-
-
-
     div :class<jumbotron>, [
         h1 "Welcome to Dunder Mifflin!";
         p  [
@@ -21,8 +18,6 @@ my $main = main [
             END
         ];
     ];
-
-
 
     p :hx-get<https://v2.jokeapi.dev/joke/Any?format=txt&safe-mode>,
         "Click Me";

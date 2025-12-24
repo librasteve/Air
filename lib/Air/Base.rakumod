@@ -566,9 +566,9 @@ class Site {
     #| Register for route setup; default = [Nav.new]
     has      @.register;
     #| Tools for sitewide behaviours
-    has Tool @.tools      = [];
+    has Tool @.tools = [];
     #| Redirects
-    has Redirect @.redirects  = [];
+    has Redirect @.redirects = [];
 
 
     #| use :scss-off to disable the SASS compiler run
