@@ -1,37 +1,42 @@
 {
-    "name": "Air",
-    "description": "Just build websites the right way.",
-    "version": "0.1.1",
-    "authors": [
-        "librasteve"
-    ],
-    "auth": "zef:librasteve",
-    "depends": [
-        "UUID::V4:ver<1.0.0>:auth<zef:masukomi>:api<1>",
-        "CSS::Writer:ver<0.2.10>:auth<zef:dwarring>",
-        "DateTime::Format:ver<0.1.5>:auth<zef:raku-community-modules>:api<1.0>",
-        "HTML::Escape:ver<0.0.1>",
-        "Cro::HTTP:ver<0.8.11>:auth<zef:cro>:api<0>",
-        "Cro::WebApp:ver<0.10.0>:auth<zef:cro>:api<0>",
-        "Cromponent:ver<0.0.13>:auth<zef:FCO>",
-        "Text::Markdown:ver<1.1.1>:auth<zef:JJMERELO>",
-        "YAMLish:ver<0.1.2>:auth<zef:leont>"
-    ],
-    "build-depends": [],
-    "provides": {
-        "Air": "lib/Air.rakumod",
-        "Air::Base": "lib/Air/Base.rakumod",
-        "Air::Base::Elements": "lib/Air/Base/Elements.rakumod",
-        "Air::Base::Tags": "lib/Air/Base/Tags.rakumod",
-        "Air::Base::Tools": "lib/Air/Base/Tools.rakumod",
-        "Air::Base::Widgets": "lib/Air/Base/Widgets.rakumod",
-        "Air::Component": "lib/Air/Component.rakumod",
-        "Air::Form": "lib/Air/Form.rakumod",
-        "Air::Functional": "lib/Air/Functional.rakumod"
-    },
-    "resources": [
-        ".air.yaml"
-    ],
-    "license": "Artistic-2.0",
-    "source-url": "https://github.com/librasteve/Air.git"
+  "auth": "zef:librasteve",
+  "authors": [
+    "librasteve"
+  ],
+  "build-depends": [
+  ],
+  "depends": [
+    "UUID::V4:ver<1.0.0>:auth<zef:masukomi>:api<1>",
+    "CSS::Writer:ver<0.2.10>:auth<zef:dwarring>",
+    "DateTime::Format:ver<0.1.5>:auth<zef:raku-community-modules>:api<1.0>",
+    "HTML::Escape:ver<0.0.1>",
+    "Cro::HTTP:ver<0.8.11>:auth<zef:cro>:api<0>",
+    "Cro::WebApp:ver<0.10.0>:auth<zef:cro>:api<0>",
+    "Cromponent:ver<0.0.13>:auth<zef:FCO>",
+    "Text::Markdown:ver<1.1.1>:auth<zef:JJMERELO>",
+    "YAMLish:ver<0.1.2>:auth<zef:leont>"
+  ],
+  "description": "Just build websites the right way.",
+  "license": "Artistic-2.0",
+  "name": "Air",
+  "provides": {
+    "Air": "lib/Air.rakumod",
+    "Air::Base": "lib/Air/Base.rakumod",
+    "Air::Base::Elements": "lib/Air/Base/Elements.rakumod",
+    "Air::Base::Tags": "lib/Air/Base/Tags.rakumod",
+    "Air::Base::Tools": "lib/Air/Base/Tools.rakumod",
+    "Air::Base::Widgets": "lib/Air/Base/Widgets.rakumod",
+    "Air::Component": "lib/Air/Component.rakumod",
+    "Air::Form": "lib/Air/Form.rakumod",
+    "Air::Functional": "lib/Air/Functional.rakumod"
+  },
+  "resources": [
+    ".air.yaml"
+  ],
+  "source-url": "https://github.com/librasteve/Air.git",
+  "tags": [
+  ],
+  "test-depends": [
+  ],
+  "version": "0.1.2"
 }
