@@ -666,7 +666,6 @@ role Background does Component is export {
     #| height of background image (in px)
     has $.height = 320;
     #| url of background image
-#    has $.src = 'img/Butterfly_bottom_PSF_transparent.gif';
     has $.src = '';
     #| opacity of background image
     has $.opacity = 0.1;
