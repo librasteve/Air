@@ -89,11 +89,11 @@ method new(
 
 ### role Dashboard does Component is export
 
-### role Box does Component is export
+### role Panel does Component is export
 
 ### has Int $.order
 
-specify sequential order of box
+specify sequential order of panel
 
 ### role Tab does Tag[Regular] {...}
 
@@ -200,7 +200,7 @@ top of background image (in px)
 
 height of background image (in px)
 
-### has Mu $.url
+### has Mu $.src
 
 url of background image
 

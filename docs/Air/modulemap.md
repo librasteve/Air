@@ -25,7 +25,7 @@
         - role Grid        does Component
         - role Flexbox     does Component
         - role Dashboard   does Component
-        - role Box         does Component
+        - role Panel       does Component
         - role Tab         does Component
         - role Tabs        does Component
         - role Dialog      does Component

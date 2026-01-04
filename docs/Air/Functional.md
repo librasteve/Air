@@ -163,6 +163,17 @@ sub attrs(
 
 convert from raku Pair syntax to HTML tag attributes
 
+### sub merge
+
+```raku
+sub merge(
+    %a,
+    %b
+) returns Hash
+```
+
+merge two attr hashes so that two styles are Str concatenated
+
 ### sub opener
 
 ```raku

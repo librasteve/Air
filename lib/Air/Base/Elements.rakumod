@@ -1,6 +1,6 @@
 unit module Elements;
 
-sub exports-air-base-elements is export {<Table Grid Flexbox Dashboard Box Tab Tabs Dialog Lightbox Markdown Background>}
+sub exports-air-base-elements is export {<Table Grid Flexbox Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background>}
 
 use Air::Functional :BASE-TAGS;
 use Air::Component;
@@ -215,10 +215,10 @@ role Dashboard  does Component is export {
     }
 }
 
-=head3 role Box does Component is export
+=head3 role Panel does Component is export
 
-role Box        does Component is export {
-    #| specify sequential order of box
+role Panel      does Component is export {
+    #| specify sequential order of panel
     has Int $.order;# is required;
 
     has @.inners;
@@ -249,8 +249,15 @@ role Box        does Component is export {
 
           /* Responsive sizing */
           flex: 1 1 600px;
-          //min-width: 600px;
           max-width: 800px;
+
+          padding-left: 0.5rem !important;
+          padding-right: 0.5rem !important;
+          margin-top: 0 !important;
+        }
+
+        dashboard > article > header {
+          border-bottom-color: darkgray;
         }
         END
     }
