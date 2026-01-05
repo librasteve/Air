@@ -4,6 +4,7 @@ Revision history for Air
     - box -> panel
     - better Panel style
     - LightDark Tag -> Component
+    - fix FOUC / theme flashFOUC / theme flash
 
 0.1.2  2025-12-24T09:45:28Z
     - Background style dynamic

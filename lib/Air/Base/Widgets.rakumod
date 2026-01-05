@@ -40,6 +40,25 @@ role LightDark does Widget is export {
         }
     }
 
+    method SCRIPT-HEAD {
+        Q|
+            (function () {
+                const savedTheme = localStorage.getItem("theme");
+
+                let theme;
+                if (savedTheme) {
+                    theme = savedTheme;
+                } else {
+                    theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+                        ? "dark"
+                        : "light";
+                }
+
+                document.documentElement.setAttribute("data-theme", theme);
+            })();
+        |;
+    }
+
     method SCRIPT {
         given $!show {
             when 'buttons' { self.buttons-script }
@@ -51,7 +70,7 @@ role LightDark does Widget is export {
         self.common ~
 
         Q|
-            // Attach to a button click
+            // Attach to button click
             document.getElementById("themeToggle").addEventListener("click", () => setTheme("toggle"));
             document.getElementById("themeDark").addEventListener("click", () => setTheme("dark"));
             document.getElementById("themeLight").addEventListener("click", () => setTheme("light"));
@@ -61,14 +80,14 @@ role LightDark does Widget is export {
 
     method icon-script {
         Q|
-            // Function to show/hide icons
+            // Show/hide icons
             function updateIcons(theme) {
                 if (theme === "dark") {
-                    sunIcon.style.display = "none"; // Hide sun
-                    moonIcon.style.display = "block"; // Show moon
+                    sunIcon.style.display = "none";
+                    moonIcon.style.display = "block";
                 } else {
-                    sunIcon.style.display = "block"; // Show sun
-                    moonIcon.style.display = "none"; // Hide moon
+                    sunIcon.style.display = "block";
+                    moonIcon.style.display = "none";
                 }
             }
         |
@@ -76,10 +95,10 @@ role LightDark does Widget is export {
         ~ self.common ~
 
         Q|
-            const sunIcon = document.getElementById("sunIcon");
+            // Attach to icon click
+            const sunIcon  = document.getElementById("sunIcon");
             const moonIcon = document.getElementById("moonIcon");
 
-            // Attach to a icon click
             document.getElementById("sunIcon").addEventListener("click", () => setTheme("dark"));
             document.getElementById("moonIcon").addEventListener("click", () => setTheme("light"));
         |;
@@ -103,14 +122,10 @@ role LightDark does Widget is export {
                 updateIcons(newTheme);
             }
 
-            // select theme on page load
+            // update icons on page load
             document.addEventListener("DOMContentLoaded", () => {
-                const savedTheme = localStorage.getItem("theme");
-                const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                const initialTheme = savedTheme ?? (systemPrefersDark ? "dark" : "light");
-
-                updateIcons(initialTheme);
-                document.documentElement.setAttribute("data-theme", initialTheme);
+                const theme = document.documentElement.getAttribute("data-theme");
+                updateIcons(theme);
             });
 
             // Listen for system dark mode changes and update the theme dynamically
