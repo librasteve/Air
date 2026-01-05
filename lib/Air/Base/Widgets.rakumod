@@ -17,7 +17,7 @@ role Widget does Component is export {}
 
 role LightDark does Widget is export {
     #| attribute 'show' may be set to 'icon'(default) or 'buttons'
-    has $.show = 'icons';
+    has $.show = 'icon';
 
     multi method HTML {
         given $!show {
