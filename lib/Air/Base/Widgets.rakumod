@@ -3,54 +3,64 @@ unit module Widgets;
 sub exports-air-base-widgets is export {<Widget LightDark>}
 
 use Air::Functional :BASE-TAGS;
+use Air::Component;
 use Air::Base::Tags;
 
 =head2 Air::Base::Widgets
 
 =para Active tags that can be used anywhere to provide a nugget of UI behaviour, default should be a short word (or a single item) that can be used in Nav
 
-role Widget does Tag[Regular] is export {}
+role Widget does Component is export {}
+#role Widget does Tag[Regular] is export {}
 
 =head3 role LightDark does Tag[Regular] does Widget {...}
 
 role LightDark does Widget is export {
     #| attribute 'show' may be set to 'icon'(default) or 'buttons'
+    has $.show = 'icons';
+
     multi method HTML {
-        my $show = self.attrs<show> // 'icon';
-        given $show {
-            when 'buttons' { Safe.new: self.buttons }
-            when 'icon'    { Safe.new: self.icon    }
+        given $!show {
+            when 'buttons' { Safe.new:
+                Q|
+                    <div role="group">
+                        <button class="contrast"  id="themeToggle">Toggle</button>
+                        <button                   id="themeLight" >Light</button>
+                        <button class="secondary" id="themeDark"  >Dark</button>
+                        <button class="outline"   id="themeSystem">System</button>
+                    </div>
+                |;
+            }
+            when 'icon'    { Safe.new:
+                Q|
+                    <a style="font-variant-emoji: text" id ="sunIcon">&#9728;</a>
+                    <a style="font-variant-emoji: text" id ="moonIcon">&#9790;</a>
+                |;
+            }
         }
     }
 
-    method buttons {
+    method SCRIPT {
+        given $!show {
+            when 'buttons' { self.buttons-script }
+            when 'icon'    { self.icon-script    }
+        }
+    }
+
+    method buttons-script {
+        self.common ~
+
         Q|
-        <div role="group">
-            <button class="contrast"  id="themeToggle">Toggle</button>
-            <button                   id="themeLight" >Light</button>
-            <button class="secondary" id="themeDark"  >Dark</button>
-            <button class="outline"   id="themeSystem">System</button>
-        </div>
-        <script>
-        |
-
-            ~ self.common ~
-
-            Q|
             // Attach to a button click
             document.getElementById("themeToggle").addEventListener("click", () => setTheme("toggle"));
             document.getElementById("themeDark").addEventListener("click", () => setTheme("dark"));
             document.getElementById("themeLight").addEventListener("click", () => setTheme("light"));
             document.getElementById("themeSystem").addEventListener("click", () => setTheme("system"));
-        </script>
         |;
     }
 
-    method icon {
+    method icon-script {
         Q|
-        <a style="font-variant-emoji: text" id ="sunIcon">&#9728;</a>
-        <a style="font-variant-emoji: text" id ="moonIcon">&#9790;</a>
-        <script>
             // Function to show/hide icons
             function updateIcons(theme) {
                 if (theme === "dark") {
@@ -63,16 +73,15 @@ role LightDark does Widget is export {
             }
         |
 
-            ~ self.common ~
+        ~ self.common ~
 
-            Q|
+        Q|
             const sunIcon = document.getElementById("sunIcon");
             const moonIcon = document.getElementById("moonIcon");
 
             // Attach to a icon click
             document.getElementById("sunIcon").addEventListener("click", () => setTheme("dark"));
             document.getElementById("moonIcon").addEventListener("click", () => setTheme("light"));
-        </script>
         |;
     }
 

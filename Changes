@@ -1,6 +1,9 @@
 Revision history for Air
 
 {{$NEXT}}
+    - box -> panel
+    - better Panel style
+    - LightDark Tag -> Component
 
 0.1.2  2025-12-24T09:45:28Z
     - Background style dynamic

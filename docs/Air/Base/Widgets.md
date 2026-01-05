@@ -5,11 +5,7 @@ Active tags that can be used anywhere to provide a nugget of UI behaviour, defau
 
 ### role LightDark does Tag[Regular] does Widget {...}
 
-### method HTML
-
-```raku
-method HTML() returns Mu
-```
+### has Mu $.show
 
 attribute 'show' may be set to 'icon'(default) or 'buttons'
 
