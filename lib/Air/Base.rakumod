@@ -595,37 +595,46 @@ class Site {
         for @!register.unique( as => *.^name ) -> $registrant {
             my $head = @!pages.first.html.head;  # NB. head is a singleton
 
-            #| SCRIPT default inserts at end of body on every page
+            #| SCRIPT inserts script tag (default)
+            #| at end of body on every page
             for @!pages -> $page {
                 with $registrant.?SCRIPT {
                     $page.html.body.scripts.append: Script.new($_)
                 }
             }
 
-            #| SCRIPT-HEAD can be used instead to insert in the shared head
+            #| SCRIPT-HEAD inserts script tag in the shared head
             with $registrant.?SCRIPT-HEAD {
                 $head.scripts.append: Script.new($_)
             }
 
-            #| SCRIPT-LINKS default inserts in the shared head
+            #| SCRIPT-LINKS inserts script tags in the shared head (default)
             #| takes list of script src urls
             for $registrant.?SCRIPT-LINKS -> $src {
                 $head.scripts.append: Script.new( :$src ) with $src;
             }
 
-            #| use SCRIPT-LINKS-BODY to insert script in every page body
+            #| SCRIPT-LINKS-DEFER inserts script tags in the shared head (with defer)
+            #| takes list of script src urls
+            for $registrant.?SCRIPT-LINKS-DEFER -> $src {
+                $head.scripts.append: Script.new( :$src, :defer ) with $src;
+            }
+
+            #| SCRIPT-LINKS-BODY inserts script tag in every page body
             for @!pages -> $page {
                 for $registrant.?SCRIPT-LINKS-BODY -> $src {
                     $page.html.body.scripts.append: Script.new( :$src ) with $src;
                 }
             }
 
-            #|  list of link href urls
+            #| STYLE-LINKS inserts link tag in the shared head
+            #| takes list of link href urls
             for $registrant.?STYLE-LINKS -> $href {
                 next unless $href.defined;
                 $head.links.append: Link.new( :$href, :rel<stylesheet> );
             }
 
+            #| STYLE insert style tag into shard head
             with $registrant.?STYLE {
                 $head.styles.append: Style.new($_)
             }
@@ -708,7 +717,7 @@ class Site {
             after => [
                 Cro::HTTP::Log::File.new(logs => $*OUT, errors => $*ERR)
             ],
-            );
+        );
         say "Starting server. Point browser at $host:$port. Ctrl-C to stop server";
         $http.start;
         react {
