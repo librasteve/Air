@@ -122,7 +122,7 @@ subset Inner    where Str | Tag | Taggable | Markup;
 
 role   Tag[TagType $tag-type?] is export(:MANDATORY) {
     #| tag name is the unqualified (ie the last) part of the class name in lower case
-    has Str    $.name = ::?CLASS.^name.split('::').tail.lc;
+    has Str    $.name is rw = ::?CLASS.^name.split('::').tail.lc;
 
     #| can be provided with attrs
     has Attr   %.attrs is rw;
@@ -152,6 +152,16 @@ role   Tag[TagType $tag-type?] is export(:MANDATORY) {
     multi method HTML(Regular) {
         do-regular-tag( $!name, @.inners, |%.attrs )
     }
+}
+
+=head3 Custom Elements
+
+=para Use eg. C<el "simple-greeting", :name<John>, @inners> to issue HTML
+custom element C<<simple-greeting name="John">@inners</simple-greeting>>
+
+#| issue an HTML custom-element tag
+sub el(Str $element-name, *@inners, *%attrs --> Markup) is export(:MANDATORY) {
+    do-regular-tag( $element-name, @inners, |%attrs )
 }
 
 =head3 Low Level API

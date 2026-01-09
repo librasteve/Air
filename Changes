@@ -1,12 +1,13 @@
 Revision history for Air
 
 {{$NEXT}}
+    - add Custom Elements ('el')
 
 0.1.3  2026-01-05T12:52:11Z
     - box -> panel
     - better Panel style
     - LightDark Tag -> Component
-    - fix FOUC / theme flashFOUC / theme flash
+    - fix FOUC / theme flash
 
 0.1.2  2025-12-24T09:45:28Z
     - Background style dynamic

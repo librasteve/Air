@@ -98,7 +98,6 @@ role Grid       does Component is export {
     has $.gap = 0;
     has $.direction = 'ltr';
 
-
     #| .new positional takes @items
     multi method new(*@items, *%h) {
         self.bless:  :@items, |%h;

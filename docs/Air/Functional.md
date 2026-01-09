@@ -149,6 +149,22 @@ method HTML() returns Mu
 
 provides default .HTML method used by tag render
 
+### Custom Elements
+
+Use eg. `el "simple-greeting", :name<John>, @inners` to issue HTML custom element `simple-greeting name="John">@inners</simple-greeting`
+
+### sub el
+
+```raku
+sub el(
+    Str $element-name,
+    *@inners,
+    *%attrs
+) returns Air::Functional::Markup
+```
+
+issue an HTML custom-element tag
+
 ### Low Level API
 
 This level is where users want to mess around with the parts of a tag for customizations
