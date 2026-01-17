@@ -157,7 +157,44 @@ All items are re-exported by the top level module, so you can just `use Air::Bas
 # TODO items
 #my loaded or has loaded - make consistent
 #role Theme {...}
-#provide for different title, description in head for wach page
+#provide for different title, description in head for each page
+#stubs
+
+#`[
+
+Note that currently, we have urls like https://raku.org/nav/1/community
+Instead, we want urls like https://raku.org/community
+
+Currently, a (routed) NavItem is specified as follows:
+
+name => target   (so target is an object with an HTML method, usually an Air::Component)
+
+eg
+
+my Page $Page1 =
+    page
+    main
+        div [
+            h3 'Page 1';
+            table |planets, :class<striped>;
+        ];
+
+my Nav $nav = nav items => [:$Page1, :$Page2],
+
+when Page {
+    my &new-method = method {$target.?HTML};
+    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+    self.^add_method($name, &new-method);
+}
+
+nav [community => (community-page &basepage, &shadow),];
+
+Here is the initial design for stubs:
+
+ - there is a flag on each (routed) NavItem, :stub
+ - this takes the $name of the item and uses it (exclusively) as the url-path in the route
+ - any attempt to make the same route agin will die "can't use same name for multiple stubs"
+]
 
 use YAMLish;
 
@@ -332,6 +369,18 @@ class Nav      does Component {
     #| must be called from within a Cro route block
     method make-routes() {
         return if $!routed++;
+
+        ## make a stubby
+
+        my Page $stub-target = Page.new(Main.new( p "Yo baby!" ));
+        my Str  $stub-name = "yobaby";
+        my NavItem $stub = $stub-name => $stub-target;
+
+        self.items.append: $stub;
+        note @!items[*-1].raku;
+
+
+
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
                 when Content {
@@ -664,7 +713,7 @@ class Site {
         use Cro::HTTP::Router;
 
         route {
-            #| setup Cro routes
+            #| setup Cromponent routes
             for @!register.unique( as => *.^name ) {
                 when Component::Common {
                     .make-methods;

@@ -290,7 +290,7 @@ role Component[
         if $ADD {
             self.^add_method(
                 'ADD', my method ADD(*%data) { ::?CLASS.new: |%data }
-                );
+            );
         }
         #| Default LOAD action (called on GET)
         if $LOAD {
@@ -341,25 +341,25 @@ role Component::Red[
         if $ADD {
             self.^add_method(
                 'ADD', my method ADD(*%data) { ::?CLASS.^create: |%data }
-                );
+            );
         }
         #| Default LOAD action (called on GET)
         if $LOAD {
             self.^add_method(
                 'LOAD', my method LOAD(Str() $id) { ::?CLASS.^load: $id }
-                );
+            );
         }
         #| Default UPDATE action (called on PUT)
         if $UPDATE {
             self.^add_method(
                 'UPDATE', my method UPDATE(*%data) { $.data = |$.data, |%data; $.^save }  #untested
-                );
+            );
         }
         #| Default DELETE action (called on DELETE)
         if $DELETE {
             self.^add_method(
                 'DELETE', my method DELETE { $.^delete }
-                );
+            );
         }
     }
 }

@@ -1,0 +1,86 @@
+#stubs
+
+#`[
+
+Note that currently, we have urls like https://raku.org/nav/1/community
+Instead, we want urls like https://raku.org/community
+
+Currently, a (routed) NavItem is specified as follows:
+
+name => target   (so target is an object with an HTML method, usually an Air::Component)
+
+eg
+
+my Page $Page1 =
+    page
+    main
+        div [
+            h3 'Page 1';
+            table |planets, :class<striped>;
+        ];
+
+my Nav $nav = nav items => [:$Page1, :$Page2],
+
+when Page {
+    my &new-method = method {$target.?HTML};
+    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+    self.^add_method($name, &new-method);
+}
+
+nav [community => (community-page &basepage, &shadow),];
+
+Here is the initial design for stubs:
+
+ - there is a flag on each (routed) NavItem, :stub
+ - this takes the $name of the item and uses it (exclusively) as the url-path in the route
+ - any attempt to make the same route agin will die "can't use same name for multiple stubs"
+]
+
+
+okaaay
+
+in role Cromponent::MetaCromponent we have
+
+method add-cromponent-routes(
+	$component    is copy,
+	:&load        is copy,
+	:delete(&del) is copy,
+	:&add         is copy,
+	:&update      is copy,
+	:$url-part = $component.^shortname.&to-kebab,   ***
+	:$macro    = $component.HOW.?is-macro($component) // False,
+) is export {
+
+
+so $url-part is hardwired to the component class name
+
+for stubs we want the $url-part to be ''
+and to pass in a $stub-name
+
+atm, Nav does this:
+
+does Component
+make method xxx is controller x NavItems
+have Site call make-routes
+
+
+note that Nav is already special in that it is auto-registered
+
+so you get
+/nav/1/community
+/nav/1/tools
+
+and so on
+
+
+so, could bypass Cromponent or we could PR it
+
+
+Page does Component
+
+imagine that you want to list all the pages on a site - then it makes sense for Page to do Component (just like  Post in WordPress)
+
+Nav does Component
+
+this is less clear cut ... nevertheless want to be able to target specific Nav components eg with HTMX sub menus and so on
+
