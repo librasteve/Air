@@ -1,6 +1,6 @@
 unit module Tools;
 
-sub exports-air-base-tools is export {<Tool Provider Analytics>}
+sub exports-air-base-tools is export {<Tool Provider Analytics Umami>}
 
 use Air::Functional :BASE-TAGS;
 use Air::Base::Tags;
