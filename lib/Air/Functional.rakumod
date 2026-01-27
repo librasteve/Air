@@ -160,7 +160,7 @@ role   Tag[TagType $tag-type?] is export(:MANDATORY) {
 custom element C<<simple-greeting name="John">@inners</simple-greeting>>
 
 #| issue an HTML custom-element tag
-sub el(Str $element-name, *@inners, *%attrs --> Markup) is export(:MANDATORY) {
+sub el(Str $element-name, *@inners, *%attrs) is export(:MANDATORY) {
     do-regular-tag( $element-name, @inners, |%attrs )
 }
 
