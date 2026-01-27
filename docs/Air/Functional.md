@@ -160,7 +160,7 @@ sub el(
     Str $element-name,
     *@inners,
     *%attrs
-) returns Air::Functional::Markup
+) returns Mu
 ```
 
 issue an HTML custom-element tag

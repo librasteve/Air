@@ -15,5 +15,6 @@ my $expect = "\n<p>\&lt;div class=\&quot;content\&quot;\&gt;Escaped \&amp; Raw H
 
 is p( $tainted ), $expect ,                                              'escape';
 
+lives-ok { our &u-combobox = &el.assuming('u-combobox'); }
 
 done-testing;
