@@ -27,9 +27,9 @@ GETTING STARTED
 Install raku - eg. from [rakubrew](https://raku.org/install), then:
 
     Install Air, Cro & Red
-    - zef install --/test cro [117 sec]
-    - zef install Red --exclude="pq:ver<5>" --/test [98 sec][only if needed]
-    - zef install Air [80 sec]
+    - zef install --/test cro                         [~2 mins]
+    - zef install Red --exclude="pq:ver<5>" --/test   [~2 mins][only if needed]
+    - zef install Air                                 [~1.5 min]
 
     Run and view some examples
     - git clone https://github.com/librasteve/Air-Examples.git && cd Air-Examples
