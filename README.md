@@ -24,7 +24,7 @@ GETTING STARTED
 
 ***IMPORTANT - GET BEST RESULTS BY FOLLOWING THIS 3 STEP PROCESS***
 
-Install raku - eg. from [rakubrew](https://rakubrew.org), then:
+Install raku - eg. from [rakubrew](https://raku.org/install), then:
 
     Install Air, Cro & Red
     - zef install --/test cro [117 sec]
