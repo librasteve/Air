@@ -32,9 +32,8 @@ Install raku - eg. from [rakubrew](https://raku.org/install), then:
     - zef install Air                                 [~1.5 min]
 
     Run and view some examples
-    - git clone https://github.com/librasteve/Air-Examples.git && cd Air-Examples
-    - export WEBSITE_HOST="0.0.0.0" && export WEBSITE_PORT="3000"
-    - raku -Ilib service.raku
+    - git clone https://github.com/librasteve/Air-Examples.git && cd Air-Examples/bin && chmod a+x
+    - ./09-todos.raku
     - browse to http://localhost:3000
 
 Cro has many other options as documented at [Cro](https://cro.raku.org) for deployment to a production server.
