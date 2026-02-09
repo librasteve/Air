@@ -490,7 +490,10 @@ run the SCSS compiler vendor all default packages fixme
 ### method serve
 
 ```raku
-method serve() returns Mu
+method serve(
+    :$host,
+    :$port
+) returns Mu
 ```
 
 build application and start server
@@ -499,8 +502,8 @@ build application and start server
 
 ```raku
 method start(
-    :$port = 3000,
-    :$host = "localhost"
+    :$host is copy,
+    :$port is copy
 ) returns Mu
 ```
 

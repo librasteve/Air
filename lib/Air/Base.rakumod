@@ -488,7 +488,7 @@ class Page     does Component {
 
     #| set all provided shortcuts on first use
     method shortcuts {
-#        unless $!loaded++ {
+        unless $!loaded++ {
             self.html.head.scripts.append: $.scripted-refresh           with $.REFRESH;
             self.html.head.title = Title.new: $.title                   with $.title;
 
@@ -500,7 +500,7 @@ class Page     does Component {
 
             self.html.body.main   = $.main                              with $.main;
             self.html.body.footer = $.footer                            with $.footer;
-#        }
+        }
     }
 
     #| .new positional with main only
@@ -702,12 +702,15 @@ class Site {
     method build { self.scss-run unless $!scss-off }
 
     #| build application and start server
-    method serve { $.build; $.start}
+    method serve( :$host, :$port ) { $.build; $.start( :$host, :$port, :watch) }
 
     #| start the server (ie skip build)
-    method start( :$port=3000, :$host='localhost' ) {
+    method start( :$host is copy, :$port is copy, :$watch ) {
         use Cro::HTTP::Log::File;
         use Cro::HTTP::Server;
+
+        $host = $host // %*ENV<CRO_WEBSITE_HOST> // '0.0.0.0';
+        $port = $port // %*ENV<CRO_WEBSITE_PORT> // 3000;
 
         my Cro::Service $http = Cro::HTTP::Server.new(
             http => <1.1>,
@@ -725,6 +728,21 @@ class Site {
                 say "Shutting down...";
                 $http.stop;
                 done;
+            }
+
+            if $watch {
+                whenever watch-recursive('.'.IO) -> $change {
+                    my @exclusions = <DS_Store styles.scss styles.css styles.css.map>;
+
+                    unless $change.path.IO.basename ~~ / <@exclusions> / {
+                        say "File change detected: {$change.path.IO.basename}";
+                        say "Restarting...";
+                        $http.stop;
+                        sleep 1;
+                        run('raku', '-Ilib', 'air-serve.raku');
+                        done;
+                    }
+                }
             }
         }
     }
@@ -806,6 +824,50 @@ class Site {
           font-style:italic;
         }
         END
+    }
+
+    # code lifted from https://github.com/croservices/cro/blob/main/lib/Cro/Tools/Services.rakumod
+    sub watch-recursive(IO::Path $path) {
+        supply {
+            my %watched-dirs;
+
+            sub add-dir(IO::Path $dir, :$initial) {
+                %watched-dirs{$dir} = True;
+
+                with $dir.watch -> $dir-watch {
+                    whenever $dir-watch {
+                        emit $_;
+                        my $path-io = .path.IO;
+                        if $path-io.d {
+                            unless $path-io.basename.starts-with('.') {
+                                add-dir($path-io) unless %watched-dirs{$path-io};
+                            }
+                        }
+                        CATCH {
+                            default {
+                                # Perhaps the directory went away; disregard.
+                            }
+                        }
+                    }
+                }
+
+                for $dir.dir {
+                    unless $initial {
+                        emit IO::Notification::Change.new(
+                            path => ~$_,
+                            event => FileChanged
+                            );
+                    }
+                    if .d {
+                        unless .basename.starts-with('.') {
+                            add-dir($_, :$initial);
+                        }
+                    }
+                }
+            }
+
+            add-dir($path, :initial);
+        }
     }
 }
 
