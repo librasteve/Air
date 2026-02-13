@@ -115,18 +115,21 @@ Key features shown are:
 =head3 Site
 
 =begin code :lang<raku>
-sub SITE is export {
-    site
+my $site =
+    site :register[lightdark],
         index
-            main $Content1
-}
+            main $Content1;
+
+$site.serve;
 =end code
 
 Key features shown are:
 =item use of C<site> functional tag - that sets up the site Cro routes and Pico SASS theme
 =item C<site> takes the C<index> page as positional argument
+=item C<site> takes a List of components & widgets (e.g. lightdark) as C<:register> argument
 =item C<index> takes a C<main> functional tag as positional argument
 =item C<main> takes the initial content
+=item method C<.serve> is then called to start the site as a Cro::Service
 
 =head1 DESCRIPTION
 
@@ -571,8 +574,8 @@ class Site {
     has Redirect @.redirects = [];
 
 
-    #| use :scss-off to disable the SASS compiler run
-    has Bool $.scss-off;
+    #| use :!scss to disable the SASS compiler run
+    has Bool $.scss = True;
     has Str  $!scss-gather;
 
     #| pick from: amber azure blue cyan fuchsia green indigo jade lime orange
@@ -697,20 +700,19 @@ class Site {
         }
     }
 
-    #| run the SCSS compiler
-    #| vendor all default packages fixme
-    method build { self.scss-run unless $!scss-off }
+    #| site.serve is the general (development) command to start the site Cro::Service
+    #| scss compilation (e.g. dart)  is True  by default, use !scss to disable it
+    #| watch file change recursively is False by default, use watch to enable  it
+    method serve( :$host is copy, :$port is copy, :$scss = True, :$watch = False ) {
+        #| vendor all default packages fixme
 
-    #| build application and start server
-    method serve( :$host, :$port ) { $.build; $.start( :$host, :$port, :watch) }
+        self.scss-run if $scss;
 
-    #| start the server (ie skip build)
-    method start( :$host is copy, :$port is copy, :$watch ) {
         use Cro::HTTP::Log::File;
         use Cro::HTTP::Server;
 
-        $host = $host // %*ENV<CRO_WEBSITE_HOST> // '0.0.0.0';
-        $port = $port // %*ENV<CRO_WEBSITE_PORT> // 3000;
+        $host //= %*ENV<CRO_WEBSITE_HOST> // '0.0.0.0';
+        $port //= %*ENV<CRO_WEBSITE_PORT> // 3000;
 
         my Cro::Service $http = Cro::HTTP::Server.new(
             http => <1.1>,
@@ -738,13 +740,18 @@ class Site {
                         say "File change detected: {$change.path.IO.basename}";
                         say "Restarting...";
                         $http.stop;
-                        sleep 1;
-                        run('raku', '-Ilib', 'air-serve.raku');
+                        sleep 1;  #let OS breathe
+                        run('raku', '-Ilib', 'air-serve.raku', "--host=$host", "--port=$port", "--scss=$scss", '--watch');
                         done;
                     }
                 }
             }
         }
+    }
+
+    #| is a variant of server for production which skips all the dev / build steps
+    method start( :$host, :$port, :$scss = False, :$watch ) {
+        self.serve: :$host, :$port, :$scss, :$watch
     }
 
     method scss-run {

@@ -126,11 +126,12 @@ Key features shown are:
 ### Site
 
 ```raku
-sub SITE is export {
-    site
+my $site =
+    site :register[lightdark],
         index
-            main $Content1
-}
+            main $Content1;
+
+$site.serve;
 ```
 
 Key features shown are:
@@ -139,9 +140,13 @@ Key features shown are:
 
   * `site` takes the `index` page as positional argument
 
+  * `site` takes a List of components & widgets (e.g. lightdark) as `:register` argument
+
   * `index` takes a `main` functional tag as positional argument
 
   * `main` takes the initial content
+
+  * method `.serve` is then called to start the site as a Cro::Service
 
 DESCRIPTION
 ===========
@@ -440,9 +445,9 @@ Tools for sitewide behaviours
 
 Redirects
 
-### has Bool $.scss-off
+### has Bool $.scss
 
-use :scss-off to disable the SASS compiler run
+use :!scss to disable the SASS compiler run
 
 ### has Str $.theme-color
 
@@ -479,35 +484,31 @@ method routes() returns Mu
 
 always register & route Nav gather all the registrant exports inject all the tools
 
-### method build
-
-```raku
-method build() returns Mu
-```
-
-run the SCSS compiler vendor all default packages fixme
-
 ### method serve
 
 ```raku
 method serve(
-    :$host,
-    :$port
+    :$host is copy,
+    :$port is copy,
+    :$scss = Bool::True,
+    :$watch = Bool::False
 ) returns Mu
 ```
 
-build application and start server
+site.serve is the general (development) command to start the site Cro::Service scss compilation (e.g. dart) is True by default, use !scss to disable it watch file change recursively is False by default, use watch to enable it
 
 ### method start
 
 ```raku
 method start(
-    :$host is copy,
-    :$port is copy
+    :$host,
+    :$port,
+    :$scss = Bool::False,
+    :$watch
 ) returns Mu
 ```
 
-start the server (ie skip build)
+is a variant of server for production which skips all the dev / build steps
 
 Defaults
 --------

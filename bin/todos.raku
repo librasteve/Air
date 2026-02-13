@@ -46,7 +46,7 @@ class Todo does Component[:C:R:U:D] {
 for <one two> -> $text { Todo.new: :$text };
 
 my $site =
-    site :register(Todo.new), :scss-off,
+    site :register(Todo.new), :!scss,
         page
         main [
             h3 'Todos';
