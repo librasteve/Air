@@ -66,15 +66,12 @@ my &planets = &table.assuming(
 );
 
 
-sub SITE is export {
-    site #:bold-color<blue>,
+my $site =
+    site :register[lightdark],
         index
-            main
-                div [
-                    h3 'Planetary Table';
-                    planets;
-                ]
-}
+        main $Content1;
+
+$site.serve;
 ```
 
 DESCRIPTION
@@ -121,7 +118,7 @@ The `Air::Component` module provided is based on an early version of the raku `C
 COPYRIGHT AND LICENSE
 =====================
 
-Copyright(c) 2025 Henley Cloud Consulting Ltd.
+Copyright(c) 2026 Henley Cloud Consulting Ltd.
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
