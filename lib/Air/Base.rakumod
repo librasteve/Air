@@ -612,7 +612,6 @@ class Site {
     #| Redirects
     has Redirect @.redirects = [];
 
-
     #| use :!scss to disable the SASS compiler run
     has Bool $.scss = True;
     has Str  $!scss-gather;
@@ -688,7 +687,6 @@ class Site {
     }
 
     submethod TWEAK {
-
         #| make index an alias for @pages[0]  # fixme consider https://raku.land/zef:lizmat/Method::Also
         given       $!index, @!pages[0] {
             when     Page:D,  Page:U    { @!pages[0] := $!index }
