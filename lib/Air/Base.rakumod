@@ -160,7 +160,6 @@ All items are re-exported by the top level module, so you can just `use Air::Bas
 # TODO items
 #my loaded or has loaded - make consistent
 #role Theme {...}
-#provide for different title, description in head for wach page
 
 use YAMLish;
 
@@ -464,11 +463,51 @@ class Nav      does Component {
     }
 }
 
+
+#`[ stubs
+class Page does Component {   #serial for page/1, page/2...
+    has Str  $.stub;
+    has Page @.children;
+
+    method append-child(Page $p) { @!children.append: $p }
+
+    method loadup { load routes here }
+}
+
+
+class SiteMap {   #singleton
+    has Page $.tree;
+
+    method loadall {
+        $!tree.deepmap.loadup
+}
+
+class  Site {
+    has Page $.index;
+    has SiteMap $.sitemap;
+
+    method TWEAK {
+        $!sitemap.loadall( $!index );
+    }
+
+}
+]
+
+
+
+
 #| Page does Component to do multiple instances with distinct content and attrs
 class Page     does Component {
     has $!loaded;
 
-    #| auto refresh browser every n secs in dev't
+    has Str     $.stub;
+    has Page    $!parent;
+    has Page    @.children;
+
+    multi method parent { $!parent }
+    multi method parent(Page:D $p) { $!parent = $p }
+
+    #| auto refresh browser every N secs in dev't
     has Int     $.REFRESH;
 
     =para page implements several shortcuts that are populated up the DOM, for example C<page :title('My Page")> will go C<self.html.head.title = Title.new: $.title with $.title;>
@@ -649,9 +688,14 @@ class Site {
     }
 
     submethod TWEAK {
-        with    @!pages[0] { $!index = @!pages[0] }
-        orwith  $!index    { @!pages[0] = $!index }
-        else    { note "No pages or index found!" }
+
+        #| make index an alias for @pages[0]  # fixme consider https://raku.land/zef:lizmat/Method::Also
+        given       $!index, @!pages[0] {
+            when     Page:D,  Page:U    { @!pages[0] := $!index }
+            when     Page:U,  Page:D    { $!index := @!pages[0] }
+            when     Page:D,  Page:D    { note "Please specify either index or pages!" }
+            default                     { note "Please specify either index or pages!" }
+        }
 
         #| always register & route Nav
         @!register.push: Nav.new;
