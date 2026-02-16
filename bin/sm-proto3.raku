@@ -7,29 +7,66 @@ concept
  - there is a sitemap
  - Nav is independent of sitemap
 
-design
- - how to assemble pages to a site
-  - ASIS site @pages
-  - TOBE my $about  = $site.add-page
- - options
-  - multi add-page take a list
-   - make new *@ do add-page(@)
-  -
+
+
 
 issues
- - fix //
- - parent default is Nil (== "parent = main page (no parent)")
+ - should stub path be nested - yes
  - id to serial
  - sitemap can route all page routes
+
  - what happens to eg tab routes
 
- <a data-value="1" hx-get="/buttabs/1/multi-paradigm"   hx-target="#buttabs-1-content">multi-paradigm</a>  <== site relative (maybe should be page relative)
+index '/'
+ <a data-value="1" hx-get="/buttabs/1/multi-paradigm"   hx-target="#buttabs-1-content">multi-paradigm</a>
+
+install '/install'
+ <a hx-target="#tabs-1-content" hx-get="/tabs/1/macOS" data-value="2">macOS</a>
+
+<== site relative (maybe should be page relative)
+
+rules
+ - canonical names such "tabs/1/xyz" are sitewide
+ - component instances & routes can be used on any page
+ - stubs apply to pages only
+ - stubs may be nested
+
+
+Wordpress flow...
+If someone visits:
+yoursite.com/about/
+WordPress:
+- Figures out it's a page
+- Loads page.php
+- Runs get_header() → inserts header
+- Outputs the page content
+- Runs get_footer() → inserts footer
+So visually:
+- header.php
+- page content
+- footer.php
+
+Air flow...
+If someone visits:
+yoursite.com/about/
+Air:
+- maps the route to a component method (raku.org/nav/1/install)
+- loads the component (nav/1) and runs the method (install)
+- a Nav item method maps the page name install => target
+- loads the target
+- runs the HTML method on the target
+-or-
+- maps the route to a component method (raku.org/tabs/1/macOS)
+- loads the component (tabs/1) and runs the method (macOS)
+- a Tabs item method maps the tab name to content function macOS => tab macOS()
 ]
 
 
-#iamerejh - get this to run
-
 #!/usr/bin/env raku
+
+use Data::Dump::Tree;
+
+class Site {...}
 
 class Page {
     has Str $.stub;
@@ -45,11 +82,11 @@ class Page {
     }
 
     method segments {
-        $!parent ?? ($!parent.segments, $!stub) !! ()
+        $!parent ?? (|$!parent.segments, $!stub) !! ()
     }
 
     method path {
-        '/' ~ self.segments.grep(*.chars).join('/');
+        '/' ~ self.segments.join('/');
     }
 
     method tree($depth = 0) {
@@ -97,7 +134,7 @@ class Site {
         }
 
         # find root (no parent-id)
-        $!index = %!pages.values.first(.parent-id ~~ Nil);
+        $!index = %!pages.values.first(!*.parent-id.defined);
 
         # assign site + register routes
         for %!pages.values -> $page {
@@ -121,15 +158,18 @@ Page.new(id => 'post2', stub => 'second-post', parent-id => 'blog'),
 Page.new(id => 'team',  stub => 'team', parent-id => 'about'),
 );
 
-
 my $site = Site.new;
 $site.add-pages(@pages);
 
 say "\nSitemap:";
 .say for $site.sitemap.list;
 
-#say "";
-#$site.tree;
-#
-#say "\nLookup:";
-#say $site.sitemap.lookup('/blog/second-post');
+say "";
+$site.tree;
+
+say "\nLookup:";
+say $site.sitemap.lookup('/blog/second-post');
+
+#say $site.index.id;
+say @pages[4].segments;
+
