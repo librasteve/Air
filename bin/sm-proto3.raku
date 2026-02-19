@@ -65,13 +65,14 @@ Air:
 #!/usr/bin/env raku
 
 use Data::Dump::Tree;
+use Air::Component;
 
 class Site {...}
 
-class Page {
+class Page does Component {
     has Str $.stub;
-    has Str $.parent-id;
-    has Str $.id;
+    has UInt $.parent-id;   ##??
+#    has Str $.id;
 
     has Page $.parent is rw;
     has Page @.children;
@@ -123,6 +124,8 @@ class Site {
         for @pages {
             %!pages{.id} = $_;
         }
+        ddt %!pages;
+#        die;
 
         # wire parents
         for %!pages.values -> $page {
@@ -149,14 +152,35 @@ class Site {
     }
 }
 
+#my @pages = (
+#Page.new(id => 'index', stub => ''),
+#Page.new(id => 'about', stub => 'about', parent-id => 'index'),
+#Page.new(id => 'blog',  stub => 'blog', parent-id => 'index'),
+#Page.new(id => 'post1', stub => 'first-post', parent-id => 'blog'),
+#Page.new(id => 'post2', stub => 'second-post', parent-id => 'blog'),
+#Page.new(id => 'team',  stub => 'team', parent-id => 'about'),
+#);
+
+#`[
+pass in parent-stub name (just need to be valid before Page.new)
+can change during preamble
+look up stub name to id on server start / route definition
+
+hmmm want behaviour like WP
+can use admin if to re-parent
+re-run SiteMap routes
+]
+
+##parent-id or parent-stub
 my @pages = (
-Page.new(id => 'index', stub => ''),
-Page.new(id => 'about', stub => 'about', parent-id => 'index'),
-Page.new(id => 'blog',  stub => 'blog', parent-id => 'index'),
-Page.new(id => 'post1', stub => 'first-post', parent-id => 'blog'),
-Page.new(id => 'post2', stub => 'second-post', parent-id => 'blog'),
-Page.new(id => 'team',  stub => 'team', parent-id => 'about'),
+    Page.new(stub => ''),
+    Page.new(stub => 'about', parent-id => 'index'),
+    Page.new(stub => 'blog', parent-id => 'index'),
+    Page.new(stub => 'first-post', parent-id => 'blog'),
+    Page.new(stub => 'second-post', parent-id => 'blog'),
+    Page.new(stub => 'team', parent-id => 'about'),
 );
+
 
 my $site = Site.new;
 $site.add-pages(@pages);
