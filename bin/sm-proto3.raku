@@ -11,7 +11,7 @@ concept
 
 
 issues
- - should stub path be nested - yes
+ - should stub url-path be nested - yes
  - id to serial
  - sitemap can route all page routes
 
@@ -59,91 +59,124 @@ Air:
 - maps the route to a component method (raku.org/tabs/1/macOS)
 - loads the component (tabs/1) and runs the method (macOS)
 - a Tabs item method maps the tab name to content function macOS => tab macOS()
+
+Snagging
+ - :register[page] will route adding GET page/<Mu $id> (!)
+ - no need for Nav routing? (big change needed)
+ - onchange behaviour for Page.stub, Page.parent-stub
 ]
 
 
 #!/usr/bin/env raku
 
 use Data::Dump::Tree;
+
+use Air::Functional :BASE;
 use Air::Component;
+
 
 class Site {...}
 
 class Page does Component {
-    has Str $.stub;
-    has UInt $.parent-id;   ##??
-#    has Str $.id;
+    my %stubs;      #stubs are unique
+    has Str  $!stub is built;
 
+    has Str  $.parent-stub;
     has Page $.parent is rw;
     has Page @.children;
+
     has Site $.site is rw;
 
+    multi method stub { $!stub }
+
+    multi method stub($s) {
+        die "Error: Stubs must be unique!" if %stubs{$s}:exists;
+        %stubs{$s} = 1;
+
+        die "Error: Stub already set!" with $!stub;   # fixme - onchange
+        $!stub = $s;
+    }
+
     method add-child(Page $child) {
-        @!children.push($child);
+        @!children.push: $child;
     }
 
     method segments {
-        $!parent ?? (|$!parent.segments, $!stub) !! ()
+        $!parent.defined ?? (|$!parent.segments, $!stub) !! ()
     }
 
-    method path {
+    method url-path {
         '/' ~ self.segments.join('/');
     }
 
     method tree($depth = 0) {
-        say '  ' x $depth ~ "- " ~ $.id ~ " (" ~ self.path ~ ")";
+        say '  ' x $depth ~ "- " ~ $.stub ~ " (" ~ self.url-path ~ ")";
         .tree($depth + 1) for @!children;
     }
 
-    method gist { self.path }
+    method gist { self.url-path }
 }
 
 class SiteMap {
-    has %!routes;
+    has %.routes;
 
     method register(Page $page) {
-        %!routes{$page.path} = $page;
+        %!routes{$page.url-path} = $page;
     }
 
-    method lookup(Str $path) {
-        %!routes{$path};
+    method lookup(Str $url-path) {
+        %!routes{$url-path};
     }
 
     method list {
         %!routes.keys.sort;
     }
+
+    method route-pages { }   #iamerejh
 }
 
 class Site {
-    has SiteMap $.sitemap = SiteMap.new;
-    has %!pages;      # id → Page
+    has SiteMap $.sitemap .= new;
+
+    has Page @.pages;
     has Page $.index;
 
-    method add-pages(@pages) {
-        # store all pages first
-        for @pages {
-            %!pages{.id} = $_;
-        }
-        ddt %!pages;
-#        die;
+    my %stubs;
 
-        # wire parents
-        for %!pages.values -> $page {
-            if $page.parent-id {
-                my $parent = %!pages{$page.parent-id};
-                $page.parent = $parent;
-                $parent.add-child($page);
+    submethod TWEAK {
+        given       $!index, @!pages[0] {
+            when     Page:D,  Page:U    { @!pages[0] := $!index }
+            when     Page:U,  Page:D    { $!index := @!pages[0] }
+            default
+                { die "Please specify either index or pages!" }
+        }
+
+        self.sitemap-pages;
+    }
+
+    method sitemap-pages {
+        for @!pages -> $page {
+            %stubs{$page.stub} = $page
+        }
+
+        for @!pages -> $page {
+            if $page.parent-stub {
+                $page.parent = %stubs{$page.parent-stub};
+                $page.parent.add-child($page);
+                next;
             }
+
+            FIRST next;    #skip index
+            $page.parent = $!index;
+            $!index.add-child($page);
         }
 
-        # find root (no parent-id)
-        $!index = %!pages.values.first(!*.parent-id.defined);
-
-        # assign site + register routes
-        for %!pages.values -> $page {
+        for @!pages -> $page {
             $page.site = self;
             $!sitemap.register($page);
         }
+
+        $!sitemap.route-pages;
     }
 
     method tree {
@@ -152,38 +185,30 @@ class Site {
     }
 }
 
-#my @pages = (
-#Page.new(id => 'index', stub => ''),
-#Page.new(id => 'about', stub => 'about', parent-id => 'index'),
-#Page.new(id => 'blog',  stub => 'blog', parent-id => 'index'),
-#Page.new(id => 'post1', stub => 'first-post', parent-id => 'blog'),
-#Page.new(id => 'post2', stub => 'second-post', parent-id => 'blog'),
-#Page.new(id => 'team',  stub => 'team', parent-id => 'about'),
-#);
-
 #`[
+#1
 pass in parent-stub name (just need to be valid before Page.new)
-can change during preamble
+can change during preamble (#2)
 look up stub name to id on server start / route definition
 
+also, #2
 hmmm want behaviour like WP
-can use admin if to re-parent
-re-run SiteMap routes
+can use admin i/f to re-parent
+re-run SiteMap routes on live site
+whereas other Component routes can be static
 ]
 
-##parent-id or parent-stub
 my @pages = (
     Page.new(stub => ''),
-    Page.new(stub => 'about', parent-id => 'index'),
-    Page.new(stub => 'blog', parent-id => 'index'),
-    Page.new(stub => 'first-post', parent-id => 'blog'),
-    Page.new(stub => 'second-post', parent-id => 'blog'),
-    Page.new(stub => 'team', parent-id => 'about'),
+    Page.new(stub => 'about'),
+    Page.new(stub => 'blog'),
+    Page.new(stub => 'first-post', parent-stub => 'blog'),
+    Page.new(stub => 'second-post', parent-stub => 'blog'),
+    Page.new(stub => 'team', parent-stub => 'about'),
 );
 
 
-my $site = Site.new;
-$site.add-pages(@pages);
+my $site = Site.new: :@pages;
 
 say "\nSitemap:";
 .say for $site.sitemap.list;
@@ -194,6 +219,4 @@ $site.tree;
 say "\nLookup:";
 say $site.sitemap.lookup('/blog/second-post');
 
-#say $site.index.id;
-say @pages[4].segments;
 
