@@ -500,13 +500,6 @@ class  Site {
 class Page     does Component {
     has $!loaded;
 
-    has Str     $.stub;
-    has Page    $!parent;
-    has Page    @.children;
-
-    multi method parent { $!parent }
-    multi method parent(Page:D $p) { $!parent = $p }
-
     #| auto refresh browser every N secs in dev't
     has Int     $.REFRESH;
 
