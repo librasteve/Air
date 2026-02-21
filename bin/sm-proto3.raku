@@ -1,14 +1,10 @@
 #!/usr/bin/env raku
 
 #`[
-
 concept
  - there is a canonical route structure
  - there is a sitemap
  - Nav is independent of sitemap
-
-
-
 
 issues
  - should stub url-path be nested - yes
@@ -61,9 +57,19 @@ Air:
 - a Tabs item method maps the tab name to content function macOS => tab macOS()
 
 Snagging
+ - what about pages with no stub (NB atm examples use same title for several pages)
  - :register[page] will route adding GET page/<Mu $id> (!)
  - no need for Nav routing? (big change needed)
- - onchange behaviour for Page.stub, Page.parent-stub
+ - onchange behaviour for Page.stub, Page.parent-stub (like WP)
+   - admin reparent,
+    - change stub
+    - re-run SiteMap routes on live site
+ - validate eg https://app.seotesting.com/tools/validatesitemap
+ - does sitemap.xml need a url route?
+
+Roadmap
+  - all other Component routes are static
+    - want them to be like WP plugins - reroute components without a site start
 ]
 
 
@@ -74,18 +80,17 @@ use Data::Dump::Tree;
 use Air::Functional :BASE;
 use Air::Component;
 
-
-class Site {...}
+class Site { ... }
 
 class Page does Component {
+    has Site $.site is rw;
+
     my %stubs;      #stubs are unique
     has Str  $!stub is built;
 
     has Str  $.parent-stub;
     has Page $.parent is rw;
     has Page @.children;
-
-    has Site $.site is rw;
 
     multi method stub { $!stub }
 
@@ -113,8 +118,6 @@ class Page does Component {
         say '  ' x $depth ~ "- " ~ $.stub ~ " (" ~ self.url-path ~ ")";
         .tree($depth + 1) for @!children;
     }
-
-    method gist { self.url-path }
 }
 
 class SiteMap {
@@ -133,6 +136,33 @@ class SiteMap {
     }
 
     method route-pages { }   #iamerejh
+
+    method to-xml( :$base-url! ) {
+        my $date = DateTime.now.Date;
+
+        my @urls = self.routes.values.sort.map({
+        qq:to/URL/;
+          <url>
+            <loc>{$base-url}{.url-path}</loc>
+            <lastmod>{$date}</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.5</priority>
+          </url>
+        URL
+        });
+
+        qq:to/XML/;
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        {@urls}</urlset>
+        XML
+    }
+
+    # save sitemap.xml file
+    method save( :$base-url!, :$file = "sitemap.xml" ) {
+        spurt $file, self.to-xml(:$base-url);
+        $file;
+    }
 }
 
 class Site {
@@ -177,6 +207,7 @@ class Site {
         }
 
         $!sitemap.route-pages;
+        $!sitemap.save(:base-url('https://furnival.net'));
     }
 
     method tree {
@@ -184,19 +215,6 @@ class Site {
         $!index.tree;
     }
 }
-
-#`[
-#1
-pass in parent-stub name (just need to be valid before Page.new)
-can change during preamble (#2)
-look up stub name to id on server start / route definition
-
-also, #2
-hmmm want behaviour like WP
-can use admin i/f to re-parent
-re-run SiteMap routes on live site
-whereas other Component routes can be static
-]
 
 my @pages = (
     Page.new(stub => ''),
@@ -218,5 +236,3 @@ $site.tree;
 
 say "\nLookup:";
 say $site.sitemap.lookup('/blog/second-post');
-
-
