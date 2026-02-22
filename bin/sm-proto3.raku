@@ -171,8 +171,6 @@ class Site {
     has Page @.pages;
     has Page $.index;
 
-    my %stubs;
-
     submethod TWEAK {
         given       $!index, @!pages[0] {
             when     Page:D,  Page:U    { @!pages[0] := $!index }
@@ -185,6 +183,8 @@ class Site {
     }
 
     method sitemap-pages {
+        my %stubs;
+
         for @!pages -> $page {
             %stubs{$page.stub} = $page
         }

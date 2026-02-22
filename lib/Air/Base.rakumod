@@ -178,6 +178,7 @@ sub exports-air-base {<Site Page Nav Body Header Main Footer>}
 role  Defaults {...}
 class Nav      {...}
 class Page     {...}
+class Site     {...}
 
 =head2 Page Tags
 
@@ -463,41 +464,46 @@ class Nav      does Component {
     }
 }
 
-
-#`[ stubs
-class Page does Component {   #serial for page/1, page/2...
-    has Str  $.stub;
-    has Page @.children;
-
-    method append-child(Page $p) { @!children.append: $p }
-
-    method loadup { load routes here }
-}
-
-
-class SiteMap {   #singleton
-    has Page $.tree;
-
-    method loadall {
-        $!tree.deepmap.loadup
-}
-
-class  Site {
-    has Page $.index;
-    has SiteMap $.sitemap;
-
-    method TWEAK {
-        $!sitemap.loadall( $!index );
-    }
-
-}
-]
-
-
-
-
 #| Page does Component to do multiple instances with distinct content and attrs
 class Page     does Component {
+    ############
+    has Site $.site is rw;
+
+    my %stubs;      #stubs are unique
+    has Str  $!stub is built;
+
+    has Str  $.parent-stub;
+    has Page $.parent is rw;
+    has Page @.children;
+
+    multi method stub { $!stub }
+
+    multi method stub($s) {
+        die "Error: Stubs must be unique!" if %stubs{$s}:exists;
+        %stubs{$s} = 1;
+
+        die "Error: Stub already set!" with $!stub;   # fixme - onchange
+        $!stub = $s;
+    }
+
+    method add-child(Page $child) {
+        @!children.push: $child;
+    }
+
+    method segments {
+        $!parent.defined ?? (|$!parent.segments, $!stub) !! ()
+    }
+
+    method url-path {
+        '/' ~ self.segments.join('/');
+    }
+
+    method tree($depth = 0) {
+        say '  ' x $depth ~ "- " ~ $.stub ~ " (" ~ self.url-path ~ ")";
+        .tree($depth + 1) for @!children;
+    }
+    ##############3
+
     has $!loaded;
 
     #| auto refresh browser every N secs in dev't
@@ -588,9 +594,56 @@ class Page     does Component {
 
 subset Redirect of Pair where .key !~~ /\// && .value ~~ /^ \//;
 
+class SiteMap {
+    has %.routes;
+
+    method register(Page $page) {
+        %!routes{$page.url-path} = $page;
+    }
+
+    method lookup(Str $url-path) {
+        %!routes{$url-path};
+    }
+
+    method list {
+        %!routes.keys.sort;
+    }
+
+    method route-pages { }   #iamerejh
+
+    method to-xml( :$base-url! ) {
+        my $date = DateTime.now.Date;
+
+        my @urls = self.routes.values.sort.map({
+            qq:to/URL/;
+          <url>
+            <loc>{$base-url}{.url-path}</loc>
+            <lastmod>{$date}</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.5</priority>
+          </url>
+        URL
+        });
+
+        qq:to/XML/;
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        {@urls}</urlset>
+        XML
+    }
+
+    # save sitemap.xml file
+    method save( :$base-url!, :$file = "sitemap.xml" ) {
+        spurt $file, self.to-xml(:$base-url);
+        $file;
+    }
+}
+
 #| Site is a holder for pages, performs setup of Cro routes, gathers styles and scripts, and runs SASS
 class Site {
     my $loaded;
+
+    has SiteMap $.sitemap .= new;
 
     #| Page holder -or-
     has Page @.pages;
@@ -679,13 +732,46 @@ class Site {
         }
     }
 
+    method sitemap-pages {
+        my %stubs;
+
+        for @!pages -> $page {
+            %stubs{$page.stub} = $page
+        }
+
+        for @!pages -> $page {
+            if $page.parent-stub {
+                $page.parent = %stubs{$page.parent-stub};
+                $page.parent.add-child($page);
+                next;
+            }
+
+            FIRST next;    #skip index
+            $page.parent = $!index;
+            $!index.add-child($page);
+        }
+
+        for @!pages -> $page {
+            $page.site = self;
+            $!sitemap.register($page);
+        }
+
+        $!sitemap.route-pages;
+        $!sitemap.save(:base-url('https://furnival.net'));
+    }
+
+    method tree {
+        say "Site Tree:";
+        $!index.tree;
+    }
+
     submethod TWEAK {
         #| make index an alias for @pages[0]  # fixme consider https://raku.land/zef:lizmat/Method::Also
         given       $!index, @!pages[0] {
             when     Page:D,  Page:U    { @!pages[0] := $!index }
             when     Page:U,  Page:D    { $!index := @!pages[0] }
-            when     Page:D,  Page:D    { note "Please specify either index or pages!" }
-            default                     { note "Please specify either index or pages!" }
+            default
+            { die "Please specify either index or pages!" }
         }
 
         #| always register & route Nav
@@ -696,6 +782,9 @@ class Site {
 
         #| inject all the tools
         .inject($!index) for @!tools;
+
+        #| register all pages with the sitemap
+        self.sitemap-pages;
     }
 
     method routes {
