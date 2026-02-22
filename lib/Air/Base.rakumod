@@ -465,9 +465,6 @@ class Nav      does Component {
 
 #| Page does Component to do multiple instances with distinct content and attrs
 class Page     does Component {
-    ############
-    has      $.site is rw;
-
     my %stubs;      #stubs are unique
     has Str  $!stub is built;
 
@@ -750,7 +747,6 @@ class Site {
         }
 
         for @!pages -> $page {
-            $page.site = self;
             $!sitemap.register($page);
         }
 
@@ -781,7 +777,7 @@ class Site {
         #| inject all the tools
         .inject($!index) for @!tools;
 
-#        self.sitemap-pages;
+        self.sitemap-pages;
     }
 
     method routes {

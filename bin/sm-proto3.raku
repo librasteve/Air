@@ -80,11 +80,7 @@ use Data::Dump::Tree;
 use Air::Functional :BASE;
 use Air::Component;
 
-class Site { ... }
-
 class Page does Component {
-    has Site $.site is rw;
-
     my %stubs;      #stubs are unique
     has Str  $!stub is built;
 
@@ -202,7 +198,6 @@ class Site {
         }
 
         for @!pages -> $page {
-            $page.site = self;
             $!sitemap.register($page);
         }
 
