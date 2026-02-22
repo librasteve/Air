@@ -178,7 +178,6 @@ sub exports-air-base {<Site Page Nav Body Header Main Footer>}
 role  Defaults {...}
 class Nav      {...}
 class Page     {...}
-class Site     {...}
 
 =head2 Page Tags
 
@@ -467,7 +466,7 @@ class Nav      does Component {
 #| Page does Component to do multiple instances with distinct content and attrs
 class Page     does Component {
     ############
-    has Site $.site is rw;
+    has      $.site is rw;
 
     my %stubs;      #stubs are unique
     has Str  $!stub is built;
@@ -642,7 +641,6 @@ class SiteMap {
 #| Site is a holder for pages, performs setup of Cro routes, gathers styles and scripts, and runs SASS
 class Site {
     my $loaded;
-
     has SiteMap $.sitemap .= new;
 
     #| Page holder -or-
@@ -783,8 +781,7 @@ class Site {
         #| inject all the tools
         .inject($!index) for @!tools;
 
-        #| register all pages with the sitemap
-        self.sitemap-pages;
+#        self.sitemap-pages;
     }
 
     method routes {
