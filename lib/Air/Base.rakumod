@@ -495,7 +495,7 @@ class Page     does Component {
     }
 
     method tree($depth = 0) {
-        say '  ' x $depth ~ "- " ~ $.stub ~ " (" ~ self.url-path ~ ")";
+        '  ' x $depth ~ "- " ~ $.stub ~ " (" ~ self.url-path ~ ")";
         .tree($depth + 1) for @!children;
     }
     ##############3
@@ -755,7 +755,6 @@ class Site {
     }
 
     method tree {
-        say "Site Tree:";
         $!index.tree;
     }
 
