@@ -1,6 +1,7 @@
 Revision history for Air
 
 {{$NEXT}}
+    - background size <auto cover>
 
 0.1.9  2026-02-13T12:45:15Z
     - improve .serve / .start methods
