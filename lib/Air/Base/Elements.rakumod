@@ -667,12 +667,14 @@ role Markdown   does Component is export {
 =head3 role Background  does Component
 
 role Background does Component is export {
+    #| url of background image
+    has $.src = '';
     #| top of background image (in px)
     has $.top = 140;
     #| height of background image (in px)
     has $.height = 320;
-    #| url of background image
-    has $.src = '';
+    #| size of background image <auto cover>
+    has $.size = 'auto';
     #| opacity of background image
     has $.opacity = 0.1;
     #| rotate angle of background image (in deg)
@@ -692,15 +694,17 @@ role Background does Component is export {
             transform: rotate(%ROTATE%deg);
             background-repeat: no-repeat;
             background-position: center center;
+            background-size: %SIZE%;
             z-index: -1;
             pointer-events: none;
             padding: 20px;
         }
         END
 
+        $res ~~ s:g/'%URL%'    /$.src/;
         $res ~~ s:g/'%TOP%'    /$.top/;
         $res ~~ s:g/'%HEIGHT%' /$.height/;
-        $res ~~ s:g/'%URL%'    /$.src/;
+        $res ~~ s:g/'%SIZE%'   /$.size/;
         $res ~~ s:g/'%OPACITY%'/$.opacity/;
         $res ~~ s:g/'%ROTATE%' /$.rotate/;
 
