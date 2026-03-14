@@ -90,13 +90,18 @@ role Table      does Component is export {
 role Grid       does Component is export {
     #| list of items to populate grid
     has @.items;
+    has %.attrs;   #for all remaining attrs
 
     has $.cols = 1;
     has $.grid-template-columns = "repeat($!cols, 1fr)";
     has $.rows = 1;
     has $.grid-template-rows    = "repeat($!rows, 1fr)";
+
     has $.gap = 0;
     has $.direction = 'ltr';
+
+    has $.mobile-flex = 'column';
+    has $.mobile-gap = $!gap;
 
     #| .new positional takes @items
     multi method new(*@items, *%h) {
@@ -104,8 +109,13 @@ role Grid       does Component is export {
     }
 
     # optional grid style from https://cssgrid-generator.netlify.app/
-    # fixme load Grid.new as standard (like Nav.new)
     method style {
+
+        my $attrs;
+        for %!attrs.kv -> $k, $v {
+            $attrs ~= "$k:$v;\n";
+        }
+
         my $str = q:to/END/;
         <style>
             #%HTML-ID% {
@@ -114,14 +124,14 @@ role Grid       does Component is export {
                 grid-template-rows: %GTR%;
                 gap: %GAP%em;
                 direction: %DIR%;
+                %ATTRS%
             }
 
             @media (max-width: 1024px) {
                 #%HTML-ID% {
                     display: flex;
-                    flex-direction: column-reverse;
-
-                    gap: 1px;
+                    flex-direction: %MOB-FLEX%;
+                    gap: %MOB-GAP%em;
                 }
             }
         </style>
@@ -132,6 +142,9 @@ role Grid       does Component is export {
         $str ~~ s:g/'%GTR%'/$!grid-template-rows/;
         $str ~~ s:g/'%GAP%'/$!gap/;
         $str ~~ s:g/'%DIR%'/$!direction/;
+        $str ~~ s:g/'%MOB-FLEX%'/$!mobile-flex/;
+        $str ~~ s:g/'%MOB-GAP%'/$!mobile-gap/;
+        $str ~~ s:g/'%ATTRS%'/$attrs/;
         $str
     }
 
