@@ -1,6 +1,7 @@
 Revision history for Air
 
 {{$NEXT}}
+    - drop dep on ImageMagick for air-start
 
 0.1.11  2026-03-14T19:31:16Z
     - move grid flex-mobile up to app

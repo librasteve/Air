@@ -1,6 +1,8 @@
 unit module Elements;
 
-sub exports-air-base-elements is export {<Table Grid Flexbox Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background>}
+sub exports-air-base-elements is export {
+    <Table Grid Flexbox Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background Logos>
+}
 
 use Air::Functional :BASE-TAGS;
 use Air::Component;
@@ -677,7 +679,7 @@ role Markdown   does Component is export {
     }
 }
 
-=head3 role Background  does Component
+=head3 role Background does Component
 
 role Background does Component is export {
     #| url of background image
@@ -732,6 +734,51 @@ role Background does Component is export {
     }
 }
 
+=head3 role Logos does Component is export
+
+role Logos      does Component is export {
+    # path to logos dir
+    has Str $.path = '../static/logos';
+    # filename => url
+    has Str %.logos;
+    # logo filenames
+    has Str @.names = %!logos.keys.sort;
+    # generate adjusted logos
+    has Bool $.adjust;
+
+    my $original  = 'original';
+    my $adjusted  = 'adjusted';
+
+    method TWEAK {
+        if $!adjust {  # fixme move to a Air SERVE method (extended API)
+            for @!names -> $name {
+                my $src = "$!path/$original/$name";
+                my $tgt = "$!path/$adjusted/$name";
+
+                qqx`magick $src -resize 100x40 $tgt`;
+            }
+        }
+    }
+
+    method HTML {
+        my %attrs = (
+            :justify-items<center>,
+            :align-items<center>,
+            :background-color<silver>,
+            :padding<10px>,
+        );
+
+        my $res = Grid.new:
+            :cols(+%!logos),
+            :gap(1),
+            :%attrs,
+            [
+                a :href(%!logos{$_}), img :src("$!path/$adjusted/$_") for @!names
+            ];
+
+        ~$res;
+    }
+}
 
 ##### Functions Export #####
 
