@@ -1,6 +1,8 @@
 Revision history for Air
 
 {{$NEXT}}
+
+0.1.12  2026-03-15T08:26:47Z
     - drop dep on ImageMagick for air-start
 
 0.1.11  2026-03-14T19:31:16Z
