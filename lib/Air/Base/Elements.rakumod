@@ -738,19 +738,20 @@ role Background does Component is export {
 
 role Logos      does Component is export {
     # path to logos dir
-    has Str $.path = '../static/logos';
+    has Str  $.path = '../static/logos';
     # filename => url
-    has Str %.logos;
+    has Pair @.logos;
     # logo filenames
-    has Str @.names = %!logos.keys.sort;
-    # generate adjusted logos
-    has Bool $.adjust;
+    has Str  @.names = @!logos.map: *.key;
+    # logo hash
+    has Str  %.hash  = @!logos.Hash;
 
-    my $original  = 'original';
-    my $adjusted  = 'adjusted';
+    #subfolder names
+    constant $original  = 'original';
+    constant $adjusted  = 'adjusted';
 
     method TWEAK {
-        if $!adjust {  # fixme move to a Air SERVE method (extended API)
+        try {  #fails quietly in case no Image Magick on prod server
             for @!names -> $name {
                 my $src = "$!path/$original/$name";
                 my $tgt = "$!path/$adjusted/$name";
@@ -764,16 +765,17 @@ role Logos      does Component is export {
         my %attrs = (
             :justify-items<center>,
             :align-items<center>,
-            :background-color<silver>,
+            :background-color<#F3F3F3>,
             :padding<10px>,
+            :corner-radius<12.75px>,
         );
 
         my $res = Grid.new:
-            :cols(+%!logos),
+            :cols(+@!names),
             :gap(1),
             :%attrs,
             [
-                a :href(%!logos{$_}), img :src("$!path/$adjusted/$_") for @!names
+                a :href(%!hash{$_}), img :src("$!path/$adjusted/$_") for @!names
             ];
 
         ~$res;
