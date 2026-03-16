@@ -747,8 +747,8 @@ role Logos      does Component is export {
     has Str  %.hash  = @!logos.Hash;
 
     #subfolder names
-    constant $original  = 'original';
-    constant $adjusted  = 'adjusted';
+    my $original  = 'original';
+    my $adjusted  = 'adjusted';
 
     method TWEAK {
         try {  #fails quietly in case no Image Magick on prod server
