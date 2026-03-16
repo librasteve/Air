@@ -113,7 +113,7 @@ role Grid       does Component is export {
     # optional grid style from https://cssgrid-generator.netlify.app/
     method style {
 
-        my $attrs;
+        my $attrs = '';
         for %!attrs.kv -> $k, $v {
             $attrs ~= "$k:$v;\n";
         }
@@ -738,25 +738,45 @@ role Background does Component is export {
 
 role Logos      does Component is export {
     # path to logos dir
-    has Str  $.path = '../static/logos';
+    has Str  $.path = 'static/logos';
     # filename => url
     has Pair @.logos;
     # logo filenames
-    has Str  @.names = @!logos.map: *.key;
+    has Str  @.names; # = @!logos.map: *.key;
     # logo hash
-    has Str  %.hash  = @!logos.Hash;
+    has Str  %.hash; #  = @!logos.Hash;
+    # grid cols
+    has Int  $.cols  = +@!logos;
+    # logo extent
+    has Int  $.width = 150;
+    has Int  $.height = 40;
 
     #subfolder names
     my $original  = 'original';
     my $adjusted  = 'adjusted';
 
     method TWEAK {
-        try {  #fails quietly in case no Image Magick on prod server
-            for @!names -> $name {
-                my $src = "$!path/$original/$name";
-                my $tgt = "$!path/$adjusted/$name";
+        my $checked-path;
+        if "./$!path".IO.d {
+            $checked-path = "./$!path";
+        } elsif "../$!path".IO.d {
+            $checked-path = "../$!path";
+        }
 
-                qqx`magick $src -resize 100x40 $tgt`;
+        try {  #fails quietly in case no Image Magick on prod server
+            for @!logos -> $logo {
+
+                my $src = "$checked-path/$original/{$logo.key}";
+
+                my $name = $logo.key.subst( /.svg$/, '.png' );
+                my $tgt = "$checked-path/$adjusted/$name";
+
+                @!names.push: $name;
+                %!hash{$name} = $logo.value;
+
+                my $cmd = "magick $src -resize " ~ $!width ~ "x" ~ $!height ~ " $tgt";
+                note $cmd;
+                qqx`$cmd`;
             }
         }
     }
@@ -767,11 +787,11 @@ role Logos      does Component is export {
             :align-items<center>,
             :background-color<#F3F3F3>,
             :padding<10px>,
-            :corner-radius<12.75px>,
+            :border-radius<12.75px>,
         );
 
         my $res = Grid.new:
-            :cols(+@!names),
+            :$!cols,
             :gap(1),
             :%attrs,
             [
