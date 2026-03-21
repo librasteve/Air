@@ -749,7 +749,7 @@ role Logos      does Component is export {
     has Int  $.cols  = +@!logos;
     # logo extent
     has Int  $.width = 150;
-    has Int  $.height = 40;
+    has Int  $.height = 30;
 
     #subfolder names
     my $original  = 'original';
@@ -785,7 +785,7 @@ role Logos      does Component is export {
         my %attrs = (
             :justify-items<center>,
             :align-items<center>,
-            :background-color<#F3F3F3>,
+            :background-color<white>,
             :padding<10px>,
             :border-radius<12.75px>,
         );
