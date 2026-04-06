@@ -338,26 +338,24 @@ class Nav      does Component {
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
                 when Content {
-                    my &new-method = method {$target.?HTML};
-                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                    my &new-method = method {
+                        $target.?HTML
+                    };
+                    trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
                     self.^add_method($name, &new-method);
                 }
                 when Page {
                     unless .is-stubbed {
-                        my &new-method = method {$target.?HTML};
-                        trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                        my &new-method = method {
+                            $target.?HTML
+                        };
+                        trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
                         self.^add_method($name, &new-method);
                     }
                 }
             }
         }
     }
-
-    #iamerejh
-    #ok im gonna get pages and content to make their own routes
-    #page need make-routes method  (no since that's just page/1 and so on)
-    #content needs promotion to Component and ditto
-    #reconsider Nav is always routed default
 
     #| renders NavItems
     method nav-items {
