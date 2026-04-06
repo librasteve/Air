@@ -160,6 +160,7 @@ All items are re-exported by the top level module, so you can just `use Air::Bas
 # TODO items
 #my loaded or has loaded - make consistent
 #role Theme {...}
+#change Page stub, parent
 
 use YAMLish;
 
@@ -342,13 +343,21 @@ class Nav      does Component {
                     self.^add_method($name, &new-method);
                 }
                 when Page {
-                    my &new-method = method {$target.?HTML};
-                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
-                    self.^add_method($name, &new-method);
+                    unless .is-stubbed {
+                        my &new-method = method {$target.?HTML};
+                        trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                        self.^add_method($name, &new-method);
+                    }
                 }
             }
         }
     }
+
+    #iamerejh
+    #ok im gonna get pages and content to make their own routes
+    #page need make-routes method  (no since that's just page/1 and so on)
+    #content needs promotion to Component and ditto
+    #reconsider Nav is always routed default
 
     #| renders NavItems
     method nav-items {
@@ -362,7 +371,11 @@ class Nav      does Component {
                     li a(:hx-get("$.url-path/$name"), Safe.new: $name)
                 }
                 when Page {
-                    li a(:href("$.url-path/$name"), Safe.new: $name)
+                    if .is-stubbed { #}&& $name eq .stub {
+                        li a(:href(.stub-path), Safe.new: $name)
+                    } else {
+                        li a(:href("$.url-path/$name"), Safe.new: $name)
+                    }
                 }
             }
         }
@@ -463,23 +476,69 @@ class Nav      does Component {
     }
 }
 
-#| Page does Component to do multiple instances with distinct content and attrs
-class Page     does Component {
+class SiteMap {
+    has %.routes;
+
+    method register(Page $page) {
+        %!routes{$page.stub-path} = $page;
+    }
+
+    method lookup(@path) {
+        %!routes{'/' ~ @path.join('/')}
+    }
+
+    method list {
+        %!routes.keys.sort;
+    }
+
+    method to-xml( :$base-url! ) {
+        my $date = DateTime.now.Date;
+
+        my @urls = self.routes.values.sort.map({
+            qq:to/URL/;
+          <url>
+            <loc>{$base-url}{.stub-path}</loc>
+            <lastmod>{$date}</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.5</priority>
+          </url>
+        URL
+        });
+
+        qq:to/XML/;
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        {@urls}</urlset>
+        XML
+    }
+
+    # save sitemap.xml file
+    method save( :$base-url!, :$file = "sitemap.xml" ) {    # fixme
+        spurt $file, self.to-xml(:$base-url);
+        $file;
+    }
+}
+
+role Sitemapped {
     my %stubs;      #stubs are unique
     has Str  $!stub is built;
 
-    has Str  $.parent-stub;
-    has Page $.parent is rw;
+    has Str  $.parent;
+    has Page $.parent-obj is rw;
     has Page @.children;
 
-    multi method stub { $!stub }
+    multi method stub { $!stub // '' }
 
     multi method stub($s) {
         die "Error: Stubs must be unique!" if %stubs{$s}:exists;
         %stubs{$s} = 1;
 
-        die "Error: Stub already set!" with $!stub;   # fixme - onchange
+        die "Error: Stub already set!" with $!stub;
         $!stub = $s;
+    }
+
+    method is-stubbed {
+        $!stub.so
     }
 
     method add-child(Page $child) {
@@ -487,19 +546,21 @@ class Page     does Component {
     }
 
     method segments {
-        $!parent.defined ?? (|$!parent.segments, $!stub) !! ()
+        $!parent-obj.defined ?? (|$!parent-obj.segments, $.stub) !! ()
     }
 
-    method url-path {
-        '/' ~ self.segments.join('/');
+    method stub-path {
+        '/' ~ $.segments.join('/');
     }
 
     method tree($depth = 0) {
-        '  ' x $depth ~ "- " ~ $.stub ~ " (" ~ self.url-path ~ ")";
-        .tree($depth + 1) for @!children;
+        '  ' x $depth ~ "-$.stub ($.stub-path)\n" ~
+            [.tree($depth + 1) for @!children].join;
     }
-    ##############3
+}
 
+#| Page does Component to do multiple instances with distinct content and attrs
+class Page     does Component does Sitemapped {
     has $!loaded;
 
     #| auto refresh browser every N secs in dev't
@@ -589,51 +650,6 @@ class Page     does Component {
 =head3 subset Redirect of Pair where .key !~~ /\// && .value ~~ /^ \//;
 
 subset Redirect of Pair where .key !~~ /\// && .value ~~ /^ \//;
-
-class SiteMap {
-    has %.routes;
-
-    method register(Page $page) {
-        %!routes{$page.url-path} = $page;
-    }
-
-    method lookup(Str $url-path) {
-        %!routes{$url-path};
-    }
-
-    method list {
-        %!routes.keys.sort;
-    }
-
-    method route-pages { }   #iamerejh
-
-    method to-xml( :$base-url! ) {
-        my $date = DateTime.now.Date;
-
-        my @urls = self.routes.values.sort.map({
-            qq:to/URL/;
-          <url>
-            <loc>{$base-url}{.url-path}</loc>
-            <lastmod>{$date}</lastmod>
-            <changefreq>weekly</changefreq>
-            <priority>0.5</priority>
-          </url>
-        URL
-        });
-
-        qq:to/XML/;
-        <?xml version="1.0" encoding="UTF-8"?>
-        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-        {@urls}</urlset>
-        XML
-    }
-
-    # save sitemap.xml file
-    method save( :$base-url!, :$file = "sitemap.xml" ) {
-        spurt $file, self.to-xml(:$base-url);
-        $file;
-    }
-}
 
 #| Site is a holder for pages, performs setup of Cro routes, gathers styles and scripts, and runs SASS
 class Site {
@@ -735,14 +751,14 @@ class Site {
         }
 
         for @!pages -> $page {
-            if $page.parent-stub {
-                $page.parent = %stubs{$page.parent-stub};
-                $page.parent.add-child($page);
+            if $page.parent {
+                $page.parent-obj = %stubs{$page.parent};
+                $page.parent-obj.add-child($page);
                 next;
             }
 
             FIRST next;    #skip index
-            $page.parent = $!index;
+            $page.parent-obj = $!index;
             $!index.add-child($page);
         }
 
@@ -750,21 +766,20 @@ class Site {
             $!sitemap.register($page);
         }
 
-        $!sitemap.route-pages;
         $!sitemap.save(:base-url('https://furnival.net'));
     }
 
     method tree {
-        $!index.tree;
+        $!index.tree
     }
 
     submethod TWEAK {
-        #| make index an alias for @pages[0]  # fixme consider https://raku.land/zef:lizmat/Method::Also
+        #| make index an alias for @pages[0]
         given       $!index, @!pages[0] {
             when     Page:D,  Page:U    { @!pages[0] := $!index }
             when     Page:U,  Page:D    { $!index := @!pages[0] }
             default
-            { die "Please specify either index or pages!" }
+                    { die "Please specify either index or pages!" }
         }
 
         #| always register & route Nav
@@ -783,7 +798,7 @@ class Site {
         use Cro::HTTP::Router;
 
         route {
-            #| setup Cro routes
+            # Components
             for @!register.unique( as => *.^name ) {
                 when Component::Common {
                     .make-methods;
@@ -795,17 +810,30 @@ class Site {
             }
 
             #| index & static
-            get ->                  { content   'text/html',  $.index.HTML }
-            get -> 'css',    *@path { static    'static/css', @path }
-            get -> 'img',    *@path { static    'static/img', @path }
-            get -> 'js',     *@path { static    'static/js',  @path }
-            get -> 'static', *@path { static    'static',     @path }
+            get ->                  { content   'text/html',  ~$.index   }
+            get -> 'css',    *@path { static    'static/css',  @path     }
+            get -> 'img',    *@path { static    'static/img',  @path     }
+            get -> 'js',     *@path { static    'static/js',   @path     }
+            get -> 'static', *@path { static    'static',      @path     }
 
-            #| 404 routes
-            with $!html404 {
-                note "adding 404";
-                get ->  *@rest { not-found 'text/html',  $.html404.HTML };
+            #| page stubs
+            get -> *@rest {
+                my $this = $.sitemap.lookup: @rest;
+
+                if $this ~~ Page:D  { content   'text/html',  ~$this     }
+                else {
+                    with $!html404  { not-found 'text/html',  ~$!html404 }
+                    else            { not-found                          }
+                }
             }
+
+
+            # fixme ... check new sub works
+            #| 404 routes
+#            with $!html404 {
+#                note "adding 404";
+#                get ->  *@rest { not-found 'text/html',  $.html404.HTML }
+#            }
 
             #| redirect routes
             for @!redirects {
