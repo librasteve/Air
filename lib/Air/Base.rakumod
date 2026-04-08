@@ -160,7 +160,7 @@ All items are re-exported by the top level module, so you can just `use Air::Bas
 # TODO items
 #my loaded or has loaded - make consistent
 #role Theme {...}
-#change Page stub, parent
+#setup base url (eg prod / dev)
 
 use YAMLish;
 
@@ -489,13 +489,13 @@ class SiteMap {
         %!routes.keys.sort;
     }
 
-    method to-xml( :$base-url! ) {
+    method to-xml( :$host! ) {
         my $date = DateTime.now.Date;
 
         my @urls = self.routes.values.sort.map({
             qq:to/URL/;
           <url>
-            <loc>{$base-url}{.stub-path}</loc>
+            <loc>{$host}{.stub-path}</loc>
             <lastmod>{$date}</lastmod>
             <changefreq>weekly</changefreq>
             <priority>0.5</priority>
@@ -511,8 +511,8 @@ class SiteMap {
     }
 
     # save sitemap.xml file
-    method save( :$base-url!, :$file = 'static/sitemap.xml' ) {
-        spurt $file, self.to-xml(:$base-url);
+    method save( :$host!, :$file = 'static/sitemap.xml' ) {
+        spurt $file, self.to-xml(:$host);
         $file;
     }
 }
@@ -671,6 +671,9 @@ class Site {
     has Bool $.scss = True;
     has Str  $!scss-gather;
 
+    #| grab host on first run
+    has Str  $.host;
+
     #| pick from: amber azure blue cyan fuchsia green indigo jade lime orange
     #| pink pumpkin purple red violet yellow (pico theme)
     has Str  $.theme-color = 'green';
@@ -773,8 +776,6 @@ class Site {
         for @!pages -> $page {
             $!sitemap.register($page);
         }
-
-        $!sitemap.save(:base-url('https://furnival.net'));
     }
 
     submethod TWEAK {
@@ -817,15 +818,29 @@ class Site {
                 }
             }
 
-            #| index & static
-            get ->                  { content   'text/html',  ~$.index   }
-            get -> 'css',    *@path { static    'static/css',  @path     }
-            get -> 'img',    *@path { static    'static/img',  @path     }
-            get -> 'js',     *@path { static    'static/js',   @path     }
-            get -> 'static', *@path { static    'static',      @path     }
-            get -> 'sitemap.xml'    { static    'static/sitemap.xml'     }
+            #| index & static routes
+            get -> :%headers is header {
+                without $!host {
+                    $!host = %headers<Host>;
+                    $!sitemap.save(:$!host);
+                }
+                content   'text/html',  ~$.index
+            }
+            get -> 'css',       *@path { static    'static/css',  @path     }
+            get -> 'img',       *@path { static    'static/img',  @path     }
+            get -> 'js',        *@path { static    'static/js',   @path     }
+            get -> 'static',    *@path { static    'static',      @path     }
+            get -> 'sitemap.xml'       { static    'static/sitemap.xml'     }
 
-            #| page stubs
+            #debug
+            get -> 'dump', :%cookies is cookie, :%headers is header {
+                note %cookies.raku;
+                note %headers.raku;
+
+                content   'text/html',  "Cookies:<br>" ~ %cookies.raku ~ "<br><br>Headers:<br>" ~ %headers.raku
+            }
+
+            #| page stub routes
             get -> *@rest {
                 my $this = $.sitemap.lookup: @rest;
 
@@ -836,14 +851,6 @@ class Site {
                 }
             }
 
-
-            # fixme ... check new sub works
-            #| 404 routes
-#            with $!html404 {
-#                note "adding 404";
-#                get ->  *@rest { not-found 'text/html',  $.html404.HTML }
-#            }
-
             #| redirect routes
             for @!redirects {
                 my ($old, $new) = .kv;
@@ -852,7 +859,6 @@ class Site {
             }
         }
     }
-
 
     submethod scss-run {
         my $css = self.scss-theme ~ "\n\n";
@@ -969,8 +975,8 @@ class Site {
     }
 
     #| site.serve is the general (development) command to start the site Cro::Service
-    #| scss compilation (e.g. dart)  is True  by default, use !scss to disable it
-    #| watch file change recursively is False by default, use watch to enable  it
+    #| scss compilation (e.g. dart)  is True  by default, use :!scss to disable it
+    #| watch file change recursively is False by default, use :watch to enable  it
     method serve( :$host is copy, :$port is copy, :$scss = True, :$watch = False ) {
         #| vendor all default packages fixme
 
