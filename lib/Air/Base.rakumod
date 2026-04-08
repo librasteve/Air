@@ -511,7 +511,7 @@ class SiteMap {
     }
 
     # save sitemap.xml file
-    method save( :$base-url!, :$file = "sitemap.xml" ) {    # fixme
+    method save( :$base-url!, :$file = 'static/sitemap.xml' ) {
         spurt $file, self.to-xml(:$base-url);
         $file;
     }
@@ -684,8 +684,18 @@ class Site {
         self.bless: :$index, |%h;
     }
 
-    #| enqueued items are rendered in order, avoid interdependencies
-    method enqueue-all {
+    submethod adjust-dir {
+        #| chdir to parent of static (i.e. if called from /bin)
+        my @refs = "./static", "../static";
+
+        for @refs -> $dir {
+            chdir $dir if $dir.IO.d;
+        }
+        chdir '..';
+    }
+
+    submethod enqueue-all {
+        #| enqueued items are rendered in order, avoid interdependencies
         return if $loaded++;
 
         for @!register.unique( as => *.^name ) -> $registrant {
@@ -741,7 +751,7 @@ class Site {
         }
     }
 
-    method sitemap-pages {
+    submethod sitemap-pages {
         my %stubs;
 
         for @!pages -> $page {
@@ -767,11 +777,10 @@ class Site {
         $!sitemap.save(:base-url('https://furnival.net'));
     }
 
-    method tree {
-        $!index.tree
-    }
-
     submethod TWEAK {
+        #| chdir to parent of static (i.e. if called from /bin)
+        self.adjust-dir;
+
         #| make index an alias for @pages[0]
         given       $!index, @!pages[0] {
             when     Page:D,  Page:U    { @!pages[0] := $!index }
@@ -789,6 +798,7 @@ class Site {
         #| inject all the tools
         .inject($!index) for @!tools;
 
+        #| generate sitemap
         self.sitemap-pages;
     }
 
@@ -813,6 +823,7 @@ class Site {
             get -> 'img',    *@path { static    'static/img',  @path     }
             get -> 'js',     *@path { static    'static/js',   @path     }
             get -> 'static', *@path { static    'static',      @path     }
+            get -> 'sitemap.xml'    { static    'static/sitemap.xml'     }
 
             #| page stubs
             get -> *@rest {
@@ -839,6 +850,121 @@ class Site {
                 note "adding redirect $old => $new";
                 delegate "$old" => route { get -> { redirect $new } };
             }
+        }
+    }
+
+
+    submethod scss-run {
+        my $css = self.scss-theme ~ "\n\n";
+        $css ~= $_ with $!scss-gather;
+
+        note "theme-color=$!theme-color";
+        $css ~~ s:g/'%THEME_COLOR%'/$!theme-color/;
+
+        note "bold-color=$!bold-color";
+        $css ~~ s:g/'%BOLD_COLOR%'/$!bold-color/;
+
+        chdir 'static/css';
+
+        spurt "styles.scss", $css;
+        qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
+
+        chdir "../..";
+    }
+
+    submethod scss-theme { Q:to/END/;
+        @use "node_modules/@picocss/pico/scss" with (
+          $theme-color: "%THEME_COLOR%"
+        );
+
+        //some root overrides for scale https://github.com/picocss/pico/discussions/482
+
+        :root {
+          --pico-font-family-sans-serif: Inter, system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif, var(--pico-font-family-emoji);
+          --pico-font-size: 106.25%;                        /* Original: 100% */
+          --pico-line-height: 1.25;                         /* Original: 1.5 */
+          --pico-form-element-spacing-vertical: 0.5rem;     /* Original: 1rem */
+          --pico-form-element-spacing-horizontal: 1.0rem;   /* Original: 1.25rem */
+          --pico-border-radius: 0.375rem;                   /* Original: 0.25rem */
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+          --pico-font-weight: 600;                          /* Original: 700 */
+        }
+
+        article {
+          border: 1px solid var(--pico-muted-border-color); /* Original doesn't have a border */
+          border-radius: calc(var(--pico-border-radius) * 2); /* Original: var(--pico-border-radius) */
+        }
+
+        article>footer {
+          border-radius: calc(var(--pico-border-radius) * 2); /* Original: var(--pico-border-radius) */
+        }
+
+        b {
+          color: %BOLD_COLOR%;
+        }
+
+        .logo, .logo:hover {
+          /* Remove underline by default and on hover */
+          text-decoration: none;
+          font-size:160%;
+          font-weight:700;
+        }
+
+        body > footer > p {
+          font-size:66%;
+          font-style:italic;
+        }
+        END
+    }
+
+    sub watch-recursive(IO::Path $path) {
+        # code lifted from https://github.com/croservices/cro/blob/main/lib/Cro/Tools/Services.rakumod
+        supply {
+            my %watched-dirs;
+
+            sub add-dir(IO::Path $dir, :$initial) {
+                %watched-dirs{$dir} = True;
+
+                with $dir.watch -> $dir-watch {
+                    whenever $dir-watch {
+                        emit $_;
+                        my $path-io = .path.IO;
+                        if $path-io.d {
+                            unless $path-io.basename.starts-with('.') {
+                                add-dir($path-io) unless %watched-dirs{$path-io};
+                            }
+                        }
+                        CATCH {
+                            default {
+                                # Perhaps the directory went away; disregard.
+                            }
+                        }
+                    }
+                }
+
+                for $dir.dir {
+                    unless $initial {
+                        emit IO::Notification::Change.new(
+                            path => ~$_,
+                            event => FileChanged
+                            );
+                    }
+                    if .d {
+                        unless .basename.starts-with('.') {
+                            add-dir($_, :$initial);
+                        }
+                    }
+                }
+            }
+
+            add-dir($path, :initial);
         }
     }
 
@@ -894,129 +1020,6 @@ class Site {
     #| is a variant of server for production which skips all the dev / build steps
     method start( :$host, :$port, :$scss = False, :$watch ) {
         self.serve: :$host, :$port, :$scss, :$watch
-    }
-
-    method scss-run {
-        my $css = self.scss-theme ~ "\n\n";
-        $css ~= $_ with $!scss-gather;
-
-        note "theme-color=$!theme-color";
-        $css ~~ s:g/'%THEME_COLOR%'/$!theme-color/;
-
-        note "bold-color=$!bold-color";
-        $css ~~ s:g/'%BOLD_COLOR%'/$!bold-color/;
-
-        my @dirs = "../static/css", "static/css";
-
-        for @dirs -> $dir {
-            if $dir.IO.d {
-                chdir $dir;
-                last;
-            }
-        }
-        unless $*CWD.ends-with("static/css") {
-            die "Neither '../static/css' nor 'static/css' exists!";
-        }
-
-        spurt "styles.scss", $css;
-        qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
-        chdir "../..";
-    }
-
-    method scss-theme { Q:to/END/;
-        @use "node_modules/@picocss/pico/scss" with (
-          $theme-color: "%THEME_COLOR%"
-        );
-
-        //some root overrides for scale https://github.com/picocss/pico/discussions/482
-
-        :root {
-          --pico-font-family-sans-serif: Inter, system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif, var(--pico-font-family-emoji);
-          --pico-font-size: 106.25%;                        /* Original: 100% */
-          --pico-line-height: 1.25;                         /* Original: 1.5 */
-          --pico-form-element-spacing-vertical: 0.5rem;     /* Original: 1rem */
-          --pico-form-element-spacing-horizontal: 1.0rem;   /* Original: 1.25rem */
-          --pico-border-radius: 0.375rem;                   /* Original: 0.25rem */
-        }
-
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-          --pico-font-weight: 600;                          /* Original: 700 */
-        }
-
-        article {
-          border: 1px solid var(--pico-muted-border-color); /* Original doesn't have a border */
-          border-radius: calc(var(--pico-border-radius) * 2); /* Original: var(--pico-border-radius) */
-        }
-
-        article>footer {
-          border-radius: calc(var(--pico-border-radius) * 2); /* Original: var(--pico-border-radius) */
-        }
-
-        b {
-          color: %BOLD_COLOR%;
-        }
-
-        .logo, .logo:hover {
-          /* Remove underline by default and on hover */
-          text-decoration: none;
-          font-size:160%;
-          font-weight:700;
-        }
-
-        body > footer > p {
-          font-size:66%;
-          font-style:italic;
-        }
-        END
-    }
-
-    # code lifted from https://github.com/croservices/cro/blob/main/lib/Cro/Tools/Services.rakumod
-    sub watch-recursive(IO::Path $path) {
-        supply {
-            my %watched-dirs;
-
-            sub add-dir(IO::Path $dir, :$initial) {
-                %watched-dirs{$dir} = True;
-
-                with $dir.watch -> $dir-watch {
-                    whenever $dir-watch {
-                        emit $_;
-                        my $path-io = .path.IO;
-                        if $path-io.d {
-                            unless $path-io.basename.starts-with('.') {
-                                add-dir($path-io) unless %watched-dirs{$path-io};
-                            }
-                        }
-                        CATCH {
-                            default {
-                                # Perhaps the directory went away; disregard.
-                            }
-                        }
-                    }
-                }
-
-                for $dir.dir {
-                    unless $initial {
-                        emit IO::Notification::Change.new(
-                            path => ~$_,
-                            event => FileChanged
-                            );
-                    }
-                    if .d {
-                        unless .basename.starts-with('.') {
-                            add-dir($_, :$initial);
-                        }
-                    }
-                }
-            }
-
-            add-dir($path, :initial);
-        }
     }
 }
 
