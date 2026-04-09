@@ -159,8 +159,9 @@ All items are re-exported by the top level module, so you can just `use Air::Bas
 
 # TODO items
 #my loaded or has loaded - make consistent
+#vendor all default packages
 #role Theme {...}
-#setup base url (eg prod / dev)
+#docs for sitemap, stubs, robots
 
 use YAMLish;
 
@@ -175,7 +176,7 @@ use Air::Base::Widgets;
 
 sub exports-air-base {<Site Page Nav Body Header Main Footer>}
 
-# predeclarations
+# pre declarations
 role  Defaults {...}
 class Nav      {...}
 class Page     {...}
@@ -285,8 +286,8 @@ role Body       does Tag[Regular]  {
 
 =head3 role Html   does Tag[Regular] {...}
 
-role Html      does Tag[Regular]  {
-    also       does Defaults;
+role Html       does Tag[Regular]  {
+    also        does Defaults;
 
     has $!loaded = 0;
 
@@ -314,7 +315,7 @@ role Html      does Tag[Regular]  {
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
 #| Nav does Component to do multiple instances with distinct NavItem and Widget attrs
-class Nav      does Component {
+class Nav       does Component {
     has $!routed = 0;
 
     #| HTMX attributes
@@ -494,13 +495,13 @@ class SiteMap {
 
         my @urls = self.routes.values.sort.map({
             qq:to/URL/;
-          <url>
-            <loc>{$host}{.stub-path}</loc>
-            <lastmod>{$date}</lastmod>
-            <changefreq>weekly</changefreq>
-            <priority>0.5</priority>
-          </url>
-        URL
+              <url>
+                <loc>{$host}{.stub-path}</loc>
+                <lastmod>{$date}</lastmod>
+                <changefreq>weekly</changefreq>
+                <priority>0.5</priority>
+              </url>
+            URL
         });
 
         qq:to/XML/;
@@ -510,10 +511,8 @@ class SiteMap {
         XML
     }
 
-    # save sitemap.xml file
     method save( :$host!, :$file = 'static/sitemap.xml' ) {
         spurt $file, self.to-xml(:$host);
-        $file;
     }
 }
 
@@ -558,7 +557,7 @@ role Sitemapped {
 }
 
 #| Page does Component to do multiple instances with distinct content and attrs
-class Page     does Component does Sitemapped {
+class Page      does Component does Sitemapped {
     has $!loaded;
 
     #| auto refresh browser every N secs in dev't
@@ -818,19 +817,22 @@ class Site {
                 }
             }
 
-            #| index & static routes
+            #| index, first run stuff
             get -> :%headers is header {
                 without $!host {
                     $!host = %headers<Host>;
                     $!sitemap.save(:$!host);
                 }
-                content   'text/html',  ~$.index
+                                         content   'text/html',  ~$.index
             }
+
+            #| static routes
             get -> 'css',       *@path { static    'static/css',  @path     }
             get -> 'img',       *@path { static    'static/img',  @path     }
             get -> 'js',        *@path { static    'static/js',   @path     }
             get -> 'static',    *@path { static    'static',      @path     }
             get -> 'sitemap.xml'       { static    'static/sitemap.xml'     }
+            get -> 'robots.txt'        { static    'static/robots.txt'      }
 
             #debug
             get -> 'dump', :%cookies is cookie, :%headers is header {
@@ -844,10 +846,10 @@ class Site {
             get -> *@rest {
                 my $this = $.sitemap.lookup: @rest;
 
-                if $this ~~ Page:D  { content   'text/html',  ~$this     }
+                if $this ~~ Page:D     { content   'text/html',  ~$this     }
                 else {
-                    with $!html404  { not-found 'text/html',  ~$!html404 }
-                    else            { not-found                          }
+                    with $!html404     { not-found 'text/html',  ~$!html404 }
+                    else               { not-found                          }
                 }
             }
 
@@ -858,6 +860,22 @@ class Site {
                 delegate "$old" => route { get -> { redirect $new } };
             }
         }
+    }
+
+    submethod robots(:$norobots) {
+        my $content = q:to/END/;
+            User-agent: *
+            Disallow: /
+            END
+
+        unless $norobots {
+            for self.sitemap.list -> $page {
+                $content ~= "Allow: $page\n";
+            }
+        }
+
+        my $file = 'static/robots.txt';
+        spurt $file, $content;
     }
 
     submethod scss-run {
@@ -975,18 +993,25 @@ class Site {
     }
 
     #| site.serve is the general (development) command to start the site Cro::Service
-    #| scss compilation (e.g. dart)  is True  by default, use :!scss to disable it
-    #| watch file change recursively is False by default, use :watch to enable  it
-    method serve( :$host is copy, :$port is copy, :$scss = True, :$watch = False ) {
-        #| vendor all default packages fixme
+    #| scss compilation (dart) is True  by default, use :!scss to disable it
+    #| watch files recursively is False by default, use :watch to enable  it
+    #| norobots is False by default, robots.txt will Allow pages with stubs
+    method serve(
+        :$host is copy,
+        :$port is copy,
+        :$norobots is copy,
+        :$scss = True,
+        :$watch = False
+    ) {
+        $host //= %*ENV<CRO_WEBSITE_HOST> // '0.0.0.0';
+        $port //= %*ENV<CRO_WEBSITE_PORT> // 3000;
+        $norobots //= %*ENV<AIR_NOROBOTS> // False;
 
+        self.robots(:$norobots);
         self.scss-run if $scss;
 
         use Cro::HTTP::Log::File;
         use Cro::HTTP::Server;
-
-        $host //= %*ENV<CRO_WEBSITE_HOST> // '0.0.0.0';
-        $port //= %*ENV<CRO_WEBSITE_PORT> // 3000;
 
         my Cro::Service $http = Cro::HTTP::Server.new(
             http => <1.1>,
@@ -1023,9 +1048,9 @@ class Site {
         }
     }
 
-    #| is a variant of server for production which skips all the dev / build steps
-    method start( :$host, :$port, :$scss = False, :$watch ) {
-        self.serve: :$host, :$port, :$scss, :$watch
+    #| serve for production ... skips dev / build steps
+    method start( :$host, :$port ) {
+        self.serve: :$host, :$port, :!scss;
     }
 }
 
