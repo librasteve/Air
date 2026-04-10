@@ -806,25 +806,13 @@ class Site {
         use Cro::HTTP::Router;
 
         route {
-            # Components
-            for @!register.unique( as => *.^name ) {
-                when Component::Common {
-                    .make-methods;
-                    .^add-cromponent-routes;
-                }
-                when Form {
-                    .form-routes
-                }
-            }
-
-            #| index, first run stuff
+            #| index (first run)
             get -> :%headers is header {
                 without $!host {
                     $!host = %headers<Host>;
                     $!sitemap.save(:$!host);
                 }
-                                         content   'text/html',  ~$.index
-            }
+                                         content   'text/html',  ~$.index   }
 
             #| static routes
             get -> 'css',       *@path { static    'static/css',  @path     }
@@ -839,21 +827,34 @@ class Site {
                 note %cookies.raku;
                 note %headers.raku;
 
-                content   'text/html',  "Cookies:<br>" ~ %cookies.raku ~ "<br><br>Headers:<br>" ~ %headers.raku
+                content   'text/html',
+                    "Cookies:<br>" ~ %cookies.raku ~ "<br><br>" ~
+                    "Headers:<br>" ~ %headers.raku
             }
 
-            #| page stub routes
+            # component & form
+            for @!register.unique( as => *.^name ) {
+                when Component::Common {
+                    .make-methods;
+                    .^add-cromponent-routes;
+                }
+                when Form {
+                    .form-routes
+                }
+            }
+
+            #| dynamic (page stubs, 404)
             get -> *@rest {
                 my $this = $.sitemap.lookup: @rest;
-
                 if $this ~~ Page:D     { content   'text/html',  ~$this     }
+
                 else {
                     with $!html404     { not-found 'text/html',  ~$!html404 }
                     else               { not-found                          }
                 }
             }
 
-            #| redirect routes
+            #| redirects
             for @!redirects {
                 my ($old, $new) = .kv;
                 note "adding redirect $old => $new";
