@@ -147,6 +147,92 @@ Is identical to writing:
 my $t = title 'sometext';
 ```
 
+=head2 Housekeeping
+
+=head3 Host
+
+The Site infers the hostname from the HTTP Headers the first time the index page is accessed.
+
+=head3 HTTP Routes
+
+The Site class creates all neeeded routes via Cro::HTTP::Router as follows:
+
+=begin code
+#| index (first run)
+#| static routes (static/css, static/js, static/img...)
+#| debug ('dump' shows Cookies and Headers)
+#| component & form (e.g. for methods with the `is controller` trait)
+#| dynamic (page stubs, 404)
+#| redirects
+=end code
+
+Most Elements are Components. Routes will be created for any Component instance passed via `Site.new: :register[...]`.
+
+The routes added are reflected on server start, where $id is an Int >= 1. For example:
+
+=begin code
+adding GET todo/<Mu $id>
+adding DELETE todo/<Mu $id>
+adding PUT todo/<Mu $id>
+adding GET todo/<Mu $id>/toggle
+adding GET nav/<Mu $id>
+=end code
+
+The Nav component is always routed. NavItems (Content, Page) are declared as Pairs and then may be assigned to each Page like this:
+
+=begin code
+my $nav = nav [:$Page1, :$Page2];
+
+my @pages = [$Page1, $Page2];
+{ .nav = $nav } for @pages;
+
+my $site = Site.new: :@pages;
+=end code
+
+So the items of `nav/1` start with a link named `Page1` with url `http://myhost/nav/1/Page1`. This model provides for dynamic creation and deletion of components and for multiple Navs that target the same content.
+
+=head3 Page Stubs
+
+A page `stub` [and `parent`] attribute may be provided.
+
+=begin code
+my @pages = (
+    Page.new(stub => 'home',                           common('home' )),
+    Page.new(stub => 'about',                          common('about')),
+    Page.new(stub => 'blog',                           common('blog' )),
+    Page.new(stub => 'first-post',  parent => 'blog',  common('1st'  )),
+    Page.new(stub => 'second-post', parent => 'blog',  common('2nd'  )),
+    Page.new(stub => 'team',        parent => 'about', common('team' )),
+);
+=end code
+
+The stub path is then used as the route to that page. Pages with and without stubs may be used in the same Nav.
+
+Note that first page `@pages[0]` [or `index`] is always returned by the root url, so it can take any stub name such as `'home'` or `'/'`. Do not use the empty Str `''`.
+
+=head3 Sitemap
+
+A sitemap.xml is generated from the stubs using the inferred hostname.
+
+=head3 Robots
+
+A robots.txt is generated from the stubs by default.
+
+=begin code
+User-agent: *
+Disallow: /
+Allow: /
+Allow: /about
+Allow: /about/team
+Allow: /blog
+Allow: /blog/first-post
+Allow: /blog/second-post
+=end code
+
+This may be overridden by setting `ENV <AIR_NOROBOTS>` to a true value.
+
+=head2 Library Modules
+
 The Air::Base library is implemented over a set of Raku modules, which are then used in the main Base module and re-exported as both classes and functions:
 
 =item [Air::Base::Tags](Base/Tags.md)  - HTML, Semantic & Safe Tags
@@ -161,7 +247,6 @@ All items are re-exported by the top level module, so you can just `use Air::Bas
 #my loaded or has loaded - make consistent
 #vendor all default packages
 #role Theme {...}
-#docs for sitemap, stubs, robots
 
 use YAMLish;
 
@@ -262,7 +347,7 @@ role Footer     does Tag[Regular]  {
     }
 }
 
-=head 3 role Body   does Tag[Regular] {...}
+=head3 role Body   does Tag[Regular] {...}
 
 role Body       does Tag[Regular]  {
     #| header
@@ -820,7 +905,7 @@ class Site {
             get -> 'sitemap.xml'       { static    'static/sitemap.xml'     }
             get -> 'robots.txt'        { static    'static/robots.txt'      }
 
-            #debug
+            #| debug
             get -> 'dump', :%cookies is cookie, :%headers is header {
                 note %cookies.raku;
                 note %headers.raku;
@@ -830,7 +915,7 @@ class Site {
                     "Headers:<br>" ~ %headers.raku
             }
 
-            # component & form
+            #| component & form
             for @!register.unique( as => *.^name ) {
                 when Component::Common {
                     .make-methods;
