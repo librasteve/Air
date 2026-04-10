@@ -312,7 +312,9 @@ role Html       does Tag[Regular]  {
 
 =head3 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
-subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
+subset NavPair of Pair where .value ~~ Internal | External | Content | Page;
+subset Stubbed of Page where .is-stubbed;
+subset NavItem where NavPair | Stubbed;
 
 #| Nav does Component to do multiple instances with distinct NavItem and Widget attrs
 class Nav       does Component {
@@ -360,22 +362,29 @@ class Nav       does Component {
 
     #| renders NavItems
     method nav-items {
-        do for @.items.map: *.kv -> ($name, $target) {
-            given $target {
-                when External | Internal {
-                    .label = $name;
-                    li .HTML
-                }
-                when Content {
-                    li a(:hx-get("$.url-path/$name"), Safe.new: $name)
-                }
-                when Page {
-                    if .is-stubbed { #}&& $name eq .stub {
-                        li a(:href(.stub-path), Safe.new: $name)
-                    } else {
-                        li a(:href("$.url-path/$name"), Safe.new: $name)
+        do for @.items -> $item {
+            if $item ~~ NavPair {
+                my ($name, $target) = $item.kv;
+
+                given $target {
+                    when External | Internal {
+                        .label = $name;
+                        li .HTML
+                    }
+                    when Content {
+                        li a(:hx-get("$.url-path/$name"), Safe.new: $name)
+                    }
+                    when Page {
+                        if .is-stubbed {
+                            li a(:href(.stub-path), Safe.new: $name)
+                        } else {
+                            li a(:href("$.url-path/$name"), Safe.new: $name)
+                        }
                     }
                 }
+            } elsif $item ~~ Stubbed {
+                my $name = $item.stub-path;
+                li a(:href($name), Safe.new: $name)
             }
         }
     }
@@ -525,7 +534,6 @@ role Sitemapped {
     has Page @.children;
 
     multi method stub { $!stub // '' }
-
     multi method stub($s) {
         die "Error: Stubs must be unique!" if %stubs{$s}:exists;
         %stubs{$s} = 1;
