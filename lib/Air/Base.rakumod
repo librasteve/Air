@@ -391,7 +391,6 @@ class Nav       does Component {
 
     #| applies Style and Script for Hamburger reactive menu
     method HTML {
-
         nav [
             { ul li :class<logo>, $.logo } with $.logo;
 
@@ -897,10 +896,12 @@ class Site {
         note "bold-color=$!bold-color";
         $css ~~ s:g/'%BOLD_COLOR%'/$!bold-color/;
 
+
         chdir 'static/css';
 
         spurt "styles.scss", $css;
-        qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
+#        qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
+        qx`sass styles.scss styles.css`;  #sinks warnings to /dev/null
 
         chdir "../..";
     }
@@ -1017,7 +1018,8 @@ class Site {
         $norobots //= %*ENV<AIR_NOROBOTS> // False;
 
         self.robots(:$norobots);
-        self.scss-run if $scss;
+
+        self.scss-run if $scss && $!scss;
 
         use Cro::HTTP::Log::File;
         use Cro::HTTP::Server;
