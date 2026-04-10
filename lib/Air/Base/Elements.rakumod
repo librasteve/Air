@@ -742,11 +742,11 @@ role Logos      does Component is export {
     # filename => url
     has Pair @.logos;
     # logo filenames
-    has Str  @.names; # = @!logos.map: *.key;
+    has Str  @.names;
     # logo hash
-    has Str  %.hash; #  = @!logos.Hash;
+    has Str  %.hash;
     # grid cols
-    has Int  $.cols  = +@!logos;
+    has Int  $.cols = +@!logos;
     # logo extent
     has Int  $.width = 150;
     has Int  $.height = 30;

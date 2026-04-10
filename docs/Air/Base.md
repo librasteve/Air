@@ -161,6 +161,84 @@ Is identical to writing:
 
 ``` my $t = title 'sometext'; ```
 
+Housekeeping
+------------
+
+### Host
+
+The Site infers the hostname from the HTTP Headers the first time the index page is accessed.
+
+### HTTP Routes
+
+The Site class creates all neeeded routes via Cro::HTTP::Router as follows:
+
+    #| index (first run)
+    #| static routes (static/css, static/js, static/img...)
+    #| debug ('dump' shows Cookies and Headers)
+    #| component & form (e.g. for methods with the `is controller` trait)
+    #| dynamic (page stubs, 404)
+    #| redirects
+
+Most Elements are Components. Routes will be created for any Component instance passed via `Site.new: :register[...]`.
+
+The routes added are reflected on server start, where $id is an Int >= 1. For example:
+
+    adding GET todo/<Mu $id>
+    adding DELETE todo/<Mu $id>
+    adding PUT todo/<Mu $id>
+    adding GET todo/<Mu $id>/toggle
+    adding GET nav/<Mu $id>
+
+The Nav component is always routed. NavItems (Content, Page) are declared as Pairs and then may be assigned to each Page like this:
+
+    my $nav = nav [:$Page1, :$Page2];
+
+    my @pages = [$Page1, $Page2];
+    { .nav = $nav } for @pages;
+
+    my $site = Site.new: :@pages;
+
+So the items of `nav/1` start with a link named `Page1` with url `http://myhost/nav/1/Page1`. This model provides for dynamic creation and deletion of components and for multiple Navs that target the same content.
+
+### Page Stubs
+
+A page `stub` [and `parent`] attribute may be provided.
+
+    my @pages = (
+        Page.new(stub => 'home',                           common('home' )),
+        Page.new(stub => 'about',                          common('about')),
+        Page.new(stub => 'blog',                           common('blog' )),
+        Page.new(stub => 'first-post',  parent => 'blog',  common('1st'  )),
+        Page.new(stub => 'second-post', parent => 'blog',  common('2nd'  )),
+        Page.new(stub => 'team',        parent => 'about', common('team' )),
+    );
+
+The stub path is then used as the route to that page. Pages with and without stubs may be used in the same Nav.
+
+Note that first page `@pages[0]` [or `index`] is always returned by the root url, so it can take any stub name such as `'home'` or `'/'`. Do not use the empty Str `''`.
+
+### Sitemap
+
+A sitemap.xml is generated from the stubs using the inferred hostname.
+
+### Robots
+
+A robots.txt is generated from the stubs by default.
+
+    User-agent: *
+    Disallow: /
+    Allow: /
+    Allow: /about
+    Allow: /about/team
+    Allow: /blog
+    Allow: /blog/first-post
+    Allow: /blog/second-post
+
+This may be overridden by setting `ENV <AIR_NOROBOTS>` to a true value.
+
+Library Modules
+---------------
+
 The Air::Base library is implemented over a set of Raku modules, which are then used in the main Base module and re-exported as both classes and functions:
 
   * [Air::Base::Tags](Base/Tags.md) - HTML, Semantic & Safe Tags
@@ -228,10 +306,7 @@ tagline
 
 ### role Footer does Tag[Regular] {...}
 
-head
-====
-
-3 role Body does Tag[Regular] {...}
+### role Body does Tag[Regular] {...}
 
 ### has Header $.header
 
@@ -318,7 +393,7 @@ Page does Component to do multiple instances with distinct content and attrs
 
 ### has Int $.REFRESH
 
-auto refresh browser every n secs in dev't
+auto refresh browser every N secs in dev't
 
 page implements several shortcuts that are populated up the DOM, for example `page :title('My Page")` will go `self.html.head.title = Title.new: $.title with $.title;`
 
@@ -449,6 +524,10 @@ Redirects
 
 use :!scss to disable the SASS compiler run
 
+### has Str $.host
+
+grab host on first run
+
 ### has Str $.theme-color
 
 pick from: amber azure blue cyan fuchsia green indigo jade lime orange pink pumpkin purple red violet yellow (pico theme)
@@ -468,21 +547,13 @@ multi method new(
 
 .new positional with index only
 
-### method enqueue-all
-
-```raku
-method enqueue-all() returns Mu
-```
-
-enqueued items are rendered in order, avoid interdependencies
-
 ### method routes
 
 ```raku
 method routes() returns Mu
 ```
 
-always register & route Nav gather all the registrant exports inject all the tools
+always register & route Nav gather all the registrant exports inject all the tools generate sitemap
 
 ### method serve
 
@@ -490,25 +561,24 @@ always register & route Nav gather all the registrant exports inject all the too
 method serve(
     :$host is copy,
     :$port is copy,
+    :$norobots is copy,
     :$scss = Bool::True,
     :$watch = Bool::False
 ) returns Mu
 ```
 
-site.serve is the general (development) command to start the site Cro::Service scss compilation (e.g. dart) is True by default, use !scss to disable it watch file change recursively is False by default, use watch to enable it
+site.serve is the general (development) command to start the site Cro::Service scss compilation (dart) is True by default, use :!scss to disable it watch files recursively is False by default, use :watch to enable it norobots is False by default, robots.txt will Allow pages with stubs
 
 ### method start
 
 ```raku
 method start(
     :$host,
-    :$port,
-    :$scss = Bool::False,
-    :$watch
+    :$port
 ) returns Mu
 ```
 
-is a variant of server for production which skips all the dev / build steps
+serve for production ... skips dev / build steps
 
 Defaults
 --------

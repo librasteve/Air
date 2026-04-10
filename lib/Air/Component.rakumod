@@ -253,7 +253,7 @@ role Component::Common does Taggable {
     method Str { self.HTML }
 
     #| show something in 'note $x.raku'
-    method gist { self.url-path }
+    method gist { self.?stub-path // self.url-path }
 }
 
 #| Component

@@ -147,6 +147,92 @@ Is identical to writing:
 my $t = title 'sometext';
 ```
 
+=head2 Housekeeping
+
+=head3 Host
+
+The Site infers the hostname from the HTTP Headers the first time the index page is accessed.
+
+=head3 HTTP Routes
+
+The Site class creates all neeeded routes via Cro::HTTP::Router as follows:
+
+=begin code
+#| index (first run)
+#| static routes (static/css, static/js, static/img...)
+#| debug ('dump' shows Cookies and Headers)
+#| component & form (e.g. for methods with the `is controller` trait)
+#| dynamic (page stubs, 404)
+#| redirects
+=end code
+
+Most Elements are Components. Routes will be created for any Component instance passed via `Site.new: :register[...]`.
+
+The routes added are reflected on server start, where $id is an Int >= 1. For example:
+
+=begin code
+adding GET todo/<Mu $id>
+adding DELETE todo/<Mu $id>
+adding PUT todo/<Mu $id>
+adding GET todo/<Mu $id>/toggle
+adding GET nav/<Mu $id>
+=end code
+
+The Nav component is always routed. NavItems (Content, Page) are declared as Pairs and then may be assigned to each Page like this:
+
+=begin code
+my $nav = nav [:$Page1, :$Page2];
+
+my @pages = [$Page1, $Page2];
+{ .nav = $nav } for @pages;
+
+my $site = Site.new: :@pages;
+=end code
+
+So the items of `nav/1` start with a link named `Page1` with url `http://myhost/nav/1/Page1`. This model provides for dynamic creation and deletion of components and for multiple Navs that target the same content.
+
+=head3 Page Stubs
+
+A page `stub` [and `parent`] attribute may be provided.
+
+=begin code
+my @pages = (
+    Page.new(stub => 'home',                           common('home' )),
+    Page.new(stub => 'about',                          common('about')),
+    Page.new(stub => 'blog',                           common('blog' )),
+    Page.new(stub => 'first-post',  parent => 'blog',  common('1st'  )),
+    Page.new(stub => 'second-post', parent => 'blog',  common('2nd'  )),
+    Page.new(stub => 'team',        parent => 'about', common('team' )),
+);
+=end code
+
+The stub path is then used as the route to that page. Pages with and without stubs may be used in the same Nav.
+
+Note that first page `@pages[0]` [or `index`] is always returned by the root url, so it can take any stub name such as `'home'` or `'/'`. Do not use the empty Str `''`.
+
+=head3 Sitemap
+
+A sitemap.xml is generated from the stubs using the inferred hostname.
+
+=head3 Robots
+
+A robots.txt is generated from the stubs by default.
+
+=begin code
+User-agent: *
+Disallow: /
+Allow: /
+Allow: /about
+Allow: /about/team
+Allow: /blog
+Allow: /blog/first-post
+Allow: /blog/second-post
+=end code
+
+This may be overridden by setting `ENV <AIR_NOROBOTS>` to a true value.
+
+=head2 Library Modules
+
 The Air::Base library is implemented over a set of Raku modules, which are then used in the main Base module and re-exported as both classes and functions:
 
 =item [Air::Base::Tags](Base/Tags.md)  - HTML, Semantic & Safe Tags
@@ -159,8 +245,8 @@ All items are re-exported by the top level module, so you can just `use Air::Bas
 
 # TODO items
 #my loaded or has loaded - make consistent
+#vendor all default packages
 #role Theme {...}
-#provide for different title, description in head for wach page
 
 use YAMLish;
 
@@ -175,7 +261,7 @@ use Air::Base::Widgets;
 
 sub exports-air-base {<Site Page Nav Body Header Main Footer>}
 
-# predeclarations
+# pre declarations
 role  Defaults {...}
 class Nav      {...}
 class Page     {...}
@@ -261,7 +347,7 @@ role Footer     does Tag[Regular]  {
     }
 }
 
-=head 3 role Body   does Tag[Regular] {...}
+=head3 role Body   does Tag[Regular] {...}
 
 role Body       does Tag[Regular]  {
     #| header
@@ -285,8 +371,8 @@ role Body       does Tag[Regular]  {
 
 =head3 role Html   does Tag[Regular] {...}
 
-role Html      does Tag[Regular]  {
-    also       does Defaults;
+role Html       does Tag[Regular]  {
+    also        does Defaults;
 
     has $!loaded = 0;
 
@@ -314,7 +400,7 @@ role Html      does Tag[Regular]  {
 subset NavItem of Pair where .value ~~ Internal | External | Content | Page;
 
 #| Nav does Component to do multiple instances with distinct NavItem and Widget attrs
-class Nav      does Component {
+class Nav       does Component {
     has $!routed = 0;
 
     #| HTMX attributes
@@ -338,14 +424,20 @@ class Nav      does Component {
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
                 when Content {
-                    my &new-method = method {$target.?HTML};
-                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                    my &new-method = method {
+                        $target.?HTML
+                    };
+                    trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
                     self.^add_method($name, &new-method);
                 }
                 when Page {
-                    my &new-method = method {$target.?HTML};
-                    trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
-                    self.^add_method($name, &new-method);
+                    unless .is-stubbed {
+                        my &new-method = method {
+                            $target.?HTML
+                        };
+                        trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
+                        self.^add_method($name, &new-method);
+                    }
                 }
             }
         }
@@ -363,7 +455,11 @@ class Nav      does Component {
                     li a(:hx-get("$.url-path/$name"), Safe.new: $name)
                 }
                 when Page {
-                    li a(:href("$.url-path/$name"), Safe.new: $name)
+                    if .is-stubbed {
+                        li a(:href(.stub-path), Safe.new: $name)
+                    } else {
+                        li a(:href("$.url-path/$name"), Safe.new: $name)
+                    }
                 }
             }
         }
@@ -371,7 +467,6 @@ class Nav      does Component {
 
     #| applies Style and Script for Hamburger reactive menu
     method HTML {
-
         nav [
             { ul li :class<logo>, $.logo } with $.logo;
 
@@ -464,11 +559,91 @@ class Nav      does Component {
     }
 }
 
+class SiteMap {
+    has %.routes;
+
+    method register(Page $page) {
+        %!routes{$page.stub-path} = $page;
+    }
+
+    method lookup(@path) {
+        %!routes{'/' ~ @path.join('/')}
+    }
+
+    method list {
+        %!routes.keys.sort;
+    }
+
+    method to-xml( :$host! ) {
+        my $date = DateTime.now.Date;
+
+        my @urls = self.routes.values.sort.map({
+            qq:to/URL/;
+              <url>
+                <loc>{$host}{.stub-path}</loc>
+                <lastmod>{$date}</lastmod>
+                <changefreq>weekly</changefreq>
+                <priority>0.5</priority>
+              </url>
+            URL
+        });
+
+        qq:to/XML/;
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        {@urls}</urlset>
+        XML
+    }
+
+    method save( :$host!, :$file = 'static/sitemap.xml' ) {
+        spurt $file, self.to-xml(:$host);
+    }
+}
+
+role Sitemapped {
+    my %stubs;      #stubs are unique
+    has Str  $!stub is built;
+
+    has Str  $.parent;
+    has Page $.parent-obj is rw;
+    has Page @.children;
+
+    multi method stub { $!stub // '' }
+    multi method stub($s) {
+        die "Error: Stubs must be unique!" if %stubs{$s}:exists;
+        %stubs{$s} = 1;
+
+        die "Error: Stub already set!" with $!stub;
+        $!stub = $s;
+    }
+
+    method is-stubbed {
+        $!stub.so
+    }
+
+    method add-child(Page $child) {
+        @!children.push: $child;
+    }
+
+    method segments {
+        $!parent-obj.defined ?? (|$!parent-obj.segments, $.stub) !! ()
+    }
+
+    method stub-path {
+        '/' ~ $.segments.join('/');
+    }
+
+    method tree($depth = 0) {
+        '  ' x $depth ~ "-$.stub ($.stub-path)\n" ~
+            [.tree($depth + 1) for @!children].join;
+    }
+}
+
 #| Page does Component to do multiple instances with distinct content and attrs
-class Page     does Component {
+class Page      does Component does Sitemapped {
     has $!loaded;
 
-    #| auto refresh browser every n secs in dev't
+    #| auto refresh browser every N secs in dev't
     has Int     $.REFRESH;
 
     =para page implements several shortcuts that are populated up the DOM, for example C<page :title('My Page")> will go C<self.html.head.title = Title.new: $.title with $.title;>
@@ -559,6 +734,7 @@ subset Redirect of Pair where .key !~~ /\// && .value ~~ /^ \//;
 #| Site is a holder for pages, performs setup of Cro routes, gathers styles and scripts, and runs SASS
 class Site {
     my $loaded;
+    has SiteMap $.sitemap .= new;
 
     #| Page holder -or-
     has Page @.pages;
@@ -573,10 +749,12 @@ class Site {
     #| Redirects
     has Redirect @.redirects = [];
 
-
     #| use :!scss to disable the SASS compiler run
     has Bool $.scss = True;
     has Str  $!scss-gather;
+
+    #| grab host on first run
+    has Str  $.host;
 
     #| pick from: amber azure blue cyan fuchsia green indigo jade lime orange
     #| pink pumpkin purple red violet yellow (pico theme)
@@ -591,8 +769,18 @@ class Site {
         self.bless: :$index, |%h;
     }
 
-    #| enqueued items are rendered in order, avoid interdependencies
-    method enqueue-all {
+    submethod adjust-dir {
+        #| chdir to parent of static (i.e. if called from /bin)
+        my @refs = "./static", "../static";
+
+        for @refs -> $dir {
+            chdir $dir if $dir.IO.d;
+        }
+        chdir '..';
+    }
+
+    submethod enqueue-all {
+        #| enqueued items are rendered in order, avoid interdependencies
         return if $loaded++;
 
         for @!register.unique( as => *.^name ) -> $registrant {
@@ -648,10 +836,41 @@ class Site {
         }
     }
 
+    submethod sitemap-pages {
+        my %stubs;
+
+        for @!pages -> $page {
+            %stubs{$page.stub} = $page
+        }
+
+        for @!pages -> $page {
+            if $page.parent {
+                $page.parent-obj = %stubs{$page.parent};
+                $page.parent-obj.add-child($page);
+                next;
+            }
+
+            FIRST next;    #skip index
+            $page.parent-obj = $!index;
+            $!index.add-child($page);
+        }
+
+        for @!pages -> $page {
+            $!sitemap.register($page);
+        }
+    }
+
     submethod TWEAK {
-        with    @!pages[0] { $!index = @!pages[0] }
-        orwith  $!index    { @!pages[0] = $!index }
-        else    { note "No pages or index found!" }
+        #| chdir to parent of static (i.e. if called from /bin)
+        self.adjust-dir;
+
+        #| make index an alias for @pages[0]
+        given       $!index, @!pages[0] {
+            when     Page:D,  Page:U    { @!pages[0] := $!index }
+            when     Page:U,  Page:D    { $!index := @!pages[0] }
+            default
+                    { die "Please specify either index or pages!" }
+        }
 
         #| always register & route Nav
         @!register.push: Nav.new;
@@ -661,13 +880,42 @@ class Site {
 
         #| inject all the tools
         .inject($!index) for @!tools;
+
+        #| generate sitemap
+        self.sitemap-pages;
     }
 
     method routes {
         use Cro::HTTP::Router;
 
         route {
-            #| setup Cro routes
+            #| index (first run)
+            get -> :%headers is header {
+                without $!host {
+                    $!host = %headers<Host>;
+                    $!sitemap.save(:$!host);
+                }
+                                         content   'text/html',  ~$.index   }
+
+            #| static routes
+            get -> 'css',       *@path { static    'static/css',  @path     }
+            get -> 'img',       *@path { static    'static/img',  @path     }
+            get -> 'js',        *@path { static    'static/js',   @path     }
+            get -> 'static',    *@path { static    'static',      @path     }
+            get -> 'sitemap.xml'       { static    'static/sitemap.xml'     }
+            get -> 'robots.txt'        { static    'static/robots.txt'      }
+
+            #| debug
+            get -> 'dump', :%cookies is cookie, :%headers is header {
+                note %cookies.raku;
+                note %headers.raku;
+
+                content   'text/html',
+                    "Cookies:<br>" ~ %cookies.raku ~ "<br><br>" ~
+                    "Headers:<br>" ~ %headers.raku
+            }
+
+            #| component & form
             for @!register.unique( as => *.^name ) {
                 when Component::Common {
                     .make-methods;
@@ -678,20 +926,18 @@ class Site {
                 }
             }
 
-            #| index & static
-            get ->                  { content   'text/html',  $.index.HTML }
-            get -> 'css',    *@path { static    'static/css', @path }
-            get -> 'img',    *@path { static    'static/img', @path }
-            get -> 'js',     *@path { static    'static/js',  @path }
-            get -> 'static', *@path { static    'static',     @path }
+            #| dynamic (page stubs, 404)
+            get -> *@rest {
+                my $this = $.sitemap.lookup: @rest;
+                if $this ~~ Page:D     { content   'text/html',  ~$this     }
 
-            #| 404 routes
-            with $!html404 {
-                note "adding 404";
-                get ->  *@rest { not-found 'text/html',  $.html404.HTML };
+                else {
+                    with $!html404     { not-found 'text/html',  ~$!html404 }
+                    else               { not-found                          }
+                }
             }
 
-            #| redirect routes
+            #| redirects
             for @!redirects {
                 my ($old, $new) = .kv;
                 note "adding redirect $old => $new";
@@ -700,61 +946,23 @@ class Site {
         }
     }
 
-    #| site.serve is the general (development) command to start the site Cro::Service
-    #| scss compilation (e.g. dart)  is True  by default, use !scss to disable it
-    #| watch file change recursively is False by default, use watch to enable  it
-    method serve( :$host is copy, :$port is copy, :$scss = True, :$watch = False ) {
-        #| vendor all default packages fixme
+    submethod robots(:$norobots) {
+        my $content = q:to/END/;
+            User-agent: *
+            Disallow: /
+            END
 
-        self.scss-run if $scss;
-
-        use Cro::HTTP::Log::File;
-        use Cro::HTTP::Server;
-
-        $host //= %*ENV<CRO_WEBSITE_HOST> // '0.0.0.0';
-        $port //= %*ENV<CRO_WEBSITE_PORT> // 3000;
-
-        my Cro::Service $http = Cro::HTTP::Server.new(
-            http => <1.1>,
-            :$host,
-            :$port,
-            application => $.routes,
-            after => [
-                Cro::HTTP::Log::File.new(logs => $*OUT, errors => $*ERR)
-            ],
-        );
-        say "Starting server. Point browser at $host:$port. Ctrl-C to stop server";
-        $http.start;
-        react {
-            whenever signal(SIGINT) {
-                say "Shutting down...";
-                $http.stop;
-                done;
-            }
-
-            if $watch {
-                whenever watch-recursive('.'.IO) -> $change {
-                    my @exclusions = <DS_Store styles.scss styles.css styles.css.map>;
-
-                    unless $change.path.IO.basename ~~ / <@exclusions> / {
-                        say "File change detected: {$change.path.IO.basename}";
-                        say "Restarting...";
-                        $http.stop;
-                        sleep 1;  #let OS breathe
-                        run('raku', '-Ilib', 'air-serve.raku', "--host=$host", "--port=$port", "--scss=$scss", '--watch');
-                        done;
-                    }
-                }
+        unless $norobots {
+            for self.sitemap.list -> $page {
+                $content ~= "Allow: $page\n";
             }
         }
+
+        my $file = 'static/robots.txt';
+        spurt $file, $content;
     }
 
-    #| is a variant of server for production which skips all the dev / build steps
-    method start( :$host, :$port, :$scss = False, :$watch ) {
-        self.serve: :$host, :$port, :$scss, :$watch
-    }
-
-    method scss-run {
+    submethod scss-run {
         my $css = self.scss-theme ~ "\n\n";
         $css ~= $_ with $!scss-gather;
 
@@ -764,24 +972,17 @@ class Site {
         note "bold-color=$!bold-color";
         $css ~~ s:g/'%BOLD_COLOR%'/$!bold-color/;
 
-        my @dirs = "../static/css", "static/css";
 
-        for @dirs -> $dir {
-            if $dir.IO.d {
-                chdir $dir;
-                last;
-            }
-        }
-        unless $*CWD.ends-with("static/css") {
-            die "Neither '../static/css' nor 'static/css' exists!";
-        }
+        chdir 'static/css';
 
         spurt "styles.scss", $css;
-        qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
+#        qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
+        qx`sass styles.scss styles.css`;  #sinks warnings to /dev/null
+
         chdir "../..";
     }
 
-    method scss-theme { Q:to/END/;
+    submethod scss-theme { Q:to/END/;
         @use "node_modules/@picocss/pico/scss" with (
           $theme-color: "%THEME_COLOR%"
         );
@@ -833,8 +1034,8 @@ class Site {
         END
     }
 
-    # code lifted from https://github.com/croservices/cro/blob/main/lib/Cro/Tools/Services.rakumod
     sub watch-recursive(IO::Path $path) {
+        # code lifted from https://github.com/croservices/cro/blob/main/lib/Cro/Tools/Services.rakumod
         supply {
             my %watched-dirs;
 
@@ -875,6 +1076,68 @@ class Site {
 
             add-dir($path, :initial);
         }
+    }
+
+    #| site.serve is the general (development) command to start the site Cro::Service
+    #| scss compilation (dart) is True  by default, use :!scss to disable it
+    #| watch files recursively is False by default, use :watch to enable  it
+    #| norobots is False by default, robots.txt will Allow pages with stubs
+    method serve(
+        :$host is copy,
+        :$port is copy,
+        :$norobots is copy,
+        :$scss = True,
+        :$watch = False
+    ) {
+        $host //= %*ENV<CRO_WEBSITE_HOST> // '0.0.0.0';
+        $port //= %*ENV<CRO_WEBSITE_PORT> // 3000;
+        $norobots //= %*ENV<AIR_NOROBOTS> // False;
+
+        self.robots(:$norobots);
+
+        self.scss-run if $scss && $!scss;
+
+        use Cro::HTTP::Log::File;
+        use Cro::HTTP::Server;
+
+        my Cro::Service $http = Cro::HTTP::Server.new(
+            http => <1.1>,
+            :$host,
+            :$port,
+            application => $.routes,
+            after => [
+                Cro::HTTP::Log::File.new(logs => $*OUT, errors => $*ERR)
+            ],
+        );
+        say "Starting server. Point browser at $host:$port. Ctrl-C to stop server";
+        $http.start;
+        react {
+            whenever signal(SIGINT) {
+                say "Shutting down...";
+                $http.stop;
+                done;
+            }
+
+            if $watch {
+                whenever watch-recursive('.'.IO) -> $change {
+                    my @exclusions = <DS_Store styles.scss styles.css styles.css.map>;
+
+                    unless $change.path.IO.basename ~~ / <@exclusions> / {
+                        say "File change detected: {$change.path.IO.basename}";
+                        say "Restarting...";
+                        $http.stop;
+                        sleep 1;  #let OS breathe
+                        run('raku', '-Ilib', 'air-serve.raku', "--host=$host", "--port=$port", "--scss=$scss", '--watch');
+                        done;
+                    }
+                }
+            }
+        }
+    }
+
+    #| serve for production ... skips dev / build steps
+    method start( :$host, :$port ) {
+        self.serve: :$host, :$port, :!scss;
     }
 }
 

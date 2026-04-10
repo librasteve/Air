@@ -192,6 +192,10 @@ method new(
 
 ### role Background does Component
 
+### has Mu $.src
+
+url of background image
+
 ### has Mu $.top
 
 top of background image (in px)
@@ -200,9 +204,9 @@ top of background image (in px)
 
 height of background image (in px)
 
-### has Mu $.src
+### has Mu $.size
 
-url of background image
+size of background image <auto cover>
 
 ### has Mu $.opacity
 
@@ -211,6 +215,8 @@ opacity of background image
 ### has Mu $.rotate
 
 rotate angle of background image (in deg)
+
+### role Logos does Component is export
 
 package Elements::EXPORT::DEFAULT
 ---------------------------------
