@@ -893,7 +893,7 @@ class Site {
             get -> :%headers is header {
                 without $!host {
                     $!host = %headers<Host>;
-                    $!sitemap.save(:$!host);
+                    $!sitemap.save(:$!host) or warn 'Can\'t save static/sitemap.xml, no static dir';
                 }
                                          content   'text/html',  ~$.index   }
 
@@ -959,7 +959,7 @@ class Site {
         }
 
         my $file = 'static/robots.txt';
-        spurt $file, $content;
+        spurt $file, $content or warn 'Can\'t save static/robots.txt,  no static dir';
     }
 
     submethod scss-run {

@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.1.17  2026-04-22T09:31:00+01:00
+    - warn on cant save robots.txt & sitemap.xml
+
 0.1.16  2026-04-10T18:29:43+01:00
     - stubs
     - sitemap
