@@ -108,6 +108,22 @@ TIPS & TRICKS
 
 * In development set CRO_DEV=1 in the [environment](https://cro.services/docs/reference/cro-webapp-template#Template_auto-reload)
 
+PREREQUISITES
+=============
+
+Air-serve.raku runs this command `sass styles.scss styles.css` to run the Dart SASS compiler on Pico CSS. This allows site theme (SCSS) variables to be set via eg `site :bold-color<green>...`.
+
+Install [update] this as follows in your Air package:
+
+```commandline
+npm install -g sass@latest
+
+cd static/css/node_modules
+[npm list @picocss/pico]
+[npm outdated @picocss/pico]
+npm install @picocss/pico@latest
+```
+
 AUTHOR
 ======
 
