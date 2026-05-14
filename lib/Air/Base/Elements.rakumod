@@ -681,6 +681,15 @@ role Markdown   does Component is export {
 
 =head3 role Background does Component
 
+#| background location steps:
+#|  - set box width and height to actual image dimensions in px (this box is rotated)
+#|  - X dimension - place left of box in center of page left<50%>
+#|                - then translate leftwards by half the box width translate(-50%,xx)
+#|  - Y dimension - set top of box to a fixed point a bit more than half the height for heading
+#|                - then translate upwards by half the box width translate(xx,-50%)
+#|
+#|  - typical result - transform: translate(-50%, -50%) rotate(-90deg);
+
 role Background does Component is export {
     #| src url of background image
     has $.src = '';
@@ -698,7 +707,9 @@ role Background does Component is export {
     has $.opacity = 0.1;
     #| filter - ('grayscale(100%)')
     has $.filter = 'grayscale(100%)';
-    #| transform - rotate angle of background image (0) (in deg)
+    #| transform - translate XY
+    has $.translate = '';
+    #| transform - rotate (0) (in deg)
     has $.rotate = 0;
 
     method style {
@@ -712,7 +723,7 @@ role Background does Component is export {
             background-size: %SIZE%;
             opacity: %OPACITY%;
             filter: %FILTER%;
-            transform: rotate(%ROTATE%deg);
+            transform: %TRANSLATE% rotate(%ROTATE%deg);
             position: fixed;
             background-repeat: no-repeat;
             background-position: center top;
@@ -722,15 +733,16 @@ role Background does Component is export {
         }
         END
 
-        $res ~~ s:g/'%URL%'    /$.src/;
-        $res ~~ s:g/'%TOP%'    /$.top/;
-        $res ~~ s:g/'%LEFT%'   /$.left/;
-        $res ~~ s:g/'%WIDTH%'  /$.width/;
-        $res ~~ s:g/'%HEIGHT%' /$.height/;
-        $res ~~ s:g/'%SIZE%'   /$.size/;
-        $res ~~ s:g/'%OPACITY%'/$.opacity/;
-        $res ~~ s:g/'%FILTER%' /$.filter/;
-        $res ~~ s:g/'%ROTATE%' /$.rotate/;
+        $res ~~ s:g/'%URL%'       /$.src/;
+        $res ~~ s:g/'%TOP%'       /$.top/;
+        $res ~~ s:g/'%LEFT%'      /$.left/;
+        $res ~~ s:g/'%WIDTH%'     /$.width/;
+        $res ~~ s:g/'%HEIGHT%'    /$.height/;
+        $res ~~ s:g/'%SIZE%'      /$.size/;
+        $res ~~ s:g/'%OPACITY%'   /$.opacity/;
+        $res ~~ s:g/'%FILTER%'    /$.filter/;
+        $res ~~ s:g/'%TRANSLATE%' /translate($.translate)/ with $!translate;
+        $res ~~ s:g/'%ROTATE%'    /$.rotate/;
 
         Style.new: $res
     }
