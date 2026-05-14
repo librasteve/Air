@@ -2,6 +2,11 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.1.18  2026-05-14T10:06:53+01:00
+    - background span to div
+    - works on moar-2026.04
+    - suppress dart deprecation warnings
+
 0.1.17  2026-04-22T09:31:00+01:00
     - warn on cant save robots.txt & sitemap.xml
 

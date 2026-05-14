@@ -976,8 +976,8 @@ class Site {
         chdir 'static/css';
 
         spurt "styles.scss", $css;
-#        qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
-        qx`sass styles.scss styles.css`;  #sinks warnings to /dev/null
+        qx`sass styles.scss styles.css 2>/dev/null`;  #sinks warnings to /dev/null
+#        qx`sass styles.scss styles.css`;
 
         chdir "../..";
     }
