@@ -236,7 +236,7 @@ role Panel      does Component is export {
     has Int $.order;# is required;
 
     has @.inners;
-    has %.attrs;
+    has %.attrs is rw;
 
     multi method new(*@inners, *%attrs) {
         self.bless:  :@inners, |%attrs;
@@ -281,7 +281,7 @@ role Panel      does Component is export {
 
 role Tab        does Component is export {
     has @.inners;
-    has %.attrs;
+    has %.attrs is rw;
 
     multi method new(*@inners, *%attrs) {
         self.bless:  :@inners, |%attrs;
@@ -388,7 +388,7 @@ role Tabs       does Component is export {
         }
         END
 
-        $.adapt-menu = $.adapt-menu ?? 'center' !! $.align-menu;
+        $!adapt-menu = $.adapt-menu ?? 'center' !! $.align-menu;
 
         $css ~~ s:g/'%ALIGN-MENU%'/$.align-menu/;
         $css ~~ s:g/'%ADAPT-MENU%'/$.adapt-menu/;
@@ -682,34 +682,40 @@ role Markdown   does Component is export {
 =head3 role Background does Component
 
 role Background does Component is export {
-    #| url of background image
+    #| src url of background image
     has $.src = '';
-    #| top of background image (in px)
-    has $.top = 140;
-    #| height of background image (in px)
-    has $.height = 320;
-    #| size of background image <auto cover>
+    #| top of background image ('140px')
+    has $.top = '140px';
+    #| left of background image ('0vw')
+    has $.left = '0vw';
+    #| width of background image ('100vw')
+    has $.width = '100vw';
+    #| height of background image ('320px')
+    has $.height = '320px';
+    #| size of background image ('auto') <auto cover>
     has $.size = 'auto';
-    #| opacity of background image
+    #| opacity of background image (0.1)
     has $.opacity = 0.1;
-    #| rotate angle of background image (in deg)
+    #| filter - ('grayscale(100%)')
+    has $.filter = 'grayscale(100%)';
+    #| transform - rotate angle of background image (0) (in deg)
     has $.rotate = 0;
 
     method style {
         my $res = q:to/END/;
         #background {
-            position: fixed;
-            top: %TOP%px;
-            left: 0;
-            width: 100vw;
-            height: %HEIGHT%px;
             background: url('%URL%');
-            opacity: %OPACITY%;
-            filter: grayscale(100%);
-            transform: rotate(%ROTATE%deg);
-            background-repeat: no-repeat;
-            background-position: center center;
+            top: %TOP%;
+            left: %LEFT%;
+            width: %WIDTH%;
+            height: %HEIGHT%;
             background-size: %SIZE%;
+            opacity: %OPACITY%;
+            filter: %FILTER%;
+            transform: rotate(%ROTATE%deg);
+            position: fixed;
+            background-repeat: no-repeat;
+            background-position: center top;
             z-index: -1;
             pointer-events: none;
             padding: 20px;
@@ -718,16 +724,19 @@ role Background does Component is export {
 
         $res ~~ s:g/'%URL%'    /$.src/;
         $res ~~ s:g/'%TOP%'    /$.top/;
+        $res ~~ s:g/'%LEFT%'   /$.left/;
+        $res ~~ s:g/'%WIDTH%'  /$.width/;
         $res ~~ s:g/'%HEIGHT%' /$.height/;
         $res ~~ s:g/'%SIZE%'   /$.size/;
         $res ~~ s:g/'%OPACITY%'/$.opacity/;
+        $res ~~ s:g/'%FILTER%' /$.filter/;
         $res ~~ s:g/'%ROTATE%' /$.rotate/;
 
         Style.new: $res
     }
 
     method HTML {
-        span [
+        div [
             $.style;
             do-regular-tag( 'div', :id<background> );
         ]
