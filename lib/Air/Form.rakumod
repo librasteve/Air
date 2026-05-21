@@ -225,15 +225,15 @@ use Cro::HTTP::Router;
 
 constant %va = (
 text     => ( /^ <[A..Za..z0..9\s.,_#-]>+ $/,
-              'In text, only ".,_-#" punctuation characters are allowed' ),
+              'In text, only .,_-# punctuation characters are allowed' ),
 name     => ( /^ <[A..Za..z.'-]>+ $/,
-              'In a name, only ".-\'" punctuation characters are allowed' ),
+              'In a name, only .-\' punctuation characters are allowed, no spaces' ),
 names    => ( /^ <[A..Za..z\s.'-]>+ $/,
-               'In names, only ".-\'" punctuation characters are allowed' ),
+               'In names, only .-\' punctuation characters are allowed, spaces OK' ),
 words    => ( /^ <[A..Za..z\s]>+ $/,
               'In words, only text characters are allowed' ),
 notes    => ( /^ <[A..Za..z0..9\s.,:;_#!?()%$£-]>+ $/,
-              'In notes, only ".,:;_-#!?()%$£" punctuation characters are allowed' ),
+              'In notes, only .,:;_-#!?()%$£ punctuation characters are allowed' ),
 postcode => ( /^ <[A..Za..z0..9\s]>+ $/,
               'In postcode, only alphanumeric characters are allowed' ),
 url      => ( /^ <[a..z0..9:/.-]>+ $/,
@@ -292,22 +292,31 @@ role Form does Cro::WebApp::Form does Taggable {
             self.form-attrs.map({":{.key}('{.value}')"}).join(',')
     }
 
-    sub adjust($form-html, $form-url) {
-        $form-html.subst(
+    sub adjust($form-html, $form-url, @required-names) {
+        my $html = $form-html.subst(
             / 'method="post"' /, "hx-post=\"$form-url\" hx-swap=\"outerHTML\" novalidate"
-        )
+        );
+        for @required-names -> $name {
+            $html .= subst(/ 'name="' $name '"' /, "name=\"$name\" required", :g);
+        }
+        $html
+    }
+
+    #| unlike Cro::WebApp::Form we actually mark the required fields in the browser
+    method required-names {
+        ::?CLASS.^attributes.grep({ .^can('required') && .required }).map(*.name.substr(2)).list
     }
 
     #| called when used as a Taggable, returns self.empty
     multi method HTML(--> Markup()) {
         parse-template($formtmp)
-            andthen .render( {form => self.empty} ).&adjust(self.form-url);
+            andthen .render( {form => self.empty} ).&adjust(self.form-url, self.required-names);
     }
 
     #| when passed a $form field set, returns populated form
     multi method HTML(Form $form --> Markup()) {
         parse-template($formtmp)
-            andthen .render( {:$form} ).&adjust(self.form-url)
+            andthen .render( {:$form} ).&adjust(self.form-url, self.required-names)
     }
 
     #| return partially complete form
