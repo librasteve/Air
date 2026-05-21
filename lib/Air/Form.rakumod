@@ -253,7 +253,7 @@ role Form does Cro::WebApp::Form does Taggable {
     multi method form-base($value) {$!form-base = $value}
 
     #| get url safe name of class doing Form role
-    method form-name { ::?CLASS.^name.subst('::','-').lc }
+    method form-name { ::?CLASS.^name.subst('::', '-', :g).lc }
 
     #| get url (ie base/name)
     method form-url(--> Str) {
