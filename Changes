@@ -1,6 +1,8 @@
 Revision history for Air
 
 {{$NEXT}}
+
+0.1.20  2026-05-21T07:15:22+01:00
     - improve dashboard / panels styles
     - no hamburger if no navitems
 
