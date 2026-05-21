@@ -467,21 +467,22 @@ class Nav       does Component {
 
     #| applies Style and Script for Hamburger reactive menu
     method HTML {
+        my Bool $has-items = ?(@.items || @.widgets);
         nav [
             { ul li :class<logo>, $.logo } with $.logo;
 
-            button( :class<hamburger>, :id<hamburger>, Safe.new: '&#9776;' );
+            { button( :class<hamburger>, :id<hamburger>, Safe.new: '&#9776;' ) } if $has-items;
 
             #regular menu
-            ul( :$!hx-target, :$!hx-swap, :class<nav-links>,
+            { ul( :$!hx-target, :$!hx-swap, :class<nav-links>,
                 self.nav-items,
                 do for @.widgets { li .HTML },
-            );
+            ) } if $has-items;
 
             #hamburger menu
-            ul( :$!hx-target, :$!hx-swap, :class<menu>, :id<menu>,
+            { ul( :$!hx-target, :$!hx-swap, :class<menu>, :id<menu>,
                 self.nav-items,
-            );
+            ) } if $has-items;
         ]
     }
 
