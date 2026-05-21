@@ -272,6 +272,13 @@ role Panel      does Component is export {
 
         dashboard > article > header {
           border-bottom-color: darkgray;
+          border-radius: 0px;
+        }
+
+        dashboard > article > footer {
+          border-top-color: darkgray;
+          border-radius: 0px;
+          margin-top: auto;
         }
         END
     }

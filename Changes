@@ -1,6 +1,7 @@
 Revision history for Air
 
 {{$NEXT}}
+    - improve dashboard / panels styles
 
 0.1.19  2026-05-14T13:14:31+01:00
     - dart /pico upgrade note
