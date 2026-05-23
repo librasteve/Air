@@ -134,6 +134,7 @@ Traits are used to describe the kinds of controls that will be used on a form. T
 =item is file - a file upload input; the attribute will be populated with an instance of Cro::HTTP::Body::MultiPartFormData::Part, which has properties filename, body-blob (binary upload) ond body-text (decodes the body-blob to a Str)
 
 =item is hidden - a hidden input
+=item is captcha - a stateless arithmetic-sequence captcha; see C<=head3 Captcha> below
 There is no trait for checkboxes; use the Bool type instead.
 
 =head3 Labels, help texts, and placeholders
@@ -149,6 +150,33 @@ Use the C<is label('Name')> trait in order to explicitly set a label.
 For text inputs, one can also set a placeholder using the is placeholder('Text') trait. This text is rendered in the textbox prior to the user filling it.
 
 Finally, one may use the C<is help('...')> trait in order to provide help text. This is displayed beneath the form field.
+
+=head3 Captcha
+
+C<Air::Form> provides a stateless, server-side captcha to filter automated form submissions without requiring a session or external service.
+
+The challenge is an arithmetic sequence puzzle — e.g. C<"2, 5, 8 ... ?"> — where the user supplies the next term. A fresh sequence is generated on every render (initial load and every retry). The expected answer is signed into a hidden field using a per-server-instance secret that is randomised at startup, so tokens do not survive a server restart.
+
+Declare the answer field and its companion hidden token field:
+
+=begin code :lang<raku>
+has Str $.captcha       is captcha(:label('Are you human?'));
+has Str $.captcha-token is hidden;
+=end code
+
+=item C<is captcha> — marks the answer input; the sequence puzzle is injected before the input on every render
+=item C<:label(...)> — optional custom label (default is derived from the attribute name); the label is always suffixed with C<*> to match the visual style of required fields
+=item C<is hidden> — companion token field; must be named C<{field}-token> (e.g. C<$.captcha-token> for C<$.captcha>)
+
+Call C<self.captcha-valid> inside C<validate-form> to check the answer:
+
+=begin code :lang<raku>
+method validate-form {
+    unless self.captcha-valid {
+        self.add-validation-error("Please answer the sequence question correctly")
+    }
+}
+=end code
 
 =head2 Validation
 
@@ -246,6 +274,28 @@ password => ( ( /^ <[A..Za..z0..9!@#$%^&*()\-_=+{}\[\]|:;"'<>,.?/]> ** 8..* $/ &
               'Passwords must have minimum 8 characters with at least one letter and one number.' ),
 );
 
+my $captcha-secret = now.Int.Str ~ (rand * 10e15).Int.Str;
+
+sub captcha-generate(--> Hash) {
+    my $start = (1..9).pick;
+    my $step  = (1..5).pick;
+    my @seq   = $start, $start + $step ... *;
+    my $answer = @seq[3].Str;
+    my $shown  = @seq[0..2].join(', ');
+    %( question => "What comes next $shown... ?", token => captcha-sign($answer) )
+}
+
+sub captcha-sign(Str $answer --> Str) {
+    my $msg = $answer ~ '|' ~ $captcha-secret;
+    my int $h = 0x5381;
+    for $msg.encode.list -> $byte { $h = ($h * 33 + $byte) mod (2**31) }
+    $h.fmt('%010d')
+}
+
+sub captcha-verify(Str $token, Str $answer --> Bool) {
+    captcha-sign($answer) eq $token
+}
+
 role Form does Cro::WebApp::Form does Taggable {
     #| optionally specify form url base (with get/set methods)
     has Str  $!form-base = '';
@@ -302,21 +352,79 @@ role Form does Cro::WebApp::Form does Taggable {
         $html
     }
 
+    sub captcha-inject(Str $html is copy, @fields --> Str) {
+        for @fields -> $field {
+            my ($name, $label) = $field.key, $field.value;
+            my %ch      = captcha-generate();
+            my ($q, $t) = %ch<question token>;
+
+            $html .= subst(
+                / '<input' <-[>]>*? 'name="' $name '-token"' <-[>]>*? '>' /,
+                "<input type=\"hidden\" name=\"{$name}-token\" value=\"$t\"/>"
+            );
+
+            my $display = $label ?? $label !! $name.subst('-', ' ', :g).tclc;
+            $html .= subst(
+                / '<label' <-[>]>*? 'for="' $name '"' <-[>]>*? '>' <-[<]>* '</label>' /,
+                "<label for=\"$name\">" ~ $display ~ "*</label>"
+            );
+
+            $html .= subst(
+                / '<input' (<-[>]>*?) 'name="' $name '"' (<-[>]>*?) '>' /,
+                -> $/ {
+                    my ($pre, $post) = $/[0].Str, $/[1].Str;
+                    "<p class=\"captcha-question\">" ~ $q ~ "</p>\n<input class=\"captcha-input\"" ~ $pre ~ "name=\"$name\"" ~ $post ~ ">"
+                }
+            );
+        }
+        $html
+    }
+
     #| unlike Cro::WebApp::Form we actually mark the required fields in the browser
     method required-names {
         ::?CLASS.^attributes.grep({ .^can('required') && .required }).map(*.name.substr(2)).list
     }
 
+    method captcha-field-names {
+        ::?CLASS.^attributes.grep({ .^can('is-captcha') }).map(*.name.substr(2)).list
+    }
+
+    method captcha-fields {
+        ::?CLASS.^attributes
+            .grep({ .^can('is-captcha') })
+            .map({ .name.substr(2) => .captcha-label })
+            .list
+    }
+
+    method captcha-new(--> Hash) { captcha-generate() }
+
+    method captcha-sign(Str $answer --> Str) { &captcha-sign.($answer) }
+
+    method captcha-verify(Str $token, Str $answer --> Bool) { &captcha-verify.($token, $answer) }
+
+    method captcha-valid(--> Bool) {
+        for self.captcha-field-names -> $name {
+            my $answer = self.^attributes.first({ .name eq "\$!$name" }).get_value(self).Str;
+            my $token  = self.^attributes.first({ .name eq "\$!{$name}-token" }).get_value(self).Str;
+            return False unless captcha-verify($token, $answer);
+        }
+        True
+    }
+
     #| called when used as a Taggable, returns self.empty
     multi method HTML(--> Markup()) {
-        parse-template($formtmp)
-            andthen .render( {form => self.empty} ).&adjust(self.form-url, self.required-names);
+        my $html = parse-template($formtmp).render( {form => self.empty} );
+        $html = adjust($html, self.form-url, self.required-names);
+        $html = captcha-inject($html, self.captcha-fields) if self.captcha-fields;
+        $html
     }
 
     #| when passed a $form field set, returns populated form
     multi method HTML(Form $form --> Markup()) {
-        parse-template($formtmp)
-            andthen .render( {:$form} ).&adjust(self.form-url, self.required-names)
+        my $html = parse-template($formtmp).render( {:$form} );
+        $html = adjust($html, self.form-url, self.required-names);
+        $html = captcha-inject($html, self.captcha-fields) if self.captcha-fields;
+        $html
     }
 
     #| return partially complete form
@@ -349,6 +457,14 @@ role Form does Cro::WebApp::Form does Taggable {
             }
             .form-errors-class > * > li {
                 color: var(--pico-del-color);
+            }
+            .captcha-question {
+                font-style: italic;
+                margin-bottom: 5px;
+            }
+            input.captcha-input {
+                width: 6rem;
+                border: calc(var(--pico-border-width) * 2) var(--pico-border-color) solid;
             }
         </style>
         END
@@ -470,6 +586,13 @@ multi trait_mod:<will>(Attribute:D $attr, &block, :$select! --> Nil) is export {
 }
 multi trait_mod:<is>(Attribute:D $attr, :$validated! --> Nil) is export {
     Cro::WebApp::Form::trait_mod:<will>($attr, :$validated)
+}
+multi trait_mod:<is>(Attribute:D $attr, :$captcha! --> Nil) is export {
+    my $lbl = $captcha ~~ Pair ?? $captcha.value !! Nil;
+    $attr does role {
+        method is-captcha(--> True) {}
+        method captcha-label { $lbl }
+    }
 }
 
 

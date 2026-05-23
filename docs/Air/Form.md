@@ -164,7 +164,9 @@ Traits are used to describe the kinds of controls that will be used on a form. T
 
   * is file - a file upload input; the attribute will be populated with an instance of Cro::HTTP::Body::MultiPartFormData::Part, which has properties filename, body-blob (binary upload) ond body-text (decodes the body-blob to a Str)
 
-  * is hidden - a hidden input There is no trait for checkboxes; use the Bool type instead.
+  * is hidden - a hidden input
+
+  * is captcha - a stateless arithmetic-sequence captcha; see `=head3 Captcha` below There is no trait for checkboxes; use the Bool type instead.
 
 ### Labels, help texts, and placeholders
 
@@ -177,6 +179,35 @@ Use the `is label('Name')` trait in order to explicitly set a label.
 For text inputs, one can also set a placeholder using the is placeholder('Text') trait. This text is rendered in the textbox prior to the user filling it.
 
 Finally, one may use the `is help('...')` trait in order to provide help text. This is displayed beneath the form field.
+
+### Captcha
+
+`Air::Form` provides a stateless, server-side captcha to filter automated form submissions without requiring a session or external service.
+
+The challenge is an arithmetic sequence puzzle — e.g. `"2, 5, 8 ... ?"` — where the user supplies the next term. A fresh sequence is generated on every render (initial load and every retry). The expected answer is signed into a hidden field using a per-server-instance secret that is randomised at startup, so tokens do not survive a server restart.
+
+Declare the answer field and its companion hidden token field:
+
+```raku
+has Str $.captcha       is captcha(:label('Are you human?'));
+has Str $.captcha-token is hidden;
+```
+
+  * `is captcha` — marks the answer input; the sequence puzzle is injected before the input on every render
+
+  * `:label(...)` — optional custom label (default is derived from the attribute name); the label is always suffixed with `*` to match the visual style of required fields
+
+  * `is hidden` — companion token field; must be named `{field}-token` (e.g. `$.captcha-token` for `$.captcha`)
+
+Call `self.captcha-valid` inside `validate-form` to check the answer:
+
+```raku
+method validate-form {
+    unless self.captcha-valid {
+        self.add-validation-error("Please answer the sequence question correctly")
+    }
+}
+```
 
 Validation
 ----------
@@ -272,6 +303,14 @@ get url (ie base/name)
 ### has Associative %!form-attrs
 
 optional form attrs (with get/set methods)
+
+### method required-names
+
+```raku
+method required-names() returns Mu
+```
+
+unlike Cro::WebApp::Form we actually mark the required fields in the browser
 
 ### method HTML
 

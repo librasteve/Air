@@ -192,29 +192,47 @@ method new(
 
 ### role Background does Component
 
+background location steps: - set box width and height to actual image dimensions in px (this box is rotated) - X dimension - place left of box in center of page left<50%> - then translate leftwards by half the box width translate(-50%,xx) - Y dimension - set top of box to a fixed point a bit more than half the height for heading - then translate upwards by half the box width translate(xx,-50%) - typical result - transform: translate(-50%, -50%) rotate(-90deg);
+
 ### has Mu $.src
 
-url of background image
+src url of background image
 
 ### has Mu $.top
 
-top of background image (in px)
+top of background image ('140px')
+
+### has Mu $.left
+
+left of background image ('0vw')
+
+### has Mu $.width
+
+width of background image ('100vw')
 
 ### has Mu $.height
 
-height of background image (in px)
+height of background image ('320px')
 
 ### has Mu $.size
 
-size of background image <auto cover>
+size of background image ('auto') <auto cover>
 
 ### has Mu $.opacity
 
-opacity of background image
+opacity of background image (0.1)
+
+### has Mu $.filter
+
+filter - ('grayscale(100%)')
+
+### has Mu $.translate
+
+transform - translate XY
 
 ### has Mu $.rotate
 
-rotate angle of background image (in deg)
+transform - rotate (0) (in deg)
 
 ### role Logos does Component is export
 
