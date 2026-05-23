@@ -1,0 +1,64 @@
+use Test;
+use Air::Form;
+
+# --- %va validation patterns ---
+
+ok %va<email>,    '%va has email entry';
+ok %va<name>,     '%va has name entry';
+
+ok  ('alice@example.com' ~~ %va<email>[0]),  'valid email matches';
+nok ('not-an-email'      ~~ %va<email>[0]),  'invalid email does not match';
+ok  ('Smith-Jones'       ~~ %va<name>[0]),   'valid name matches';
+nok ('John Doe'          ~~ %va<name>[0]),   'name with space does not match';
+
+# --- Form class used for captcha method access ---
+
+class TestForm does Form {
+    has Str $.captcha       is captcha;
+    has Str $.captcha-token is hidden;
+}
+
+# --- Captcha signing mechanics (via class methods) ---
+
+my $token = TestForm.captcha-sign('7');
+ok $token.chars > 0,                                      'captcha-sign returns a non-empty token';
+ok  TestForm.captcha-verify($token, '7'),                 'correct answer verifies';
+nok TestForm.captcha-verify($token, '8'),                 'wrong answer does not verify';
+nok TestForm.captcha-verify($token, ''),                  'empty answer does not verify';
+nok TestForm.captcha-verify('forged-token', '7'),         'forged token does not verify';
+isnt TestForm.captcha-sign('5'), TestForm.captcha-sign('6'), 'different answers produce different tokens';
+
+# --- captcha-generate (via role captcha-sign for token verification) ---
+
+my %ch = TestForm.captcha-new();
+ok %ch<question>.chars > 0,                               'captcha-generate returns a question';
+ok %ch<token>.chars > 0,                                  'captcha-generate returns a token';
+like %ch<question>, / \d+ ', ' \d+ ', ' \d+ '... ?' $/,
+    'question has expected format';
+
+my ($x, $y, $z) = %ch<question>.match(/(\d+)', '(\d+)', '(\d+)/).[0,1,2]».Str».Int;
+my $step = $y - $x;
+ok  TestForm.captcha-verify(%ch<token>, ($z + $step).Str),     'generated token verifies with correct 4th term';
+nok TestForm.captcha-verify(%ch<token>, ($z + $step + 1).Str), 'generated token fails with wrong 4th term';
+
+# --- captcha-field-names ---
+
+is TestForm.new.captcha-field-names.elems, 1,     'one captcha field found';
+is TestForm.new.captcha-field-names[0], 'captcha', 'captcha field name is "captcha"';
+
+# plain form has no captcha fields; captcha-valid is vacuously True
+class PlainForm does Form {
+    has Str $.name is validated(%va<name>);
+}
+
+is PlainForm.new.captcha-field-names.elems, 0,  'plain form has no captcha fields';
+ok PlainForm.new.captcha-valid,                 'captcha-valid on plain form is True (vacuous)';
+
+# --- captcha-valid with correct and wrong answers ---
+
+my $good-token = TestForm.captcha-sign('9');
+ok  TestForm.new(captcha => '9', captcha-token => $good-token).captcha-valid,  'correct answer passes captcha-valid';
+nok TestForm.new(captcha => '5', captcha-token => $good-token).captcha-valid,  'wrong answer fails captcha-valid';
+nok TestForm.new(captcha => '',  captcha-token => $good-token).captcha-valid,  'empty answer fails captcha-valid';
+
+done-testing;
