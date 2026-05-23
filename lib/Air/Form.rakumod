@@ -134,7 +134,7 @@ Traits are used to describe the kinds of controls that will be used on a form. T
 =item is file - a file upload input; the attribute will be populated with an instance of Cro::HTTP::Body::MultiPartFormData::Part, which has properties filename, body-blob (binary upload) ond body-text (decodes the body-blob to a Str)
 
 =item is hidden - a hidden input
-=item is captcha - a simple math captcha (server-side, stateless); pair with a C<is hidden> companion attribute named C<{field}-token> (e.g. C<$.captcha-token>). Call C<self.captcha-valid> in C<validate-form> to check the answer.
+=item is captcha - a stateless arithmetic-sequence captcha; see C<=head3 Captcha> below
 There is no trait for checkboxes; use the Bool type instead.
 
 =head3 Labels, help texts, and placeholders
@@ -150,6 +150,33 @@ Use the C<is label('Name')> trait in order to explicitly set a label.
 For text inputs, one can also set a placeholder using the is placeholder('Text') trait. This text is rendered in the textbox prior to the user filling it.
 
 Finally, one may use the C<is help('...')> trait in order to provide help text. This is displayed beneath the form field.
+
+=head3 Captcha
+
+C<Air::Form> provides a stateless, server-side captcha to filter automated form submissions without requiring a session or external service.
+
+The challenge is an arithmetic sequence puzzle — e.g. C<"2, 5, 8 ... ?"> — where the user supplies the next term. A fresh sequence is generated on every render (initial load and every retry). The expected answer is signed into a hidden field using a per-server-instance secret that is randomised at startup, so tokens do not survive a server restart.
+
+Declare the answer field and its companion hidden token field:
+
+=begin code :lang<raku>
+has Str $.captcha       is captcha(:label('Are you human?'));
+has Str $.captcha-token is hidden;
+=end code
+
+=item C<is captcha> — marks the answer input; the sequence puzzle is injected before the input on every render
+=item C<:label(...)> — optional custom label (default is derived from the attribute name); the label is always suffixed with C<*> to match the visual style of required fields
+=item C<is hidden> — companion token field; must be named C<{field}-token> (e.g. C<$.captcha-token> for C<$.captcha>)
+
+Call C<self.captcha-valid> inside C<validate-form> to check the answer:
+
+=begin code :lang<raku>
+method validate-form {
+    unless self.captcha-valid {
+        self.add-validation-error("Please answer the sequence question correctly")
+    }
+}
+=end code
 
 =head2 Validation
 
