@@ -33,7 +33,6 @@ Install raku - eg. from [rakubrew](https://raku.org/install), then:
 
     Run and view some examples
     - git clone https://github.com/librasteve/Air-Examples.git && cd Air-Examples && chmod a+x bin
-    - cd /static/css && npm install @picocss/pico
     - cd ../.. && ./bin/09-todos.raku
     - browse to http://localhost:3000
 
