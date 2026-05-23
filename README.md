@@ -33,8 +33,8 @@ Install raku - eg. from [rakubrew](https://raku.org/install), then:
 
     Run and view some examples
     - git clone https://github.com/librasteve/Air-Examples.git && cd Air-Examples && chmod a+x bin
-    - npm install static/css/node_modules/@picocss/pico
-    - ./bin/09-todos.raku
+    - cd /static/css && npm install @picocss/pico
+    - cd ../.. && ./bin/09-todos.raku
     - browse to http://localhost:3000
 
 Cro has many other options as documented at [Cro](https://cro.raku.org) for deployment to a production server.
