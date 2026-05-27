@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.1.25  2026-05-27T15:17:22+01:00
+    - fix bg transform buglet
+
 0.1.24  2026-05-27T13:42:14+01:00
     - fix hamburger buglet
 
