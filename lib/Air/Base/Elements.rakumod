@@ -730,7 +730,7 @@ role Background does Component is export {
             background-size: %SIZE%;
             opacity: %OPACITY%;
             filter: %FILTER%;
-            transform: %TRANSLATE% rotate(%ROTATE%deg);
+            transform: %TRANSFORM%;
             position: fixed;
             background-repeat: no-repeat;
             background-position: center top;
@@ -740,6 +740,10 @@ role Background does Component is export {
         }
         END
 
+        my @transforms = [];
+        $@transforms.push: "translate($.translate)" if $!translate;
+        $@transforms.push: "rotate({$.rotate}deg)"  if $!rotate;
+
         $res ~~ s:g/'%URL%'       /$.src/;
         $res ~~ s:g/'%TOP%'       /$.top/;
         $res ~~ s:g/'%LEFT%'      /$.left/;
@@ -748,8 +752,7 @@ role Background does Component is export {
         $res ~~ s:g/'%SIZE%'      /$.size/;
         $res ~~ s:g/'%OPACITY%'   /$.opacity/;
         $res ~~ s:g/'%FILTER%'    /$.filter/;
-        $res ~~ s:g/'%TRANSLATE%' /translate($.translate)/ with $!translate;
-        $res ~~ s:g/'%ROTATE%'    /$.rotate/;
+        $res ~~ s:g/'%TRANSFORM%' /@transforms.join(' ')/;
 
         Style.new: $res
     }
