@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.1.24  2026-05-27T13:42:14+01:00
+    - fix hamburger buglet
+
 0.1.23  2026-05-23T14:40:16+01:00
     - Form captcha (& docs)
 

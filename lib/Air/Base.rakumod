@@ -477,13 +477,9 @@ class Nav       does Component {
                 );
 
             #hamburger menu (only show if Nav has items)
-            if ?@.items {
-                button( :class<hamburger>, :id<hamburger>, Safe.new: '&#9776;' );
+            { button( :class<hamburger>, :id<hamburger>, Safe.new: '&#9776;' ) } if ?@.items;
 
-                ul( :$!hx-target, :$!hx-swap, :class<menu>, :id<menu>,
-                    self.nav-items,
-                );
-            }
+            { ul( :$!hx-target, :$!hx-swap, :class<menu>, :id<menu>, self.nav-items) } if ?@.items;
         ]
     }
 
@@ -553,7 +549,7 @@ class Nav       does Component {
 
         // Hide the menu when resizing the viewport to a wider width
         window.addEventListener('resize', () => {
-            if (window.innerWidth > 768) {
+            if (menu && window.innerWidth > 768) {
                 menu.classList.remove('show');
             }
         });
