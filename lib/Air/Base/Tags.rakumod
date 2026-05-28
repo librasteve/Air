@@ -1,6 +1,6 @@
 unit module Tags;
 
-sub exports-air-base-tags is export {<Script Style Meta Title Link Internal External Content A Button Section Article Aside Time Spacer Safe>}
+sub exports-air-base-tags is export {<Script Style Meta Title Link Internal External A Button Section Article Aside Time Spacer Safe>}  #Content
 
 use Air::Functional :MANDATORY;
 
@@ -76,14 +76,15 @@ role Internal does Tag[Regular] is export {
     }
 }
 
-=head3 role Content does Tag[Regular] {}
-
-role Content does Tag[Regular] is export {
-    multi method HTML {
-        my %attrs  = |%.attrs, :id<content>;
-        do-regular-tag( $.name, @.inners, |%attrs )
-    }
-}
+#iamerejh - Content from Tag to Elemenet (ie Component)
+#=head3 role Content does Tag[Regular] {}
+#
+#role Content does Tag[Regular] is export {
+#    multi method HTML {
+#        my %attrs  = |%.attrs, :id<content>;
+#        do-regular-tag( $.name, @.inners, |%attrs )
+#    }
+#}
 
 =head2 Semantic Tags
 

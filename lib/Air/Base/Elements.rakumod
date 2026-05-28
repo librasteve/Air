@@ -1,8 +1,6 @@
 unit module Elements;
 
-sub exports-air-base-elements is export {
-    <Table Grid Flexbox Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background Logos>
-}
+sub exports-air-base-elements is export { <Content Table Grid Flexbox Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background Logos LeftMain> }
 
 use Air::Functional :BASE-TAGS;
 use Air::Component;
@@ -15,6 +13,28 @@ use Air::Base::Tags;
 =para  The Air roadmap is to provide a full set of pre-styled tags as defined in the Pico L<docs|https://picocss.com/docs>. Did we say that Air::Base implements Pico CSS?
 
 =head2 Layout Elements
+
+#iamerejh - Content from Tag to Elemenet (ie Component)
+=head3 role Content does Component is export {}
+
+role Content    does Component is export {
+#    multi method HTML {
+#        my %attrs  = |%.attrs, :id<content>;
+#        do-regular-tag( $.name, @.inners, |%attrs )
+#    }
+
+    has @.inners;
+    has %.attrs is rw;
+
+    multi method new(*@inners, *%attrs) {
+        self.bless:  :@inners, |%attrs;
+    }
+
+    method HTML {
+        my %attrs = |%.attrs, :id<content>;
+        do-regular-tag( 'content', @.inners, |%attrs )
+    }
+}
 
 =head3 role Table does Component is export
 
@@ -830,6 +850,126 @@ role Logos      does Component is export {
             ];
 
         ~$res;
+    }
+}
+
+=head2 Navigation Elements
+
+=head3 role LeftMain does Component is export
+
+role LeftMain   does Component is export {
+    has $!loaded = 0;
+
+    #| HTMX swap strategy
+    has Str  $.hx-swap = 'outerHTML';
+    #| list of name => content Pairs
+    has Pair @.items;
+
+    multi method new(*@items, *%h) {
+        self.bless: :@items, |%h;
+    }
+
+    #| makes routes for each content item
+    #| must be called from within a Cro route block
+    method make-routes() {
+        return if $!loaded++;
+        do for self.items.map: *.kv -> ($name, $target) {
+            my &m = method { $target.?HTML };
+            trait_mod:<is>(&m, :controller{ :$name, :returns-html });
+            self.^add_method($name, &m);
+        }
+    }
+
+    method content-id { $.html-id ~ '-content' }
+
+    method nav-items {
+        my $first = True;
+        do for @.items.map: *.kv -> ($name, $target) {
+            my %attrs = :class($first ?? 'active' !! '');
+            $first = False;
+            li |%attrs, a(
+                :hx-get("$.url-path/$name"),
+                :hx-target("#$.content-id"),
+                :hx-swap($!hx-swap),
+                Safe.new: $name,
+            )
+        }
+    }
+
+    multi method HTML {
+        div :class<left-main>, [
+            nav :class<left-nav>,
+                ul self.nav-items;
+            div :id($.content-id),
+                @.items[0].value;
+        ]
+    }
+
+    method STYLE {
+        q:to/END/
+        .left-main {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .left-nav {
+            position: sticky;
+            top: 1rem;
+        }
+
+        .left-nav > ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .left-nav > ul > li > a {
+            display: block;
+            padding: 0.375rem 0.75rem;
+            border-radius: var(--pico-border-radius);
+            color: var(--pico-color);
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .left-nav > ul > li > a:hover {
+            color: var(--pico-primary);
+            background-color: var(--pico-primary-background);
+        }
+
+        .left-nav > ul > li.active > a {
+            color: var(--pico-primary);
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .left-main {
+                grid-template-columns: 1fr;
+            }
+            .left-nav {
+                position: static;
+            }
+        }
+        END
+    }
+
+    method SCRIPT {
+        q:to/END/
+        function setupLeftNav() {
+            document.querySelectorAll('.left-nav > ul > li').forEach(li => {
+                li.querySelector('a')?.addEventListener('click', function() {
+                    li.closest('ul').querySelectorAll('li').forEach(l => l.classList.remove('active'));
+                    li.classList.add('active');
+                });
+            });
+        }
+        document.addEventListener('DOMContentLoaded', setupLeftNav);
+        document.body.addEventListener('htmx:afterSwap', setupLeftNav);
+        END
     }
 }
 

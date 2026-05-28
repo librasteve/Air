@@ -423,22 +423,25 @@ class Nav       does Component {
         return if $!routed++;
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
-                when Content {
-                    my &new-method = method {
-                        $target.?HTML
-                    };
-                    trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
-                    self.^add_method($name, &new-method);
-                }
-                when Page {
-                    unless .is-stubbed {
-                        my &new-method = method {
-                            $target.?HTML
-                        };
-                        trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
-                        self.^add_method($name, &new-method);
-                    }
-                }
+
+#iamerejh - no need for routes if they are component anyway
+#                when Content {
+#                    my &new-method = method {
+#                        $target.?HTML
+#                    };
+#                    trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
+#                    self.^add_method($name, &new-method);
+#                }
+#iamerejh - this is getting out of hand promote from left-menu to dynamic refactor
+#                when Page {
+#                    unless .is-stubbed {
+#                        my &new-method = method {
+#                            $target.?HTML
+#                        };
+#                        trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
+#                        self.^add_method($name, &new-method);
+#                    }
+#                }
             }
         }
     }
@@ -451,14 +454,20 @@ class Nav       does Component {
                     .label = $name;
                     li .HTML
                 }
+#iamerejh - switch to component routes (not Nav routes)
                 when Content {
-                    li a(:hx-get("$.url-path/$name"), Safe.new: $name)
+                    li a(:hx-get(.url-path), Safe.new: $name)
+#                    li a(:hx-get("$.url-path/$name"), Safe.new: $name)
                 }
                 when Page {
                     if .is-stubbed {
                         li a(:href(.stub-path), Safe.new: $name)
                     } else {
-                        li a(:href("$.url-path/$name"), Safe.new: $name)
+                        note .url-name;
+                        note .html-id;
+                        # can't use .url-name as this may be eg my-page/2, need page/2
+                        li a(:href('/page/' ~ .id), Safe.new: $name)
+#                        li a(:href("$.url-path/$name"), Safe.new: $name)
                     }
                 }
             }
@@ -872,6 +881,9 @@ class Site {
 
         #| always register & route Nav
         @!register.push: Nav.new;
+
+        #| always register & route Page
+        @!register.push: Page.new;
 
         #| gather all the registrant exports
         self.enqueue-all;
