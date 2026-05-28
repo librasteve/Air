@@ -76,16 +76,6 @@ role Internal does Tag[Regular] is export {
     }
 }
 
-#iamerejh - Content from Tag to Elemenet (ie Component)
-#=head3 role Content does Tag[Regular] {}
-#
-#role Content does Tag[Regular] is export {
-#    multi method HTML {
-#        my %attrs  = |%.attrs, :id<content>;
-#        do-regular-tag( $.name, @.inners, |%attrs )
-#    }
-#}
-
 =head2 Semantic Tags
 
 =para These are a mix of HTML Tags re-published (some with minor improvements) and of newly construed Air Tags for convenience. Generally they align with the Pico CSS semantic tags in use.

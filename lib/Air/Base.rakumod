@@ -423,15 +423,6 @@ class Nav       does Component {
         return if $!routed++;
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
-
-#iamerejh - no need for routes if they are component anyway
-#                when Content {
-#                    my &new-method = method {
-#                        $target.?HTML
-#                    };
-#                    trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
-#                    self.^add_method($name, &new-method);
-#                }
                 when Page {
                     unless .is-stubbed {
                         my &new-method = method {
@@ -453,10 +444,8 @@ class Nav       does Component {
                     .label = $name;
                     li .HTML
                 }
-#iamerejh - switch to component routes (not Nav routes)
                 when Content {
                     li a(:hx-get(.url-path), Safe.new: $name)
-#                    li a(:hx-get("$.url-path/$name"), Safe.new: $name)
                 }
                 when Page {
                     if .is-stubbed {
@@ -923,11 +912,6 @@ class Site {
             #| component & form
             for @!register.unique( as => *.^name ) {
                 when Component::Common {
-
-                    note .^name;
-                    note .concrete;
-                    #iamerejh
-
                     .make-methods;
                     .^add-cromponent-routes;
                 }

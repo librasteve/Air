@@ -1,6 +1,6 @@
 unit module Elements;
 
-sub exports-air-base-elements is export { <Content Table Grid Flexbox Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background Logos LeftMain> }
+sub exports-air-base-elements is export { <Content Table Grid Flexbox Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background Logos LeftMenu> }
 
 use Air::Functional :BASE-TAGS;
 use Air::Component;
@@ -14,7 +14,6 @@ use Air::Base::Tags;
 
 =head2 Layout Elements
 
-#iamerejh - Content from Tag to Elemenet (ie Component)
 =head3 role Content does Component is export {}
 
 role Content    does Component is export {
@@ -855,9 +854,9 @@ role Logos      does Component is export {
 
 =head2 Navigation Elements
 
-=head3 role LeftMain does Component is export
+=head3 role LeftMenu does Component is export
 
-role LeftMain   does Component is export {
+role LeftMenu   does Component is export {
     has $!loaded = 0;
 
     #| HTMX swap strategy
