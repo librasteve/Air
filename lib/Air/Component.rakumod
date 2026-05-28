@@ -236,8 +236,13 @@ role Component::Common does Taggable {
     has Str  $!base is built = '';
     method base {$!base}
 
+    #iamerejh
+    method concrete(--> Str) { self.^mro[*-3].^shortname }
+
     #| get url safe name of class doing Component role
-    method url-name(--> Str()) { self.^shortname.&to-kebab, }
+    method url-name(--> Str()) { self.^shortname.&to-kebab }
+    # this hack is to extract first concrete class name ie Page not MyPage
+#    method url-name(--> Str()) { self.^mro[*-3].^shortname.&to-kebab }
 
     #| get url (ie base/name)
     method url(--> Str) { do with self.base { "$_/" } ~ self.url-name}
@@ -253,7 +258,7 @@ role Component::Common does Taggable {
     method Str { self.HTML }
 
     #| show something in 'note $x.raku'
-    method gist { self.?stub-path // self.url-path }
+    method gist { self.?stub-path // self.?url-path // 'cant gist' }
 }
 
 #| Component

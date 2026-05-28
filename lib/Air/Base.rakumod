@@ -432,16 +432,15 @@ class Nav       does Component {
 #                    trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
 #                    self.^add_method($name, &new-method);
 #                }
-#iamerejh - this is getting out of hand promote from left-menu to dynamic refactor
-#                when Page {
-#                    unless .is-stubbed {
-#                        my &new-method = method {
-#                            $target.?HTML
-#                        };
-#                        trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
-#                        self.^add_method($name, &new-method);
-#                    }
-#                }
+                when Page {
+                    unless .is-stubbed {
+                        my &new-method = method {
+                            $target.?HTML
+                        };
+                        trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
+                        self.^add_method($name, &new-method);
+                    }
+                }
             }
         }
     }
@@ -463,11 +462,7 @@ class Nav       does Component {
                     if .is-stubbed {
                         li a(:href(.stub-path), Safe.new: $name)
                     } else {
-                        note .url-name;
-                        note .html-id;
-                        # can't use .url-name as this may be eg my-page/2, need page/2
-                        li a(:href('/page/' ~ .id), Safe.new: $name)
-#                        li a(:href("$.url-path/$name"), Safe.new: $name)
+                        li a(:href("$.url-path/$name"), Safe.new: $name)
                     }
                 }
             }
@@ -882,8 +877,8 @@ class Site {
         #| always register & route Nav
         @!register.push: Nav.new;
 
-        #| always register & route Page
-        @!register.push: Page.new;
+#        #| always register & route Page
+#        @!register.push: Page.new;
 
         #| gather all the registrant exports
         self.enqueue-all;
@@ -928,6 +923,11 @@ class Site {
             #| component & form
             for @!register.unique( as => *.^name ) {
                 when Component::Common {
+
+                    note .^name;
+                    note .concrete;
+                    #iamerejh
+
                     .make-methods;
                     .^add-cromponent-routes;
                 }
