@@ -8,6 +8,8 @@ The Air roadmap is to provide a full set of pre-styled tags as defined in the Pi
 Layout Elements
 ---------------
 
+### role Content does Component is export {}
+
 ### role Table does Component is export
 
 Attrs thead, tbody and tfoot can each be a 1D [values] or 2D Array [[values],] that iterates to row and columns or a Tag|Component - if the latter then they are just rendered via their .HTML method. This allow for single- and multi-row thead and tfoot.
@@ -86,6 +88,24 @@ method new(
 ```
 
 .new positional takes @items
+
+### role LeftMenu does Component is export
+
+### has Str $.hx-swap
+
+HTMX swap strategy
+
+### has Positional[<anon>] @.items
+
+list of name => Content Pairs
+
+### method make-routes
+
+```raku
+method make-routes() returns Mu
+```
+
+makes routes for each content item must be called from within a Cro route block
 
 ### role Dashboard does Component is export
 
@@ -191,6 +211,8 @@ method new(
 .new positional takes Str $code
 
 ### role Background does Component
+
+
 
 background location steps: - set box width and height to actual image dimensions in px (this box is rotated) - X dimension - place left of box in center of page left<50%> - then translate leftwards by half the box width translate(-50%,xx) - Y dimension - set top of box to a fixed point a bit more than half the height for heading - then translate upwards by half the box width translate(xx,-50%) - typical result - transform: translate(-50%, -50%) rotate(-90deg);
 
