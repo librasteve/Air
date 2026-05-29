@@ -1,6 +1,6 @@
 unit module Tags;
 
-sub exports-air-base-tags is export {<Script Style Meta Title Link Internal External Content A Button Section Article Aside Time Spacer Safe>}
+sub exports-air-base-tags is export {<Script Style Meta Title Link Internal External A Button Section Article Aside Time Spacer Safe>}  #Content
 
 use Air::Functional :MANDATORY;
 
@@ -73,15 +73,6 @@ role Internal does Tag[Regular] is export {
 
     multi method HTML {
         do-regular-tag( 'a', [$.label], |%.attrs )
-    }
-}
-
-=head3 role Content does Tag[Regular] {}
-
-role Content does Tag[Regular] is export {
-    multi method HTML {
-        my %attrs  = |%.attrs, :id<content>;
-        do-regular-tag( $.name, @.inners, |%attrs )
     }
 }
 

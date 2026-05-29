@@ -47,8 +47,6 @@ The are newly construed Air Tags that are used in the Nav class.
 
 ### role Internal does Tag[Regular] {...}
 
-### role Content does Tag[Regular] {}
-
 Semantic Tags
 -------------
 

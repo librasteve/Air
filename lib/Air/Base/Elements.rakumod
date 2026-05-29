@@ -1,8 +1,6 @@
 unit module Elements;
 
-sub exports-air-base-elements is export {
-    <Table Grid Flexbox Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background Logos>
-}
+sub exports-air-base-elements is export { <Content Table Grid Flexbox Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background Logos LeftMenu> }
 
 use Air::Functional :BASE-TAGS;
 use Air::Component;
@@ -15,6 +13,27 @@ use Air::Base::Tags;
 =para  The Air roadmap is to provide a full set of pre-styled tags as defined in the Pico L<docs|https://picocss.com/docs>. Did we say that Air::Base implements Pico CSS?
 
 =head2 Layout Elements
+
+=head3 role Content does Component is export {}
+
+role Content    does Component is export {
+#    multi method HTML {
+#        my %attrs  = |%.attrs, :id<content>;
+#        do-regular-tag( $.name, @.inners, |%attrs )
+#    }
+
+    has @.inners;
+    has %.attrs is rw;
+
+    multi method new(*@inners, *%attrs) {
+        self.bless:  :@inners, |%attrs;
+    }
+
+    method HTML {
+        my %attrs = |%.attrs, :id<content>;
+        do-regular-tag( 'div', @.inners, |%attrs )
+    }
+}
 
 =head3 role Table does Component is export
 
@@ -200,6 +219,140 @@ role Flexbox    does Component is export {
     multi method HTML {
         $.style ~
             div :id($.html-id), @!items;
+    }
+}
+
+=head3 role LeftMenu does Component is export
+
+role LeftMenu   does Component is export {
+    has $!loaded = 0;
+
+    #| HTMX swap strategy
+    has Str  $.hx-swap = 'innerHTML';
+    #| list of name => Content Pairs
+    has Pair @.items where .all.value ~~ Content;
+
+    multi method new(*@items, *%h) {
+        self.bless: :@items, |%h;
+    }
+
+    #| makes routes for each content item
+    #| must be called from within a Cro route block
+    method make-routes() {
+        return if $!loaded++;
+        do for self.items.map: *.kv -> ($name, $target) {
+            my &m = method { $target.?HTML };
+            trait_mod:<is>(&m, :controller{ :$name, :returns-html });
+            self.^add_method($name, &m);
+        }
+    }
+
+    method content-id { $.html-id ~ '-content' }
+
+    method nav-items {
+        my $first = True;
+        do for @.items.map: *.kv -> ($name, $target) {
+            my %attrs = :class($first ?? 'active' !! '');
+            $first = False;
+            li |%attrs, a(
+                :hx-get("$.url-path/$name"),
+                :hx-target("#$.content-id"),
+                :hx-swap($!hx-swap),
+                Safe.new: $name,
+                                           )
+        }
+    }
+
+    multi method HTML {
+        div :class<left-main>, [
+            div :class<left-nav>,
+                ul self.nav-items;
+            div :id($.content-id),
+                @.items[0].value;
+        ]
+    }
+
+    method STYLE {
+        q:to/END/
+        .left-main {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .left-nav {
+            position: sticky;
+            top: 1rem;
+        }
+
+        .left-nav > ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            border-left: var(--pico-border-width) solid var(--pico-muted-border-color);
+        }
+
+        .left-nav li::marker {
+            content: none;
+        }
+
+        .left-nav > ul > li {
+            margin: 0;
+            padding: calc(var(--pico-nav-element-spacing-vertical) * 0.25) 0;
+        }
+
+        .left-nav > ul > li > a {
+            display: block;
+            margin-left: calc(var(--pico-border-width) * -1);
+            padding: 0;
+            padding-left: calc(var(--pico-nav-element-spacing-horizontal) * 1.5);
+            border-left: var(--pico-border-width) solid transparent;
+            border-radius: 0;
+            text-align: left;
+            color: var(--pico-color);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 400;
+            transition: color var(--pico-transition), border-color var(--pico-transition);
+        }
+
+        .left-nav > ul > li > a:hover {
+            border-color: var(--pico-secondary-underline);
+        }
+
+        .left-nav > ul > li.active > a {
+            border-color: var(--pico-primary);
+            color: var(--pico-primary-hover);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .left-main {
+                grid-template-columns: 1fr;
+            }
+            .left-nav {
+                position: static;
+            }
+        }
+        END
+    }
+
+    method SCRIPT {
+        q:to/END/
+        function setupLeftNav() {
+            document.querySelectorAll('.left-nav > ul > li').forEach(li => {
+                li.querySelector('a')?.addEventListener('click', function() {
+                    li.closest('ul').querySelectorAll('li').forEach(l => l.classList.remove('active'));
+                    li.classList.add('active');
+                });
+            });
+        }
+        document.addEventListener('DOMContentLoaded', setupLeftNav);
+        document.body.addEventListener('htmx:afterSwap', setupLeftNav);
+        END
     }
 }
 

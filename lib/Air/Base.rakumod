@@ -423,13 +423,6 @@ class Nav       does Component {
         return if $!routed++;
         do for self.items.map: *.kv -> ($name, $target) {
             given $target {
-                when Content {
-                    my &new-method = method {
-                        $target.?HTML
-                    };
-                    trait_mod:<is>(&new-method, :controller{ :$name, :returns-html });
-                    self.^add_method($name, &new-method);
-                }
                 when Page {
                     unless .is-stubbed {
                         my &new-method = method {
@@ -452,7 +445,7 @@ class Nav       does Component {
                     li .HTML
                 }
                 when Content {
-                    li a(:hx-get("$.url-path/$name"), Safe.new: $name)
+                    li a(:hx-get(.url-path), Safe.new: $name)
                 }
                 when Page {
                     if .is-stubbed {
@@ -872,6 +865,9 @@ class Site {
 
         #| always register & route Nav
         @!register.push: Nav.new;
+
+#        #| always register & route Page
+#        @!register.push: Page.new;
 
         #| gather all the registrant exports
         self.enqueue-all;

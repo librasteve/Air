@@ -237,7 +237,7 @@ role Component::Common does Taggable {
     method base {$!base}
 
     #| get url safe name of class doing Component role
-    method url-name(--> Str()) { self.^shortname.&to-kebab, }
+    method url-name(--> Str()) { self.^shortname.&to-kebab }
 
     #| get url (ie base/name)
     method url(--> Str) { do with self.base { "$_/" } ~ self.url-name}
@@ -253,7 +253,7 @@ role Component::Common does Taggable {
     method Str { self.HTML }
 
     #| show something in 'note $x.raku'
-    method gist { self.?stub-path // self.url-path }
+    method gist { self.?stub-path // self.?url-path // 'cant gist' }
 }
 
 #| Component
