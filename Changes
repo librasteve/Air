@@ -2,6 +2,9 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.1.26  2026-05-29T07:40:13+01:00
+    - add LeftMenu Element
+
 0.1.25  2026-05-27T15:17:22+01:00
     - fix bg transform buglet
 
