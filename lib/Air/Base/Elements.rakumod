@@ -1,6 +1,6 @@
 unit module Elements;
 
-sub exports-air-base-elements is export { <Content Table Grid Flexbox Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background Logos LeftMenu> }
+sub exports-air-base-elements is export { <Content Table Grid Flexbox LeftMenu Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background Logos> }
 
 use Air::Functional :BASE-TAGS;
 use Air::Component;
@@ -17,11 +17,6 @@ use Air::Base::Tags;
 =head3 role Content does Component is export {}
 
 role Content    does Component is export {
-#    multi method HTML {
-#        my %attrs  = |%.attrs, :id<content>;
-#        do-regular-tag( $.name, @.inners, |%attrs )
-#    }
-
     has @.inners;
     has %.attrs is rw;
 
@@ -316,6 +311,7 @@ role LeftMenu   does Component is export {
             text-decoration: none;
             font-size: 0.875rem;
             font-weight: 400;
+            cursor: pointer;
             transition: color var(--pico-transition), border-color var(--pico-transition);
         }
 
