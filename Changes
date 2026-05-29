@@ -1,6 +1,7 @@
 Revision history for Air
 
 {{$NEXT}}
+    - left menu fix safari buglet
 
 0.1.27  2026-05-29T11:48:02+01:00
     - left menu tweak width

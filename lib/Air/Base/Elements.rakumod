@@ -295,6 +295,7 @@ role LeftMenu   does Component is export {
         }
 
         .left-nav > ul > li {
+            list-style: none;
             margin: 0;
             padding: calc(var(--pico-nav-element-spacing-vertical) * 0.25) 0;
         }
