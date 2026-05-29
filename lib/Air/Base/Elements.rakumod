@@ -31,7 +31,7 @@ role Content    does Component is export {
 
     method HTML {
         my %attrs = |%.attrs, :id<content>;
-        do-regular-tag( 'content', @.inners, |%attrs )
+        do-regular-tag( 'div', @.inners, |%attrs )
     }
 }
 
@@ -860,9 +860,9 @@ role LeftMenu   does Component is export {
     has $!loaded = 0;
 
     #| HTMX swap strategy
-    has Str  $.hx-swap = 'outerHTML';
-    #| list of name => content Pairs
-    has Pair @.items;
+    has Str  $.hx-swap = 'innerHTML';
+    #| list of name => Content Pairs
+    has Pair @.items where .all.value ~~ Content;
 
     multi method new(*@items, *%h) {
         self.bless: :@items, |%h;
@@ -897,7 +897,7 @@ role LeftMenu   does Component is export {
 
     multi method HTML {
         div :class<left-main>, [
-            nav :class<left-nav>,
+            div :class<left-nav>,
                 ul self.nav-items;
             div :id($.content-id),
                 @.items[0].value;
@@ -924,25 +924,41 @@ role LeftMenu   does Component is export {
             margin: 0;
             display: flex;
             flex-direction: column;
+            border-left: var(--pico-border-width) solid var(--pico-muted-border-color);
+        }
+
+        .left-nav li::marker {
+            content: none;
+        }
+
+        .left-nav > ul > li {
+            margin: 0;
+            padding: calc(var(--pico-nav-element-spacing-vertical) * 0.25) 0;
         }
 
         .left-nav > ul > li > a {
             display: block;
-            padding: 0.375rem 0.75rem;
-            border-radius: var(--pico-border-radius);
+            margin-left: calc(var(--pico-border-width) * -1);
+            padding: 0;
+            padding-left: calc(var(--pico-nav-element-spacing-horizontal) * 1.5);
+            border-left: var(--pico-border-width) solid transparent;
+            border-radius: 0;
+            text-align: left;
             color: var(--pico-color);
             text-decoration: none;
             font-size: 0.875rem;
+            font-weight: 400;
+            transition: color var(--pico-transition), border-color var(--pico-transition);
         }
 
         .left-nav > ul > li > a:hover {
-            color: var(--pico-primary);
-            background-color: var(--pico-primary-background);
+            border-color: var(--pico-secondary-underline);
         }
 
         .left-nav > ul > li.active > a {
-            color: var(--pico-primary);
-            font-weight: bold;
+            border-color: var(--pico-primary);
+            color: var(--pico-primary-hover);
+            font-weight: 600;
         }
 
         @media (max-width: 768px) {
