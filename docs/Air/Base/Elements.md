@@ -156,6 +156,12 @@ method make-routes() returns Mu
 
 makes routes for Tabs must be called from within a Cro route block
 
+### role Fold does Component is export
+
+### subset FoldItem of Pair where .value ~~ Fold;
+
+### role Folds does Component is export
+
 Action Elements
 ---------------
 

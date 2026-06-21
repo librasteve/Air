@@ -1,6 +1,6 @@
 unit module Elements;
 
-sub exports-air-base-elements is export { <Content Table Grid Flexbox LeftMenu Dashboard Panel Tab Tabs Dialog Lightbox Markdown Background Logos> }
+sub exports-air-base-elements is export { <Content Table Grid Flexbox LeftMenu Dashboard Panel Tab Tabs Fold Folds Dialog Lightbox Markdown Background Logos> }
 
 use Air::Functional :BASE-TAGS;
 use Air::Component;
@@ -579,6 +579,133 @@ role Tabs       does Component is export {
 
         // Re-run after HTMX swaps in new content
         document.body.addEventListener('htmx:afterSwap', setupTabLinks);
+        END
+    }
+}
+
+=head3 role Fold does Component is export
+
+role Fold does Component is export {
+    has @.inners;
+    has %.attrs is rw;
+
+    multi method new(*@inners, *%attrs) {
+        self.bless: :@inners, |%attrs;
+    }
+
+    method HTML {
+        do-regular-tag('div', @.inners, :class<fold-content>)
+    }
+}
+
+=head3 subset FoldItem of Pair where .value ~~ Fold;
+
+subset FoldItem of Pair where .value ~~ Fold;
+
+=head3 role Folds does Component is export
+
+role Folds does Component is export {
+    has $!loaded = 0;
+    has FoldItem @.items;
+
+    multi method new(*@items, *%h) {
+        self.bless: :@items, |%h;
+    }
+
+    method make-routes() {
+        return if $!loaded++;
+        do for self.items.map: *.kv -> ($name, $target) {
+            given $target {
+                my &new-method = method { $target.?HTML };
+                trait_mod:<is>(&new-method, :controller{:$name, :returns-html});
+                self.^add_method($name, &new-method);
+            }
+        }
+    }
+
+    method HTML {
+        div :class<folds>, [
+            do for @.items.map: *.kv -> ($name, $target) {
+                my $panel-id   = $.html-id ~ '-' ~ $name ~ '-panel';
+                my $content-id = $.html-id ~ '-' ~ $name ~ '-content';
+                div :class<fold-wrapper>, [
+                    div(
+                        :class<fold-bar>,
+                        :aria-expanded("false"),
+                        :onclick("toggleFold(this,'$panel-id','$content-id','$.url-path/$name')"),
+                        [
+                            span(:class<fold-label>, Safe.new: $name),
+                            span(:class<fold-arrow>, Safe.new: '▼'),
+                        ]
+                    ),
+                    div :id($panel-id), :class<fold-panel>, [
+                        div :class<fold-inner>, [
+                            div(:id($content-id))
+                        ]
+                    ]
+                ]
+            }
+        ]
+    }
+
+    method STYLE {
+        q:to/END/;
+        .fold-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        .fold-label {
+            flex: 1;
+            color: var(--pico-primary);
+        }
+        .fold-bar:hover .fold-label {
+            text-decoration: underline;
+        }
+        .fold-arrow {
+            color: var(--pico-primary);
+            transition: transform 0.25s ease;
+        }
+        .fold-bar[aria-expanded="true"] .fold-arrow {
+            transform: rotate(180deg);
+        }
+        .fold-panel {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+        .fold-panel.open {
+            grid-template-rows: 1fr;
+        }
+        .fold-inner {
+            overflow: hidden;
+        }
+        .fold-content {
+            border-top: 1px solid var(--pico-muted-border-color);
+            padding: 1.25rem 1.5rem;
+        }
+        END
+    }
+
+    method SCRIPT {
+        q:to/END/;
+        function toggleFold(bar, panelId, contentId, url) {
+            const panel = document.getElementById(panelId);
+            const isOpen = bar.getAttribute('aria-expanded') === 'true';
+            if (isOpen) {
+                panel.classList.remove('open');
+                bar.setAttribute('aria-expanded', 'false');
+            } else {
+                panel.classList.add('open');
+                bar.setAttribute('aria-expanded', 'true');
+                htmx.ajax('GET', url, {target: '#' + contentId, swap: 'innerHTML'});
+            }
+        }
         END
     }
 }
