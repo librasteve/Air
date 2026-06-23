@@ -315,7 +315,12 @@ role Form does Cro::WebApp::Form does Taggable {
     multi method form-attrs     { %!form-attrs }
     multi method form-attrs(%h) { %!form-attrs{.key} = .value for %h }
 
+    has Str $!formtmp;
+    has Int $!formtmp-loaded = 0;
+
     method init {
+        return if $!formtmp-loaded++;
+        $!formtmp = Q|%FORM-STYLES%<&form( .form, %FORM-ATTRS% )>|;
         self.do-form-styles;
         self.?do-form-scripts;
         self.do-form-defaults;
@@ -323,10 +328,8 @@ role Form does Cro::WebApp::Form does Taggable {
         self.do-form-tmpl;
     }
 
-    my $formtmp //= Q|%FORM-STYLES%<&form( .form, %FORM-ATTRS% )>|;
-
     method do-form-styles {
-        $formtmp .= subst: /'%FORM-STYLES%'/, self.form-styles
+        $!formtmp .= subst: /'%FORM-STYLES%'/, self.form-styles
     }
 
     method do-form-defaults {
@@ -338,7 +341,7 @@ role Form does Cro::WebApp::Form does Taggable {
     }
 
     method do-form-tmpl {
-        $formtmp .= subst: /'%FORM-ATTRS%'/,
+        $!formtmp .= subst: /'%FORM-ATTRS%'/,
             self.form-attrs.map({":{.key}('{.value}')"}).join(',')
     }
 
@@ -413,7 +416,8 @@ role Form does Cro::WebApp::Form does Taggable {
 
     #| called when used as a Taggable, returns self.empty
     multi method HTML(--> Markup()) {
-        my $html = parse-template($formtmp).render( {form => self.empty} );
+        self.init;
+        my $html = parse-template($!formtmp).render( {form => self.empty} );
         $html = adjust($html, self.form-url, self.required-names);
         $html = captcha-inject($html, self.captcha-fields) if self.captcha-fields;
         $html
@@ -421,7 +425,8 @@ role Form does Cro::WebApp::Form does Taggable {
 
     #| when passed a $form field set, returns populated form
     multi method HTML(Form $form --> Markup()) {
-        my $html = parse-template($formtmp).render( {:$form} );
+        self.init;
+        my $html = parse-template($!formtmp).render( {:$form} );
         $html = adjust($html, self.form-url, self.required-names);
         $html = captcha-inject($html, self.captcha-fields) if self.captcha-fields;
         $html

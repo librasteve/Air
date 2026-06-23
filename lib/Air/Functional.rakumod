@@ -253,6 +253,11 @@ sub do-singular-tag(Str $tag, *%h --> Markup()) is export(:MANDATORY)  {
 
 my @regular-tags = (@all-tags (-) @singular-tags).keys;  #Set difference (-)
 
+#| head dispatcher h(2, "Title") calls h2("Title") etc.
+sub h(Int $level where 1 <= * <= 6, *@inners, *%h --> Markup()) is export(:MANDATORY) {
+    do-regular-tag( "h$level", @inners, |%h )
+}
+
 #| export all HTML tags
 #| viz. https://docs.raku.org/language/modules#Exporting_and_selective_importing
 my package EXPORT::DEFAULT {

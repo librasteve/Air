@@ -254,6 +254,18 @@ Tag Export Options
 
 Exports all the tags programmatically
 
+### sub h
+
+```raku
+sub h(
+    Int $level where { ... },
+    *@inners,
+    *%h
+) returns Air::Functional::Markup(Any)
+```
+
+head dispatcher h(2, "Title") calls h2("Title") etc.
+
 package Air::Functional::EXPORT::DEFAULT
 ----------------------------------------
 
