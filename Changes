@@ -2,6 +2,10 @@ Revision history for Air
 
 {{$NEXT}}
 
+0.1.29  2026-06-23T16:48:33+01:00
+    - add Fold element
+    - pin to Cro::WebApp:ver<0.10.1>
+
 0.1.28  2026-05-29T12:43:31+01:00
     - left menu fix safari buglet
 
