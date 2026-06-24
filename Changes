@@ -1,6 +1,7 @@
 Revision history for Air
 
 {{$NEXT}}
+    - permit urls with trailing slash
 
 0.1.29  2026-06-23T16:48:33+01:00
     - add Fold element

@@ -558,7 +558,7 @@ class SiteMap {
     }
 
     method lookup(@path) {
-        %!routes{'/' ~ @path.join('/')}
+        %!routes{'/' ~ @path.grep(*.so).join('/')}
     }
 
     method list {
@@ -926,8 +926,10 @@ class Site {
                 if $this ~~ Page:D     { content   'text/html',  ~$this     }
 
                 else {
-                    with $!html404     { not-found 'text/html',  ~$!html404 }
-                    else               { not-found                          }
+                    my $redir = @!redirects.first(*.key eq @rest.grep(*.so)[0]);
+                    if $redir              { redirect $redir.value             }
+                    elsif $!html404        { not-found 'text/html',  ~$!html404 }
+                    else                   { not-found                          }
                 }
             }
 
