@@ -1,6 +1,7 @@
 Revision history for Air
 
 {{$NEXT}}
+    - fix left menu column shift
 
 0.1.30  2026-06-24T18:36:58+01:00
     - permit urls with trailing slash
