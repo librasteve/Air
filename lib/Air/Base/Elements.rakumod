@@ -271,7 +271,7 @@ role LeftMenu   does Component is export {
         q:to/END/
         .left-main {
             display: grid;
-            grid-template-columns: 1fr 4fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 4fr);
             gap: 2rem;
             align-items: start;
         }
