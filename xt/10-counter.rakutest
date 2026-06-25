@@ -1,0 +1,33 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Component;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 2;
+
+class Counter does Component {
+    has Int $.count = 0;
+    method increment is controller { $!count++; self }
+    method HTML { input :id($.html-id), :name<counter>, :value($.count) }
+}
+
+my $counter = Counter.new;
+
+my $zero-expect = q:to/END/;
+
+<input id="counter-1" value="0" name="counter" />
+END
+is $counter.HTML.&normalize, $zero-expect.chomp.&normalize, 'counter starts at zero';
+
+$counter.increment;
+$counter.increment;
+
+my $two-expect = q:to/END/;
+
+<input name="counter" value="2" id="counter-1" />
+END
+is $counter.HTML.&normalize, $two-expect.chomp.&normalize, 'counter increments correctly';
+
+done-testing;

@@ -1,0 +1,29 @@
+use Test;
+
+BEGIN {
+    unless try { require Red:api<2>; True } {
+        plan :skip-all<Red required for this test>;
+    }
+}
+
+use Air::Form;
+use Red:api<2>;
+
+red-defaults 'SQLite';
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 3;
+
+model Contact does Form {
+    has Int $.id         is serial is hidden;
+    has Str $.first-name is column is validated(%va<name>);
+    has Str $.last-name  is column is validated(%va<name>)  is required;
+    has Str $.email      is column is validated(%va<email>) is required is email;
+}
+
+lives-ok { Contact.^create-table(:unless-exists) }, 'Red Form model table created';
+ok Contact.^can('first-name'), 'first-name column attribute';
+ok Contact.^can('email'),      'email column attribute';
+
+done-testing;

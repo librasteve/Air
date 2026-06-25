@@ -1,0 +1,85 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 3;
+
+# Grid
+my $grid = (grid :cols(3), [span 'A'; span 'B'; span 'C';]).HTML;
+my $grid-expect = q:to/END/;
+<style>
+    #grid-1 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(1, 1fr);
+        gap: 0em;
+        direction: ltr;
+
+    }
+
+    @media (max-width: 1024px) {
+        #grid-1 {
+            display: flex;
+            flex-direction: column;
+            gap: 0em;
+        }
+    }
+</style>
+
+<div id="grid-1">
+<span>A</span>
+<span>B</span>
+<span>C</span>
+</div>
+END
+is $grid.&normalize, $grid-expect.chomp.&normalize, 'grid with 3 columns';
+
+# Tabs
+my $tabs = (tabs [First => tab p 'tada'; Second => tab p 'yoda';]).HTML;
+my $tabs-expect = q:to/END/;
+
+<div class="tabs">
+<nav class="tab-menu">
+<ul class="tab-links">
+<li class="active">
+<a hx-get="/tabs/1/First" hx-target="#tabs-1-content" data-value="1">First</a></li>
+<li class="">
+<a hx-target="#tabs-1-content" data-value="2" hx-get="/tabs/1/Second">Second</a></li>
+</ul></nav>
+<div id="tabs-1-content">
+<div align="left" class="tab">
+<p>tada</p></div></div>
+</div>
+END
+is $tabs.&normalize, $tabs-expect.chomp.&normalize, 'tabs with two items, first active';
+
+# Folds
+my $folds = (folds [Alpha => fold p 'hello'; Beta => fold p 'world';]).HTML;
+my $folds-expect = q:to/END/;
+
+<div class="folds">
+<div class="fold-wrapper">
+<div onclick="toggleFold(this,'folds-1-Alpha-panel','folds-1-Alpha-content','/folds/1/Alpha')" class="fold-bar" aria-expanded="false">
+<span class="fold-label">Alpha</span>
+<span class="fold-arrow">▼</span>
+</div>
+<div class="fold-panel" id="folds-1-Alpha-panel">
+<div class="fold-inner">
+<div id="folds-1-Alpha-content"></div></div></div>
+</div>
+<div class="fold-wrapper">
+<div class="fold-bar" aria-expanded="false" onclick="toggleFold(this,'folds-1-Beta-panel','folds-1-Beta-content','/folds/1/Beta')">
+<span class="fold-label">Beta</span>
+<span class="fold-arrow">▼</span>
+</div>
+<div class="fold-panel" id="folds-1-Beta-panel">
+<div class="fold-inner">
+<div id="folds-1-Beta-content"></div></div></div>
+</div>
+</div>
+END
+is $folds.&normalize, $folds-expect.chomp.&normalize, 'folds with two items, both collapsed';
+
+done-testing;

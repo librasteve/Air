@@ -1,0 +1,33 @@
+use Test;
+
+BEGIN {
+    unless try { require Air::Plugin::MailForm; True } {
+        plan :skip-all<Air::Plugin::MailForm required for this test>;
+    }
+}
+
+use Air::Form;
+use Air::Plugin::MailForm;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 3;
+
+class SignupForm is Air::Plugin::MailForm {
+    has Str $.name  is validated(%va<names>) is required;
+    has Str $.nick;
+    has Str $.email is validated(%va<email>) is email is required;
+
+    method do-form-attrs { self.form-attrs: {:submit-button-text('Register Interest')} }
+
+    method validate-form {
+        self.add-validation-error('Nick must be a single word')
+            if $!nick && $!nick.trim.contains(/ \s /);
+    }
+}
+
+lives-ok { SignupForm.empty }, 'SignupForm.empty instantiates';
+ok  'two words'.trim.contains(/ \s /), 'spaced nick triggers nick check condition';
+nok 'oneword'.trim.contains(/ \s /),   'single-word nick passes nick check condition';
+
+done-testing;

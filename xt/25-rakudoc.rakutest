@@ -1,0 +1,21 @@
+use Test;
+
+BEGIN {
+    unless try { require Air::Plugin::Rakudoc; True } {
+        plan :skip-all<Air::Plugin::Rakudoc required for this test>;
+    }
+}
+
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Plugin::Rakudoc;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = div [ rakudoc "=head1 Some RakuDoc\n\n=item First item\n"; ];
+
+ok $html.contains('RakuDoc'), 'rakudoc heading content present in output';
+
+done-testing;

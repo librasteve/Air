@@ -1,0 +1,26 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = dashboard([
+    panel :order(1), h2 'Analytics';
+    panel :order(2), h2 'Traffic';
+]).HTML;
+
+my $expect = q:to/END/;
+
+<dashboard>
+<article style="order: 1;">
+<h2>Analytics</h2></article>
+<article style="order: 2;">
+<h2>Traffic</h2></article>
+</dashboard>
+END
+
+is $html.&normalize, $expect.chomp.&normalize, 'dashboard renders panels with order';
+
+done-testing;

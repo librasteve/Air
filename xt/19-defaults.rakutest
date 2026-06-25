@@ -1,0 +1,80 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+class MyPage is Page {
+    has Str    $.title  = 'hÅrc';
+    has Footer $.footer = footer p safe 'Aloft on <b>&Aring;ir</b>.';
+}
+sub mypage(*@a, *%h) { MyPage.new(|@a, |%h) }
+
+my %planets = :thead[["Planet", "Orbit"],], :tbody[["Mercury", "88"],];
+
+my Page $Page1 = mypage main => Main.new(div [h3 'Page 1'; table |%planets;]);
+my Page $Page2 = mypage main => Main.new(div [h3 'Page 2'; table |%planets;]);
+
+my Nav $nav = nav logo => span('hÅrc'), items => [:$Page1, :$Page2];
+{ .nav = $nav } for [$Page1, $Page2];
+
+my $html = $Page1.HTML;
+
+my $expect = q:to/END/;
+<!doctype html>
+<html data-theme="dark" lang="en">
+<head>
+<title>hÅrc</title>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1" name="viewport" />
+<script crossorigin="anonymous" integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO" src="https://unpkg.com/htmx.org@1.9.5"></script>
+
+<link type="image/x-icon" rel="icon" href="/img/favicon.ico" />
+<link rel="stylesheet" href="/css/styles.css" /></head>
+
+<body>
+<header class="container">
+<nav>
+<ul>
+<li class="logo">
+<span>hÅrc</span></li></ul>
+<ul class="nav-links" hx-swap="outerHTML" hx-target="#content">
+<li>
+<a href="/nav/1/Page1">Page1</a></li>
+<li>
+<a href="/nav/1/Page2">Page2</a></li>
+</ul>
+<button class="hamburger" id="hamburger">&#9776;</button>
+<ul hx-target="#content" id="menu" hx-swap="outerHTML" class="menu">
+<li>
+<a href="/nav/1/Page1">Page1</a></li>
+<li>
+<a href="/nav/1/Page2">Page2</a></li>
+</ul>
+</nav></header>
+<main class="container">
+<div>
+<h3>Page 1</h3>
+<table>
+<thead>
+<tr>
+<th scope="row">Planet</th>
+<td>Orbit</td>
+</tr></thead>
+<tbody>
+<tr>
+<th scope="row">Mercury</th>
+<td>88</td>
+</tr></tbody>
+</table>
+</div></main>
+<footer class="container">
+<p>Aloft on <b>&Aring;ir</b>.</p></footer></body>
+</html>
+END
+
+is $html.&normalize, $expect.&normalize, 'multi-page site: page with nav and default footer';
+
+done-testing;

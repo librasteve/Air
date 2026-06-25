@@ -1,0 +1,58 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Component;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 2;
+
+role HxTodo {
+    method hx-delete(--> Hash()) { :hx-delete($.url-path), :hx-target('closest tr'), :hx-swap<delete> }
+    method hx-toggle(--> Hash()) { :hx-get("$.url-path/toggle"), :hx-target<closest tr>, :hx-swap<outerHTML> }
+}
+
+class Todo does Component[:C:R:U:D] {
+    also does HxTodo;
+    has Bool $.checked is rw = False;
+    has Str  $.text;
+
+    method toggle is controller { $!checked = !$!checked; self }
+
+    multi method HTML {
+        tr
+            td( input :type<checkbox>, |$.hx-toggle, :$!checked ),
+            td( $!checked ?? del $!text !! $!text ),
+            td( button :type<submit>, |$.hx-delete, '-' ),
+    }
+}
+
+my $todo = Todo.new: text => 'buy milk';
+
+my $unchecked-expect = q:to/END/;
+
+<tr>
+<td>
+<input type="checkbox" hx-get="/todo/1/toggle" hx-target="closest tr" hx-swap="outerHTML" /></td>
+<td>buy milk</td>
+<td>
+<button type="submit" hx-target="closest tr" hx-delete="/todo/1" hx-swap="delete">-</button></td>
+</tr>
+END
+is $todo.HTML.&normalize, $unchecked-expect.chomp.&normalize, 'unchecked todo renders text without del';
+
+$todo.toggle;
+my $checked-expect = q:to/END/;
+
+<tr>
+<td>
+<input checked type="checkbox" hx-get="/todo/1/toggle" hx-target="closest tr" hx-swap="outerHTML" /></td>
+<td>
+<del>buy milk</del></td>
+<td>
+<button hx-target="closest tr" hx-swap="delete" type="submit" hx-delete="/todo/1">-</button></td>
+</tr>
+END
+is $todo.HTML.&normalize, $checked-expect.chomp.&normalize, 'toggled todo renders text in del';
+
+done-testing;

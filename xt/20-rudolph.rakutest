@@ -1,0 +1,48 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 2;
+
+my &rude-div = &div.assuming(:style('background:rgba(179,0,0,0.75);color:white;'));
+
+my $div-html = rude-div h1 'Rudolph';
+my $div-expect = q:to/END/;
+
+<div style="background:rgba(179,0,0,0.75);color:white;">
+<h1>Rudolph</h1></div>
+END
+is $div-html.&normalize, $div-expect.chomp.&normalize, 'div.assuming applies style';
+
+my $bg = background.new: :src<https://example.com/bg.png>, :top(400), :rotate(0);
+my $bg-html = $bg.HTML;
+my $bg-expect = q:to/END/;
+
+<div>
+<style>#background {
+    background: url('https://example.com/bg.png');
+    top: 400;
+    left: 0vw;
+    width: 100vw;
+    height: 320px;
+    background-size: auto;
+    opacity: 0.1;
+    filter: grayscale(100%);
+    transform: ;
+    position: fixed;
+    background-repeat: no-repeat;
+    background-position: center top;
+    z-index: -1;
+    pointer-events: none;
+    padding: 20px;
+}
+</style>
+
+<div id="background"></div>
+</div>
+END
+is $bg-html.&normalize, $bg-expect.chomp.&normalize, 'background component renders with src and position';
+
+done-testing;

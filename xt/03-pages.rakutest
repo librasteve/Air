@@ -1,0 +1,39 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+class MyPage is Page {
+    has $.title  = 'hÅrc';
+    has $.footer = Footer.new: p safe 'Aloft on <b>&Aring;ir</b>.';
+}
+
+my $html = MyPage.new(main => Main.new(p 'Hello World!')).HTML;
+
+my $expect = q:to/END/;
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<title>hÅrc</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script crossorigin="anonymous" integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO" src="https://unpkg.com/htmx.org@1.9.5"></script>
+
+<link href="/img/favicon.ico" type="image/x-icon" rel="icon" />
+<link href="/css/styles.css" rel="stylesheet" /></head>
+
+<body>
+<header class="container"></header>
+<main class="container">
+<p>Hello World!</p></main>
+<footer class="container">
+<p>Aloft on <b>&Aring;ir</b>.</p></footer></body>
+</html>
+END
+
+is $html.&normalize, $expect.&normalize, 'custom Page subclass with default title and footer';
+
+done-testing;

@@ -1,0 +1,24 @@
+use Test;
+
+BEGIN {
+    unless try { require Air::Plugin::Hilite; True } {
+        plan :skip-all<Air::Plugin::Hilite required for this test>;
+    }
+}
+
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Plugin::Hilite;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = (grid :cols(2), :gap(6), [
+    hilite :lang('python'), "def hello():\n    print('hi')\n";
+    hilite                  "sub hello { say 'hi' }\n";
+]).HTML;
+
+ok $html.contains('hello'), 'code content present in two-column grid';
+
+done-testing;

@@ -1,0 +1,26 @@
+use Test;
+
+BEGIN {
+    unless try { require Air::Plugin::Hilite; True } {
+        plan :skip-all<Air::Plugin::Hilite required for this test>;
+    }
+}
+
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Plugin::Hilite;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = div [ hilite "my \$x = 42;\nsay \"hello\";\n"; ];
+
+my $expect = div [
+    pre code :class<language-raku>,
+        "my \$x = 42;\nsay \"hello\";\n"
+];
+
+ok $html.contains('42'), 'hilite source content present in output';
+
+done-testing;

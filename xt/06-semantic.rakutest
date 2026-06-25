@@ -1,0 +1,46 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = div [
+    section :id<blog>, [
+        h2 'Blog';
+        article [
+            h3 'Post 1';
+            p 'Published ', time(:datetime<2025-03-11>);
+        ];
+    ];
+    aside [
+        h2 'About';
+        ul [ li a(:href<#>, 'Link'); ];
+    ];
+];
+
+my $expect = q:to/END/;
+
+<div>
+<section id="blog">
+<h2>Blog</h2>
+<article style="direction:ltr;">
+<h3>Post 1</h3>
+<p>Published
+<time datetime="2025-03-11">March 11, 2025</time>
+</p>
+</article>
+</section>
+<aside>
+<h2>About</h2>
+<ul>
+<li>
+<a href="#">Link</a></li></ul>
+</aside>
+</div>
+END
+
+is $html.&normalize, $expect.chomp.&normalize, 'semantic elements: section, article, time, aside, ul';
+
+done-testing;

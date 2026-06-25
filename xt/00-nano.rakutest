@@ -1,0 +1,18 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = p "Yo baby!";
+
+my $expect = q:to/END/;
+
+<p>Yo baby!</p>
+END
+
+is $html.&normalize, $expect.chomp.&normalize, 'nano p tag';
+
+done-testing;

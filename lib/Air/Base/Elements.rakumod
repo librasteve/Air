@@ -1072,6 +1072,8 @@ role Logos      does Component is export {
             $checked-path = "../$!path";
         }
 
+        return unless $checked-path.defined;
+
         try {  #fails quietly in case no Image Magick on prod server
             for @!logos -> $logo {
 
