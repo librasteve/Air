@@ -1,0 +1,21 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = el 'simple-greeting', :name<John>, [span 'yo'; span 'ho';];
+
+my $expect = q:to/END/;
+
+<simple-greeting name="John">
+<span>yo</span>
+<span>ho</span>
+</simple-greeting>
+END
+
+is $html.&normalize, $expect.chomp.&normalize, 'el() renders custom HTML element with attributes and inner spans';
+
+done-testing;

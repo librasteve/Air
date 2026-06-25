@@ -1,0 +1,63 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+class MyPage is Page {
+    has Str    $.title  = 'hÅrc';
+    has Footer $.footer = footer p safe 'Aloft on <b>&Aring;ir</b>.';
+}
+sub mypage(*@a, *%h) { MyPage.new(|@a, |%h) }
+
+my %planets =
+    :thead[["Planet", "Orbit (days)"],],
+    :tbody[["Mercury", "88"], ["Earth", "365"],];
+
+my $html = mypage(main => Main.new(div [h3 'Page 1'; table |%planets;])).HTML;
+
+my $expect = q:to/END/;
+<!doctype html>
+<html data-theme="dark" lang="en">
+<head>
+<title>hÅrc</title>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1" name="viewport" />
+<script src="https://unpkg.com/htmx.org@1.9.5" crossorigin="anonymous" integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"></script>
+
+<link type="image/x-icon" rel="icon" href="/img/favicon.ico" />
+<link rel="stylesheet" href="/css/styles.css" /></head>
+
+<body>
+<header class="container"></header>
+<main class="container">
+<div>
+<h3>Page 1</h3>
+<table>
+<thead>
+<tr>
+<th scope="row">Planet</th>
+<td>Orbit (days)</td>
+</tr></thead>
+<tbody>
+<tr>
+<th scope="row">Mercury</th>
+<td>88</td>
+</tr>
+<tr>
+<th scope="row">Earth</th>
+<td>365</td>
+</tr>
+</tbody>
+</table>
+</div></main>
+<footer class="container">
+<p>Aloft on <b>&Aring;ir</b>.</p></footer></body>
+</html>
+END
+
+is $html.&normalize, $expect.&normalize, 'page functional sub wrapper applies defaults';
+
+done-testing;

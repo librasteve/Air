@@ -1,0 +1,39 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = leftmenu([
+    :Usage( content [h2 'Usage'; pre code 'zef install Air';] ),
+    :API(   content [
+        h2 'API Reference';
+        table :thead[['Attr', 'Type', 'Default'],],
+              :tbody[['hx-swap', 'Str', 'innerHTML'],];
+    ]),
+]).HTML;
+
+my $expect = q:to/END/;
+
+<div class="left-main">
+<div class="left-nav">
+<ul>
+<li class="active">
+<a hx-swap="innerHTML" hx-target="#left-menu-1-content" hx-get="/left-menu/1/Usage">Usage</a></li>
+<li class="">
+<a hx-swap="innerHTML" hx-get="/left-menu/1/API" hx-target="#left-menu-1-content">API</a></li>
+</ul></div>
+<div id="left-menu-1-content">
+<div id="content">
+<h2>Usage</h2>
+<pre>
+<code>zef install Air</code></pre>
+</div></div>
+</div>
+END
+
+is $html.&normalize, $expect.chomp.&normalize, 'leftmenu2 with pre/code in first pane, table in second';
+
+done-testing;

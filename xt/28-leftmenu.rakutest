@@ -1,0 +1,34 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = leftmenu([
+    :Overview( content [h2 'Overview'; p 'Air framework.';] ),
+    :Features( content [h2 'Features'; ul [li 'HTMX'; li 'Pico';];] ),
+]).HTML;
+
+my $expect = q:to/END/;
+
+<div class="left-main">
+<div class="left-nav">
+<ul>
+<li class="active">
+<a hx-get="/left-menu/1/Overview" hx-target="#left-menu-1-content" hx-swap="innerHTML">Overview</a></li>
+<li class="">
+<a hx-target="#left-menu-1-content" hx-get="/left-menu/1/Features" hx-swap="innerHTML">Features</a></li>
+</ul></div>
+<div id="left-menu-1-content">
+<div id="content">
+<h2>Overview</h2>
+<p>Air framework.</p>
+</div></div>
+</div>
+END
+
+is $html.&normalize, $expect.chomp.&normalize, 'leftmenu renders nav items and first content pane';
+
+done-testing;

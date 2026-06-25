@@ -1,0 +1,55 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my %data =
+    :thead[["Planet", "Diameter (km)", "Distance to Sun (AU)", "Orbit (days)"],],
+    :tbody[["Mercury", "4,880", "0.39", "88"], ["Earth", "12,742", "1.00", "365"],],
+    :tfoot[["Average",  "9,126", "0.91", "341"],];
+
+my $html = div [ h3 "Planets"; table |%data, :class<striped>; ];
+
+my $expect = q:to/END/;
+
+<div>
+<h3>Planets</h3>
+<table class="striped">
+<thead>
+<tr>
+<th scope="row">Planet</th>
+<td>Diameter (km)</td>
+<td>Distance to Sun (AU)</td>
+<td>Orbit (days)</td>
+</tr></thead>
+<tbody>
+<tr>
+<th scope="row">Mercury</th>
+<td>4,880</td>
+<td>0.39</td>
+<td>88</td>
+</tr>
+<tr>
+<th scope="row">Earth</th>
+<td>12,742</td>
+<td>1.00</td>
+<td>365</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<th scope="row">Average</th>
+<td>9,126</td>
+<td>0.91</td>
+<td>341</td>
+</tr></tfoot>
+</table>
+</div>
+END
+
+is $html.&normalize, $expect.chomp.&normalize, 'minimal table with class and thead/tbody/tfoot';
+
+done-testing;

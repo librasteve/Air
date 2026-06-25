@@ -1,0 +1,22 @@
+use Test;
+
+BEGIN {
+    unless try { require Air::Plugin::Wordcloud; True } {
+        plan :skip-all<Air::Plugin::Wordcloud required for this test>;
+    }
+}
+
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Plugin::Wordcloud;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my %words = Raku => 10, Grammar => 8, HTMX => 7, Air => 9;
+my $html = (wordcloud %words).HTML;
+
+ok $html.contains('Raku'), 'word content present in wordcloud output';
+
+done-testing;

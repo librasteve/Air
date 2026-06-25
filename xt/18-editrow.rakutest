@@ -1,0 +1,55 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Component;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 2;
+
+class Contact does Component[:R:U] {
+    has $.name;
+    has $.email;
+
+    multi method data(%h) { $!name = %h<name>; $!email = %h<email> }
+
+    method edit is controller {
+        tr( :hx-trigger<cancel>, :class<editing>, :hx-get("/contact/{$.id}"), [
+            td input :autofocus, :name<name>,  :value($.name);
+            td input :name<email>, :value($.email);
+            td button :hx-get("/contact/{$.id}"), 'Cancel';
+        ])
+    }
+
+    multi method HTML {
+        tr( td $.name; td $.email; td button :hx-get("/contact/{$.id}/edit"), 'Edit'; )
+    }
+}
+
+my $c = Contact.new: name => 'Joe Smith', email => 'joe@smith.org';
+
+my $view-expect = q:to/END/;
+
+<tr>
+<td>Joe Smith</td>
+<td>joe@smith.org</td>
+<td>
+<button hx-get="/contact/1/edit">Edit</button></td>
+</tr>
+END
+is $c.HTML.&normalize, $view-expect.chomp.&normalize, 'contact view row';
+
+my $edit-expect = q:to/END/;
+
+<tr hx-trigger="cancel" class="editing" hx-get="/contact/1">
+<td>
+<input autofocus name="name" value="Joe Smith" /></td>
+<td>
+<input name="email" value="joe@smith.org" /></td>
+<td>
+<button hx-get="/contact/1">Cancel</button></td>
+</tr>
+END
+is $c.edit.&normalize, $edit-expect.chomp.&normalize, 'contact edit row with pre-filled inputs';
+
+done-testing;

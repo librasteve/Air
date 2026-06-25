@@ -1,0 +1,15 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+# Logos uses ImageMagick and a file-system path; test instantiation only
+lives-ok {
+    logos.new: logos => ['atikon-logo.png' => 'https://www.atikon.com',
+                         'haltec-logo.png'  => ''];
+}, 'Logos instantiates with logo pairs';
+
+done-testing;

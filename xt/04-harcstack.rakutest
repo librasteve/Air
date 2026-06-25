@@ -1,0 +1,44 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = nav(
+    logo    => span( safe '<a href="/">h<b>&Aring;</b>rc</a>' ),
+    items   => [:Htmx(external :href<https://htmx.org>),
+                :Air(external  :href<https://github.com/librasteve/Air>)],
+    widgets => [lightdark],
+).HTML;
+
+my $expect = q:to/END/;
+
+<nav>
+<ul>
+<li class="logo">
+<span><a href="/">h<b>&Aring;</b>rc</a></span></li></ul>
+<ul hx-target="#content" class="nav-links" hx-swap="outerHTML">
+<li>
+<a href="https://htmx.org" target="_blank" rel="noopener noreferrer">Htmx</a></li>
+<li>
+<a rel="noopener noreferrer" target="_blank" href="https://github.com/librasteve/Air">Air</a></li>
+<li>
+                    <a style="font-variant-emoji: text" id ="sunIcon">&#9728;</a>
+                    <a style="font-variant-emoji: text" id ="moonIcon">&#9790;</a>
+                </li>
+</ul>
+<button class="hamburger" id="hamburger">&#9776;</button>
+<ul hx-swap="outerHTML" class="menu" id="menu" hx-target="#content">
+<li>
+<a rel="noopener noreferrer" target="_blank" href="https://htmx.org">Htmx</a></li>
+<li>
+<a href="https://github.com/librasteve/Air" rel="noopener noreferrer" target="_blank">Air</a></li>
+</ul>
+</nav>
+END
+
+is $html.&normalize, $expect.chomp.&normalize, 'nav with logo, external items, and lightdark widget';
+
+done-testing;

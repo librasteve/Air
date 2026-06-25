@@ -1,0 +1,35 @@
+use Test;
+
+BEGIN {
+    unless try { require Red:api<2>; True } {
+        plan :skip-all<Red required for this test>;
+    }
+}
+
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Component;
+use Red:api<2>;
+
+red-defaults 'SQLite';
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 2;
+
+model Counter does Component::Red {
+    has UInt $.id    is serial;
+    has Int  $.count is rw is column(:default{0});
+
+    method increment is controller { $!count++; $.^save; self }
+    method HTML { input :id($.html-id), :name<counter>, :value($.count) }
+}
+
+lives-ok { Counter.^create-table(:unless-exists) }, 'Red Counter table created';
+
+my $counter = Counter.^create: count => 5;
+is $counter.HTML.&normalize,
+    qq[\n<inputname="counter"value="5"id="counter-{$counter.id}"/>].&normalize,
+    'Red Counter renders with persisted count';
+
+done-testing;

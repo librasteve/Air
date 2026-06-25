@@ -1,0 +1,34 @@
+use Test;
+use Air::Form;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 8;
+
+class Contact does Form {
+    has Str  $.name     is validated(%va<names>) is required;
+    has Str  $.street   is validated(%va<text>);
+    has Str  $.city     is validated(%va<text>);
+    has Str  $.zip      is validated(%va<postcode>);
+    has Str  $.country  is validated(%va<words>) is placeholder('USA');
+    has Bool $.is-company;
+    has Str  $.url      is validated(%va<url>)      is url;
+    has Str  $.phone    is validated(%va<tel>)      is tel;
+    has Str  $.email    is validated(%va<email>)    is email is required;
+    has Str  $.password is validated(%va<password>) is password;
+    has Int  $.rating   will select { 1..5 };
+    has Str  $.comment  is validated(%va<notes>)    is multiline(:5rows, :60cols) is maxlength(400);
+    has      $.date     is date;
+    has Str  $.hidden   is hidden;
+}
+
+ok  ('alice@example.com'  ~~ %va<email>[0]),   'valid email passes';
+nok ('not-an-email'       ~~ %va<email>[0]),   'invalid email fails';
+ok  ('Alice Smith'        ~~ %va<names>[0]),   'names with space passes';
+nok ('Alice Smith'        ~~ %va<name>[0]),    'space in name fails strict name validator';
+ok  ('Smith'              ~~ %va<name>[0]),    'single word passes strict name validator';
+ok  ('http://example.com' ~~ %va<url>[0]),     'valid url passes';
+nok ('not a url'          ~~ %va<url>[0]),     'invalid url fails';
+ok  ('EC2A 4BQ'           ~~ %va<postcode>[0]),'valid postcode passes';
+
+done-testing;

@@ -1,0 +1,21 @@
+use Test;
+
+BEGIN {
+    unless try { require Air::Plugin::Asciinema; True } {
+        plan :skip-all<Air::Plugin::Asciinema required for this test>;
+    }
+}
+
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Plugin::Asciinema;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = (asciinema '/static/demos/demo1.cast').HTML;
+
+ok $html.contains('demo1'), 'asciinema src path present in output';
+
+done-testing;

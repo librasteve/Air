@@ -1,0 +1,34 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 7;
+
+sub common($content) { Main.new: div h3 $content }
+
+my @pages = (
+    Page.new(stub => 'home',                           common('home' )),
+    Page.new(stub => 'blog',                           common('blog' )),
+    Page.new(stub => 'first-post',  parent => 'blog',  common('1st'  )),
+    Page.new(stub => 'about',                          common('about')),
+    Page.new(stub => 'team',        parent => 'about', common('team' )),
+);
+
+my Nav $nav = nav( @pages.map: {.stub => $_} );
+@pages.map: { .nav = $nav };
+
+ok @pages[0].is-stubbed, 'home is stubbed';
+is @pages[0].stub-path, '/', 'home stub-path is /';
+
+my $site = Site.new: :@pages;
+
+is @pages[1].stub-path, '/blog',            'blog stub-path is /blog';
+is @pages[2].stub-path, '/blog/first-post', 'child stub-path includes parent';
+is @pages[4].stub-path, '/about/team',      'team stub-path includes about parent';
+
+ok $site.sitemap.lookup(['blog']).defined,               'sitemap finds blog';
+ok $site.sitemap.lookup(['blog', 'first-post']).defined, 'sitemap finds nested first-post';
+
+done-testing;

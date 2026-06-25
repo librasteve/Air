@@ -1,0 +1,33 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Component;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+class Person does Component {
+    has Str $.firstName;
+    has Str $.lastName;
+    has Str $.city;
+
+    multi method HTML {
+        tr [ td $.firstName; td $.lastName; td $.city; ]
+    }
+}
+
+my $html = Person.new(firstName => 'Jane', lastName => 'Doe', city => 'Auckland').HTML;
+
+my $expect = q:to/END/;
+
+<tr>
+<td>Jane</td>
+<td>Doe</td>
+<td>Auckland</td>
+</tr>
+END
+
+is $html.&normalize, $expect.chomp.&normalize, 'custom Component renders fields in table row';
+
+done-testing;

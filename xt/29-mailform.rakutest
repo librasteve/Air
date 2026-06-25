@@ -1,0 +1,17 @@
+use Test;
+
+BEGIN {
+    unless try { require Air::Plugin::MailForm; True } {
+        plan :skip-all<Air::Plugin::MailForm required for this test>;
+    }
+}
+
+use Air::Plugin::MailForm;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+lives-ok { Air::Plugin::ContactForm.empty }, 'ContactForm.empty instantiates';
+
+done-testing;

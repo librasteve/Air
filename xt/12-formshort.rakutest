@@ -1,0 +1,34 @@
+use Test;
+use Air::Form;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 7;
+
+class Contact does Form {
+    has Str $.first-names   is validated(%va<names>);
+    has Str $.last-name     is validated(%va<name>)  is required;
+    has Str $.email         is validated(%va<email>) is required is email;
+    has Str $.captcha       is captcha(:label('Are you human?'));
+    has Str $.captcha-token is hidden;
+
+    method validate-form {
+        self.add-validation-error('Please answer correctly') unless self.captcha-valid;
+    }
+}
+
+is Contact.new(last-name => 'T', email => 'a@b.c').captcha-field-names.elems, 1,        'one captcha field';
+is Contact.new(last-name => 'T', email => 'a@b.c').captcha-field-names[0], 'captcha',   'captcha field name';
+
+my $token = Contact.captcha-sign('42');
+ok  Contact.new(last-name => 'T', email => 'a@b.c', captcha => '42', captcha-token => $token).captcha-valid, 'correct answer validates';
+nok Contact.new(last-name => 'T', email => 'a@b.c', captcha => '99', captcha-token => $token).captcha-valid, 'wrong answer fails';
+
+my %ch = Contact.captcha-new;
+ok %ch<question>.chars > 0, 'captcha-new returns question';
+ok %ch<token>.chars > 0,    'captcha-new returns token';
+
+my ($x, $y, $z) = %ch<question>.match(/(\d+)', '(\d+)', '(\d+)/).[0,1,2]».Str».Int;
+ok Contact.captcha-verify(%ch<token>, ($z + ($y - $x)).Str), 'generated captcha verifies with correct answer';
+
+done-testing;

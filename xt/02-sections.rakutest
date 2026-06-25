@@ -1,0 +1,21 @@
+use Test;
+use Air::Functional :BASE;
+use Air::Base;
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 1;
+
+my $html = (content [h3 "Content 1"; p "Hello";]).HTML;
+
+my $expect = q:to/END/;
+
+<div id="content">
+<h3>Content 1</h3>
+<p>Hello</p>
+</div>
+END
+
+is $html.&normalize, $expect.chomp.&normalize, 'content component renders inners inside div#content';
+
+done-testing;

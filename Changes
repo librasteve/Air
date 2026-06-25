@@ -1,6 +1,8 @@
 Revision history for Air
 
 {{$NEXT}}
+    - centre dashboard 1 col
+    - drop bin/, add xt/
 
 0.1.31  2026-06-24T22:42:09+01:00
     - fix left menu column shift

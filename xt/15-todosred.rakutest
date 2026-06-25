@@ -1,0 +1,46 @@
+use Test;
+
+BEGIN {
+    unless try { require Red:api<2>; True } {
+        plan :skip-all<Red required for this test>;
+    }
+}
+
+use Air::Functional :BASE;
+use Air::Base;
+use Air::Component;
+use Red:api<2>;
+
+red-defaults 'SQLite';
+
+sub normalize(Str $html) { $html.trans(' ' => '').comb.sort.join }
+
+plan 2;
+
+role HxTodo {
+    method hx-delete(--> Hash()) { :hx-delete($.url-path), :hx-target('closest tr'), :hx-swap<delete> }
+    method hx-toggle(--> Hash()) { :hx-get("$.url-path/toggle"), :hx-target<closest tr>, :hx-swap<outerHTML> }
+}
+
+model Todo does Component::Red[:C:R:U:D] {
+    also does HxTodo;
+    has UInt $.id      is serial;
+    has Bool $.checked is rw is column(:default{False});
+    has Str  $.text    is column;
+
+    method toggle is controller { $!checked = !$!checked; $.^save; self }
+
+    multi method HTML {
+        tr
+            td( input :type<checkbox>, |$.hx-toggle, :$!checked ),
+            td( $!checked ?? del $!text !! $!text ),
+            td( button :type<submit>, |$.hx-delete, '-' ),
+    }
+}
+
+lives-ok { Todo.^create-table(:unless-exists) }, 'Red Todo table created';
+
+my $todo = Todo.^create: text => 'buy oat milk';
+nok $todo.checked,                       'Red todo starts unchecked';
+
+done-testing;
