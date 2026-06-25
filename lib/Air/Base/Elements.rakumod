@@ -373,6 +373,7 @@ role Dashboard  does Component is export {
         dashboard {
           display: flex;
           flex-wrap: wrap;
+          justify-content: center;
           gap: 1rem;
         }
         END
